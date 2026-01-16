@@ -1,0 +1,303 @@
+"use client"
+
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import { Button } from "@/components/ui/button"
+import { useFilingContext } from "@/context/filing-context"
+import { formatFilingRef } from "@/lib/domain/pricing-engine"
+import { QuestionRegistry } from "@/lib/domain/question-registry"
+import { CorporateFilingService } from "@/services/corporate-filing-service"
+import {
+  Loader2,
+  Send,
+  FileCheck,
+  ChevronDown,
+  ChevronUp,
+  Pencil,
+  Building2
+} from "lucide-react"
+import type { Filing, TaxFilingSchema } from "@/lib/domain/types"
+
+type ReviewStep = "review" | "submitted"
+
+interface CorporateReviewScreenProps {
+  filing: Filing
+  schema: TaxFilingSchema
+  formData: Record<string, unknown>
+}
+
+export function CorporateReviewScreen({ filing, schema, formData }: CorporateReviewScreenProps) {
+  const router = useRouter()
+  const { dispatch } = useFilingContext()
+  const [currentStep, setCurrentStep] = useState<ReviewStep>("review")
+  const [submittedRefNumber, setSubmittedRefNumber] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Get corporation name from formData
+  const corpName = (formData["corpInfo.legalName"] as string) || "Your Corporation"
+
+  const handleSubmit = async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const updatedFiling = await CorporateFilingService.submitForReview(filing.id)
+      if (updatedFiling) {
+        setSubmittedRefNumber(updatedFiling.referenceNumber || null)
+        setCurrentStep("submitted")
+      }
+    } catch (err: any) {
+      console.error("Failed to submit corporate filing:", err)
+      setError(err.message || "Failed to submit filing. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleEditSection = (sectionIndex: number) => {
+    // Navigate back to the specific section
+    dispatch({ type: "GO_TO_SECTION", payload: sectionIndex })
+    dispatch({ type: "INIT_CORPORATE_FILING", payload: {
+      filingId: filing.id,
+      corporateFilingId: (filing as any).corporateFiling?.id || filing.id
+    }})
+  }
+
+  // Submitted confirmation
+  if (currentStep === "submitted") {
+    const displayRefNumber = submittedRefNumber || formatFilingRef(filing.id)
+
+    return (
+      <div className="glass-card mx-auto max-w-xl rounded-2xl p-8 text-center">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
+          <FileCheck className="h-10 w-10 text-primary" />
+        </div>
+        <h2 className="text-2xl font-bold text-foreground">Corporate Filing Submitted!</h2>
+        <p className="mt-2 text-muted-foreground">
+          Your T2 corporate tax return for <span className="font-medium text-foreground">{corpName}</span> has been submitted for review.
+        </p>
+        <div className="mt-6 rounded-lg bg-muted/50 p-4">
+          <p className="text-sm text-muted-foreground">Reference Number</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-primary">{displayRefNumber}</p>
+        </div>
+        <Button className="mt-8" onClick={() => router.push("/dashboard")}>
+          Return to Dashboard
+        </Button>
+      </div>
+    )
+  }
+
+  // Get sections from schema for display
+  const sections = schema ? QuestionRegistry.getSectionsForRole(schema, "primary", formData) : []
+
+  // Review screen
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="glass-card rounded-xl p-6">
+        <div className="flex items-center gap-4">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
+            <Building2 className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Review Corporate Filing</h2>
+            <p className="text-muted-foreground">
+              Please verify all information for <span className="font-medium text-foreground">{corpName}</span> is correct.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Error Alert */}
+      {error && (
+        <div className="glass-card rounded-xl p-4 border border-destructive/50 bg-destructive/10">
+          <p className="text-destructive text-sm">{error}</p>
+        </div>
+      )}
+
+      {/* Sections */}
+      <div className="space-y-4">
+        {sections.map((section, sectionIndex) => (
+          <SectionCard
+            key={section.id}
+            section={section}
+            formData={formData}
+            onEdit={() => handleEditSection(sectionIndex)}
+          />
+        ))}
+      </div>
+
+      {/* Submit Button - No payment step for corporate filings */}
+      <div className="flex justify-end">
+        <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px]">
+          {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+          Submit for Review
+        </Button>
+      </div>
+    </div>
+  )
+}
+
+interface SectionCardProps {
+  section: any
+  formData: Record<string, unknown>
+  onEdit: () => void
+}
+
+function SectionCard({ section, formData, onEdit }: SectionCardProps) {
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  // Filter to only visible questions
+  const visibleQuestions = section.questions.filter((q: any) =>
+    QuestionRegistry.isQuestionVisible(q, formData)
+  )
+
+  if (visibleQuestions.length === 0) return null
+
+  // Count answered questions
+  const answeredCount = visibleQuestions.filter((q: any) => {
+    const value = formData[q.name]
+    return value !== undefined && value !== null && value !== '' &&
+      !(Array.isArray(value) && value.length === 0)
+  }).length
+
+  return (
+    <div className="glass-card rounded-xl p-6">
+      {/* Header */}
+      <div
+        className="flex items-center justify-between cursor-pointer"
+        onClick={() => setIsExpanded(!isExpanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div>
+            <h3 className="font-semibold text-foreground">{section.title}</h3>
+            <p className="text-sm text-muted-foreground">
+              {answeredCount} of {visibleQuestions.length} answered
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 text-xs text-muted-foreground hover:text-primary"
+            onClick={(e) => {
+              e.stopPropagation()
+              onEdit()
+            }}
+          >
+            <Pencil className="mr-1 h-3 w-3" />
+            Edit
+          </Button>
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </Button>
+        </div>
+      </div>
+
+      {/* Expanded Details */}
+      {isExpanded && (
+        <div className="mt-4 space-y-1 rounded-lg bg-muted/30 p-3">
+          {visibleQuestions.map((question: any) => (
+            <AnswerRow
+              key={question.id}
+              question={question}
+              value={formData[question.name]}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+interface AnswerRowProps {
+  question: any
+  value: any
+}
+
+function AnswerRow({ question, value }: AnswerRowProps) {
+  const displayValue = formatAnswerValue(value, question)
+  const isEmpty = value === undefined || value === null || value === '' ||
+    (Array.isArray(value) && value.length === 0)
+
+  return (
+    <div className="flex justify-between py-1.5 text-sm">
+      <span className={isEmpty ? "text-muted-foreground/60" : "text-muted-foreground"}>
+        {question.label}
+        {question.validation?.required && <span className="text-destructive ml-0.5">*</span>}
+      </span>
+      <span className={isEmpty ? "text-muted-foreground/60 italic" : "text-foreground text-right max-w-[60%]"}>
+        {displayValue}
+      </span>
+    </div>
+  )
+}
+
+function formatAnswerValue(value: any, question: any): string {
+  if (value === undefined || value === null || value === '') return 'Not provided'
+
+  // Handle arrays (multi-select, checkboxes, repeaters)
+  if (Array.isArray(value)) {
+    if (value.length === 0) return 'Not provided'
+
+    // Check if it's a repeater (array of objects)
+    if (typeof value[0] === 'object' && value[0] !== null) {
+      return `${value.length} item${value.length > 1 ? 's' : ''}`
+    }
+
+    // Try to find labels from options
+    if (question.options) {
+      const labels = value.map((v: any) => {
+        const option = question.options.find((o: any) => o.value === v)
+        return option?.label || v
+      })
+      return labels.join(', ')
+    }
+    return value.join(', ')
+  }
+
+  // Handle boolean
+  if (typeof value === 'boolean') {
+    return value ? 'Yes' : 'No'
+  }
+
+  // Handle YES/NO strings
+  if (value === 'YES') return 'Yes'
+  if (value === 'NO') return 'No'
+
+  // Handle select/radio - find the label
+  if (question.options && (question.type === 'select' || question.type === 'radio')) {
+    const option = question.options.find((o: any) => o.value === value)
+    if (option) return option.label
+  }
+
+  // Handle currency/numbers
+  if (question.type === 'number') {
+    const num = Number(value)
+    if (!isNaN(num)) {
+      // Format as currency for financial fields
+      if (question.name?.toLowerCase().includes('revenue') ||
+          question.name?.toLowerCase().includes('expense') ||
+          question.name?.toLowerCase().includes('income') ||
+          question.name?.toLowerCase().includes('salary') ||
+          question.name?.toLowerCase().includes('rent') ||
+          question.name?.toLowerCase().includes('fee')) {
+        return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(num)
+      }
+      return num.toLocaleString()
+    }
+  }
+
+  // Handle dates
+  if (question.type === 'date' && value) {
+    try {
+      const date = new Date(value)
+      return date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
+    } catch {
+      return String(value)
+    }
+  }
+
+  return String(value)
+}
