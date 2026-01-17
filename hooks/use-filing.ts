@@ -242,11 +242,12 @@ export function useFiling(filingId?: string, initialData?: Filing) {
   }, [state.filingId, state.phase])
 
   // Submit filing for review - returns the updated filing with reference number
-  const submitForReview = useCallback(async (): Promise<Filing | null> => {
+  // Accepts optional calculatedTotalPrice to store the pricing at submission time
+  const submitForReview = useCallback(async (calculatedTotalPrice?: number): Promise<Filing | null> => {
     if (!state.filingId) return null
     dispatch({ type: "SET_LOADING", payload: true })
     try {
-      const updatedFiling = await FilingService.submitForReview(state.filingId)
+      const updatedFiling = await FilingService.submitForReview(state.filingId, calculatedTotalPrice)
       await mutate(`filing/${state.filingId}`)
       return updatedFiling
     } catch (err) {

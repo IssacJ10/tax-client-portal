@@ -89,15 +89,15 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
   }, [sections, formData])
 
   return (
-    <div className="flex h-full flex-col">
-      {/* Logo */}
-      <div className="flex items-center gap-3 border-b border-sidebar-border p-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary">
-          <Leaf className="h-5 w-5 text-primary-foreground" />
+    <div className="flex h-full flex-col bg-white">
+      {/* Logo - H&R Block green header */}
+      <div className="flex items-center gap-3 bg-[#00754a] p-6">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
+          <Leaf className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h1 className="font-semibold text-sidebar-foreground">TaxPortal</h1>
-          <p className="text-xs text-muted-foreground">Tax Year 2025</p>
+          <h1 className="font-semibold text-white">TaxPortal</h1>
+          <p className="text-xs text-white/70">Tax Year 2025</p>
         </div>
       </div>
 
@@ -112,18 +112,18 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
               <li key={step.id}>
                 <div
                   className={cn(
-                    "flex items-center gap-3 rounded-lg px-3 py-3 transition-colors",
-                    status === "current" && "bg-sidebar-accent text-sidebar-accent-foreground",
-                    status === "complete" && "text-primary",
-                    status === "pending" && "text-muted-foreground",
+                    "flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
+                    status === "current" && "bg-[#00754a]/10 text-gray-900",
+                    status === "complete" && "text-[#00754a]",
+                    status === "pending" && "text-gray-400",
                   )}
                 >
                   <div
                     className={cn(
-                      "flex h-8 w-8 items-center justify-center rounded-full border-2",
-                      status === "current" && "border-primary bg-primary text-primary-foreground",
-                      status === "complete" && "border-primary bg-primary/20 text-primary",
-                      status === "pending" && "border-muted-foreground/30",
+                      "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
+                      status === "current" && "border-[#00754a] bg-[#00754a] text-white shadow-lg shadow-[#00754a]/30",
+                      status === "complete" && "border-[#00754a] bg-[#00754a]/10 text-[#00754a]",
+                      status === "pending" && "border-gray-200 text-gray-400",
                     )}
                   >
                     {status === "complete" ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
@@ -139,16 +139,16 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
                         <button
                           onClick={() => onSectionClick(originalIndex)}
                           className={cn(
-                            "flex w-full items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors",
+                            "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
                             originalIndex === currentSectionIndex
-                              ? "bg-primary/10 text-primary"
-                              : "text-muted-foreground hover:text-sidebar-foreground",
+                              ? "bg-[#00754a]/10 text-[#00754a] font-medium"
+                              : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
                           )}
                         >
                           <Circle
                             className={cn(
                               "h-2 w-2",
-                              originalIndex === currentSectionIndex ? "fill-primary text-primary" : "fill-muted text-muted",
+                              originalIndex === currentSectionIndex ? "fill-[#00754a] text-[#00754a]" : "fill-gray-300 text-gray-300",
                             )}
                           />
                           {section.title}
@@ -165,10 +165,10 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
 
       {/* Filing Reference */}
       {filing && (
-        <div className="border-t border-sidebar-border p-4">
-          <div className="glass rounded-lg p-3">
-            <p className="text-xs text-muted-foreground">Filing Reference</p>
-            <p className="font-mono text-sm text-sidebar-foreground">
+        <div className="border-t border-gray-100 p-4">
+          <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+            <p className="text-xs text-gray-500">Filing Reference</p>
+            <p className="font-mono text-sm text-[#00754a] font-medium">
               {filing.referenceNumber || `JJ-${String(filing.id).slice(-6).toUpperCase()}`}
             </p>
           </div>
@@ -185,12 +185,12 @@ export function WizardSidebar(props: WizardSidebarProps) {
   if (isMobile) {
     return (
       <>
-        <Button variant="ghost" size="icon" className="fixed left-4 top-4 z-50 glass" onClick={() => setOpen(true)}>
+        <Button variant="ghost" size="icon" className="fixed left-4 top-4 z-50 rounded-xl bg-[#00754a] text-white hover:bg-[#005c3b] shadow-lg" onClick={() => setOpen(true)}>
           <Menu className="h-5 w-5" />
         </Button>
 
         <Sheet open={open} onOpenChange={setOpen}>
-          <SheetContent side="left" className="w-72 bg-sidebar p-0">
+          <SheetContent side="left" className="w-72 bg-white border-r border-gray-200 p-0">
             <SidebarContent {...props} />
           </SheetContent>
         </Sheet>
@@ -199,7 +199,7 @@ export function WizardSidebar(props: WizardSidebarProps) {
   }
 
   return (
-    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-72 border-r border-sidebar-border bg-sidebar lg:block">
+    <aside className="fixed left-0 top-0 z-40 hidden h-screen w-72 border-r border-gray-200 bg-white shadow-sm lg:block">
       <SidebarContent {...props} />
     </aside>
   )

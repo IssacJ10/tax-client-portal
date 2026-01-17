@@ -535,10 +535,10 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   // Render loading state
   if (isLoading && !filing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <div className="glass-card rounded-xl p-8 text-center">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-          <p className="mt-4 text-muted-foreground">Loading your filing...</p>
+      <div className="flex min-h-screen items-center justify-center bg-[#f8faf9]">
+        <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+          <p className="mt-4 text-gray-500">Loading your filing...</p>
         </div>
       </div>
     )
@@ -570,9 +570,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         // If auto-skipping (not married/common_law), show loading briefly while useEffect handles the skip
         if (shouldAutoSkipSpouse) {
           return (
-            <div className="glass-card rounded-xl p-8 text-center">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-              <p className="mt-4 text-muted-foreground">Continuing to dependents...</p>
+            <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+              <p className="mt-4 text-gray-500">Continuing to dependents...</p>
             </div>
           )
         }
@@ -581,7 +581,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
           <IntermissionCard
             icon={Heart}
             title="Filing with a Spouse?"
-            description="Would you like to include your spouse in this tax return? Joint filing may provide tax benefits for your household."
+            description="Would you like to include your spouse in this tax filing? Joint filing may provide tax benefits for your household."
             primaryAction={{
               label: "Yes, Add Spouse",
               onClick: handleAddSpouse,
@@ -666,9 +666,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
               startDependent(nextIncompleteDependentId, completedCount)
             }, 0)
             return (
-              <div className="glass-card rounded-xl p-8 text-center">
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-                <p className="mt-4 text-muted-foreground">Continuing with your dependents...</p>
+              <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+                <p className="mt-4 text-gray-500">Continuing with your dependents...</p>
               </div>
             )
           }
@@ -726,23 +726,23 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
         // FRESH START: No existing dependents - show the add dependents form
         return (
-          <div className="glass-card mx-auto max-w-xl rounded-2xl p-8">
+          <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 shadow-sm">
             {/* Icon */}
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
-              <Users className="h-8 w-8 text-primary" />
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#00754a]/10">
+              <Users className="h-8 w-8 text-[#00754a]" />
             </div>
 
             {/* Title & Description */}
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-foreground">Add Dependents</h2>
-              <p className="mt-2 text-muted-foreground">
-                Do you have any dependents to claim on your tax return? You can add children or other qualifying relatives.
+              <h2 className="text-2xl font-bold text-gray-900">Add Dependents</h2>
+              <p className="mt-2 text-gray-500">
+                Do you have any dependents to claim on your tax filing? You can add children or other qualifying relatives.
               </p>
             </div>
 
             {/* Dependent Count Input */}
             <div className="mt-6">
-              <Label htmlFor="dependentCount" className="text-sm font-medium">
+              <Label htmlFor="dependentCount" className="text-sm font-medium text-gray-700">
                 How many dependents do you want to add?
               </Label>
               <div className="mt-2 flex items-center justify-center gap-4">
@@ -752,6 +752,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
                   size="icon"
                   onClick={() => setDependentCount(Math.max(1, dependentCount - 1))}
                   disabled={dependentCount <= 1 || isCreatingDependents}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-100"
                 >
                   <Minus className="h-4 w-4" />
                 </Button>
@@ -762,7 +763,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
                   max={10}
                   value={dependentCount}
                   onChange={(e) => setDependentCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                  className="w-20 text-center"
+                  className="w-20 text-center bg-white border-gray-200 text-gray-900"
                   disabled={isCreatingDependents}
                 />
                 <Button
@@ -771,6 +772,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
                   size="icon"
                   onClick={() => setDependentCount(Math.min(10, dependentCount + 1))}
                   disabled={dependentCount >= 10 || isCreatingDependents}
+                  className="border-gray-200 text-gray-600 hover:bg-gray-100"
                 >
                   <Plus className="h-4 w-4" />
                 </Button>
@@ -782,7 +784,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
               <Button
                 onClick={handleAddDependents}
                 disabled={isCreatingDependents || isLoading}
-                className="min-w-[180px]"
+                className="min-w-[180px] bg-[#00754a] hover:bg-[#005c3b] text-white"
                 size="lg"
               >
                 {isCreatingDependents ? (
@@ -795,7 +797,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
               <Button
                 variant="ghost"
                 onClick={goToReview}
-                className="min-w-[180px]"
+                className="min-w-[180px] text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 size="lg"
                 disabled={isCreatingDependents}
               >
@@ -829,8 +831,8 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         // Corporate and Trust filings use the same QuestionRenderer but with their schema
         if (!currentSection) {
           return (
-            <div className="glass-card rounded-xl p-8 text-center">
-              <p className="text-muted-foreground">No questions available for this section.</p>
+            <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+              <p className="text-gray-500">No questions available for this section.</p>
             </div>
           )
         }
@@ -854,8 +856,8 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       case "DEPENDENT_ACTIVE":
         if (!currentSection) {
           return (
-            <div className="glass-card rounded-xl p-8 text-center">
-              <p className="text-muted-foreground">No questions available for this section.</p>
+            <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+              <p className="text-gray-500">No questions available for this section.</p>
             </div>
           )
         }
@@ -878,9 +880,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       case "IDLE":
         // Show loading state while initializing or creating primary filing
         return (
-          <div className="glass-card rounded-xl p-8 text-center">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-            <p className="mt-4 text-muted-foreground">
+          <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+            <p className="mt-4 text-gray-500">
               {isCreatingPrimaryRef.current ? "Setting up your tax filing..." : "Initializing wizard..."}
             </p>
           </div>
@@ -888,15 +890,18 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
       default:
         return (
-          <div className="glass-card rounded-xl p-8 text-center">
-            <p className="text-muted-foreground">Unknown phase: {state.phase}</p>
+          <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+            <p className="text-gray-500">Unknown phase: {state.phase}</p>
           </div>
         )
     }
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen relative overflow-hidden">
+      {/* Clean White Background - matching dashboard theme */}
+      <div className="fixed inset-0 bg-[#f8faf9]" />
+
       {/* Sidebar / Drawer */}
       <WizardSidebar
         currentPhase={state.phase}
@@ -908,7 +913,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       />
 
       {/* Main Content */}
-      <main className="flex-1 p-4 md:p-8 lg:ml-72">
+      <main className="relative flex-1 p-4 md:p-8 lg:ml-72">
         <div className="mx-auto max-w-3xl">
           {/* Header with Save & Exit */}
           <div className="flex items-center justify-between mb-4">
@@ -922,7 +927,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
                 size="sm"
                 onClick={handleSaveAndExit}
                 disabled={isSyncing}
-                className="text-muted-foreground hover:text-foreground"
+                className="text-gray-600 hover:text-gray-900 hover:bg-gray-100"
               >
                 {isSyncing ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

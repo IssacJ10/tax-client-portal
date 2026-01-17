@@ -63,6 +63,7 @@ function transformFilingWithTrust(data: any): TrustFilingWithData {
     type: 'TRUST',
     status: (data.status || data.filingStatus?.statusCode || data.filingStatus?.code || 'DRAFT') as FilingStatus,
     totalPrice: data.totalPrice || 0,
+    paidAmount: data.paidAmount || 0,
     personalFilings: [], // Trust filings don't have personal filings
     trustFiling: trustFilingData ? transformTrustFiling(trustFilingData) : undefined,
     createdAt: data.createdAt,
@@ -362,13 +363,26 @@ export class TrustFilingService {
     console.log('[submitForReview] STEP 4 COMPLETE')
 
     // ============================================================
-    // STEP 5: Update the parent filing status and confirmation number
+    // STEP 5: Update the parent filing status, confirmation number, totalPrice, and paidAmount
+    // When submitting (new or amendment), paidAmount = totalPrice because user pays the full amount
+    // After submission, paidAmount reflects what they've now paid in total
     // ============================================================
     console.log('[submitForReview] STEP 5: Updating parent filing status...')
+
+    // Get the current total price from the filing
+    const totalPrice = filingData.totalPrice || 0
+
+    // After submission, paidAmount should equal totalPrice (user has paid for this filing)
+    const paidAmount = totalPrice
+
+    console.log('[submitForReview] STEP 5: totalPrice =', totalPrice, ', paidAmount =', paidAmount)
+
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
         filingStatus: statusId,
         confirmationNumber,
+        totalPrice,
+        paidAmount,
         submittedAt: new Date().toISOString()
       }
     })

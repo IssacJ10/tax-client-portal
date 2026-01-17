@@ -22,6 +22,7 @@ export interface Filing {
   type: FilingType;
   status: FilingStatus;
   totalPrice: number;
+  paidAmount?: number; // Amount already paid (for tracking amendments)
   personalFilings: PersonalFiling[];
   wizardProgress?: WizardProgress; // Progress tracking for resume functionality
   createdAt: string;

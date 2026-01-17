@@ -39,6 +39,9 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
   // Get corporation name from formData
   const corpName = (formData["corpInfo.legalName"] as string) || "Your Corporation"
 
+  // Amendment detection: has a reference number AND has a previous paid amount
+  const isAmendment = !!(filing.referenceNumber && filing.paidAmount && filing.paidAmount > 0)
+
   const handleSubmit = async () => {
     setIsLoading(true)
     setError(null)
@@ -87,7 +90,7 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
         </div>
         <h2 className="text-2xl font-bold text-foreground">Corporate Filing Submitted!</h2>
         <p className="mt-2 text-muted-foreground">
-          Your T2 corporate tax return for <span className="font-medium text-foreground">{corpName}</span> has been submitted for review.
+          Your T2 corporate tax filing for <span className="font-medium text-foreground">{corpName}</span> has been submitted for review.
         </p>
         <div className="mt-6 rounded-lg bg-muted/50 p-4">
           <p className="text-sm text-muted-foreground">Reference Number</p>
@@ -113,9 +116,14 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
             <Building2 className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Review Corporate Filing</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              {isAmendment ? "Review Corporate Filing Amendment" : "Review Corporate Filing"}
+            </h2>
             <p className="text-muted-foreground">
-              Please verify all information for <span className="font-medium text-foreground">{corpName}</span> is correct.
+              {isAmendment
+                ? <>Amending filing <span className="font-mono text-primary">{filing.referenceNumber}</span> for <span className="font-medium text-foreground">{corpName}</span>.</>
+                : <>Please verify all information for <span className="font-medium text-foreground">{corpName}</span> is correct.</>
+              }
             </p>
           </div>
         </div>

@@ -171,9 +171,9 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[425px] bg-background border-white/10">
                 <DialogHeader>
-                    <DialogTitle>Start New Return</DialogTitle>
+                    <DialogTitle>Start New Filing</DialogTitle>
                     <DialogDescription>
-                        Select the tax year and type of return you wish to file.
+                        Select the tax year and type of filing you wish to file.
                     </DialogDescription>
                 </DialogHeader>
 

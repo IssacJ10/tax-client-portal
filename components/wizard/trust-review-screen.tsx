@@ -39,6 +39,9 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
   // Get trust name from formData
   const trustName = (formData["trustInfo.name"] as string) || "Your Trust"
 
+  // Amendment detection: has a reference number AND has a previous paid amount
+  const isAmendment = !!(filing.referenceNumber && filing.paidAmount && filing.paidAmount > 0)
+
   const handleSubmit = async () => {
     setIsLoading(true)
     setError(null)
@@ -87,7 +90,7 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
         </div>
         <h2 className="text-2xl font-bold text-foreground">Trust Filing Submitted!</h2>
         <p className="mt-2 text-muted-foreground">
-          Your T3 trust tax return for <span className="font-medium text-foreground">{trustName}</span> has been submitted for review.
+          Your T3 trust tax filing for <span className="font-medium text-foreground">{trustName}</span> has been submitted for review.
         </p>
         <div className="mt-6 rounded-lg bg-muted/50 p-4">
           <p className="text-sm text-muted-foreground">Reference Number</p>
@@ -113,9 +116,14 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
             <Landmark className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Review Trust Filing</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              {isAmendment ? "Review Trust Filing Amendment" : "Review Trust Filing"}
+            </h2>
             <p className="text-muted-foreground">
-              Please verify all information for <span className="font-medium text-foreground">{trustName}</span> is correct.
+              {isAmendment
+                ? <>Amending filing <span className="font-mono text-primary">{filing.referenceNumber}</span> for <span className="font-medium text-foreground">{trustName}</span>.</>
+                : <>Please verify all information for <span className="font-medium text-foreground">{trustName}</span> is correct.</>
+              }
             </p>
           </div>
         </div>

@@ -47,6 +47,11 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
   const spouse = filing.personalFilings.find((pf) => pf.type === "spouse")
   const dependents = filing.personalFilings.filter((pf) => pf.type === "dependent")
 
+  // Amendment detection: has a reference number AND has a previous paid amount
+  const isAmendment = !!(filing.referenceNumber && filing.paidAmount && filing.paidAmount > 0)
+  const amountPaid = filing.paidAmount || 0
+  const amountDue = isAmendment ? Math.max(0, pricing.total - amountPaid) : pricing.total
+
   // Check if user is eligible to add spouse (married or common_law and no spouse yet)
   const maritalStatus = primary?.formData?.["maritalStatus.status"] as string | undefined
   const isEligibleForSpouse = (maritalStatus === "MARRIED" || maritalStatus === "COMMON_LAW") && !spouse
@@ -54,7 +59,8 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
   const canAddFamilyMembers = onAddSpouse || onAddDependent
 
   const handleSubmit = async () => {
-    const updatedFiling = await submitForReview()
+    // Pass the calculated total price to be stored in the filing
+    const updatedFiling = await submitForReview(pricing.total)
     if (updatedFiling) {
       // Store the reference number from the response
       setSubmittedRefNumber(updatedFiling.referenceNumber || null)
@@ -70,19 +76,19 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
     const displayRefNumber = submittedRefNumber || formatFilingRef(filing.id)
 
     return (
-      <div className="glass-card mx-auto max-w-xl rounded-2xl p-8 text-center">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
-          <FileCheck className="h-10 w-10 text-primary" />
+      <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#00754a]/10">
+          <FileCheck className="h-10 w-10 text-[#00754a]" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Filing Submitted!</h2>
-        <p className="mt-2 text-muted-foreground">
-          Your tax return has been submitted for review. We'll notify you once it's processed.
+        <h2 className="text-2xl font-bold text-gray-900">Filing Submitted!</h2>
+        <p className="mt-2 text-gray-500">
+          Your tax filing has been submitted for review. We'll notify you once it's processed.
         </p>
-        <div className="mt-6 rounded-lg bg-muted/50 p-4">
-          <p className="text-sm text-muted-foreground">Reference Number</p>
-          <p className="mt-1 font-mono text-2xl font-bold text-primary">{displayRefNumber}</p>
+        <div className="mt-6 rounded-lg bg-gray-100 p-4">
+          <p className="text-sm text-gray-500">Reference Number</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-[#00754a]">{displayRefNumber}</p>
         </div>
-        <Button className="mt-8" onClick={() => router.push("/dashboard")}>
+        <Button className="mt-8 bg-[#00754a] hover:bg-[#005c3b] text-white" onClick={() => router.push("/dashboard")}>
           Return to Dashboard
         </Button>
       </div>
@@ -94,81 +100,122 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
     return (
       <div className="space-y-6">
         {/* Header */}
-        <div className="glass-card rounded-xl p-6">
+        <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
-              <CreditCard className="h-6 w-6 text-primary" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00754a]/10">
+              <CreditCard className="h-6 w-6 text-[#00754a]" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-foreground">Confirm & Pay</h2>
-              <p className="text-muted-foreground">Review your pricing and submit your tax return.</p>
+              <h2 className="text-xl font-bold text-gray-900">
+                {isAmendment ? "Amendment Payment" : "Confirm & Pay"}
+              </h2>
+              <p className="text-gray-500">
+                {isAmendment
+                  ? `Review the changes to your filing (Ref: ${filing.referenceNumber}).`
+                  : "Review your pricing and submit your tax filing."}
+              </p>
             </div>
           </div>
         </div>
 
         {/* Filing Summary */}
-        <div className="glass-card rounded-xl p-6">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">Filing Summary</h3>
+        <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">Filing Summary</h3>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Primary Filer</span>
-              <span className="text-foreground">{primary?.formData?.firstName ? `${primary.formData.firstName} ${primary.formData.lastName || ''}`.trim() : 'You'}</span>
+              <span className="text-gray-500">Primary Filer</span>
+              <span className="text-gray-900">{primary?.formData?.firstName ? `${primary.formData.firstName} ${primary.formData.lastName || ''}`.trim() : 'You'}</span>
             </div>
             {spouse && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Spouse</span>
-                <span className="text-foreground">{spouse.formData?.firstName ? `${spouse.formData.firstName} ${spouse.formData.lastName || ''}`.trim() : 'Included'}</span>
+                <span className="text-gray-500">Spouse</span>
+                <span className="text-gray-900">{spouse.formData?.firstName ? `${spouse.formData.firstName} ${spouse.formData.lastName || ''}`.trim() : 'Included'}</span>
               </div>
             )}
             {dependents.length > 0 && (
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Dependents</span>
-                <span className="text-foreground">{dependents.length} {dependents.length === 1 ? 'person' : 'people'}</span>
+                <span className="text-gray-500">Dependents</span>
+                <span className="text-gray-900">{dependents.length} {dependents.length === 1 ? 'person' : 'people'}</span>
               </div>
             )}
           </div>
         </div>
 
         {/* Pricing Breakdown */}
-        <div className="glass-card rounded-xl p-6">
-          <h3 className="mb-4 text-lg font-semibold text-foreground">Pricing Summary</h3>
+        <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">
+            {isAmendment ? "Amendment Pricing" : "Pricing Summary"}
+          </h3>
           <div className="space-y-3">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Base Filing Fee</span>
-              <span className="font-medium text-foreground">{formatPrice(pricing.baseFee)}</span>
+              <span className="text-gray-500">Base Filing Fee</span>
+              <span className="font-medium text-gray-900">{formatPrice(pricing.baseFee)}</span>
             </div>
             {pricing.items.map((item, idx) => (
               <div key={idx} className="flex justify-between">
-                <span className="text-muted-foreground">{item.label}</span>
-                <span className="font-medium text-foreground">{formatPrice(item.amount)}</span>
+                <span className="text-gray-500">{item.label}</span>
+                <span className="font-medium text-gray-900">{formatPrice(item.amount)}</span>
               </div>
             ))}
-            <div className="border-t border-border pt-3">
+            <div className="border-t border-gray-200 pt-3">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-medium text-foreground">{formatPrice(pricing.subtotal)}</span>
+                <span className="text-gray-500">Subtotal</span>
+                <span className="font-medium text-gray-900">{formatPrice(pricing.subtotal)}</span>
               </div>
               <div className="flex justify-between mt-1">
-                <span className="text-muted-foreground">Tax (HST 13%)</span>
-                <span className="font-medium text-foreground">{formatPrice(pricing.tax)}</span>
+                <span className="text-gray-500">Tax (HST 15%)</span>
+                <span className="font-medium text-gray-900">{formatPrice(pricing.tax)}</span>
               </div>
             </div>
-            <div className="border-t border-border pt-3">
-              <div className="flex justify-between">
-                <span className="text-lg font-semibold text-foreground">Total</span>
-                <span className="text-lg font-bold text-primary">{formatPrice(pricing.total)}</span>
-              </div>
+            <div className="border-t border-gray-200 pt-3">
+              {isAmendment ? (
+                <>
+                  {/* Amendment: Show Updated Total, Already Paid, and Amount Due */}
+                  <div className="flex justify-between">
+                    <span className="text-gray-500">Updated Total</span>
+                    <span className="font-medium text-gray-900">{formatPrice(pricing.total)}</span>
+                  </div>
+                  <div className="flex justify-between mt-1">
+                    <span className="text-gray-500">Previously Paid</span>
+                    <span className="font-medium text-green-600">-{formatPrice(amountPaid)}</span>
+                  </div>
+                  <div className="border-t border-gray-200 mt-3 pt-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-lg font-semibold text-gray-900">Amount You Owe</span>
+                      <span className={`text-xl font-bold ${amountDue > 0 ? 'text-[#00754a]' : 'text-green-600'}`}>
+                        {amountDue > 0 ? formatPrice(amountDue) : "$0.00"}
+                      </span>
+                    </div>
+                    {amountDue === 0 && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        No additional payment required. Your previous payment covers the updated filing.
+                      </p>
+                    )}
+                    {amountDue > 0 && (
+                      <p className="text-xs text-gray-500 mt-2">
+                        This is the additional amount due for the changes made to your filing.
+                      </p>
+                    )}
+                  </div>
+                </>
+              ) : (
+                /* New Filing: Just show Total */
+                <div className="flex justify-between items-center">
+                  <span className="text-lg font-semibold text-gray-900">Total</span>
+                  <span className="text-xl font-bold text-[#00754a]">{formatPrice(pricing.total)}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Actions */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" onClick={() => setCurrentStep("review")}>
+          <Button variant="ghost" onClick={() => setCurrentStep("review")} className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Review
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px]">
+          <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px] bg-[#00754a] hover:bg-[#005c3b] text-white">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Submit for Review
           </Button>
@@ -181,14 +228,14 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="glass-card rounded-xl p-6">
+      <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
-            <FileCheck className="h-6 w-6 text-primary" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00754a]/10">
+            <FileCheck className="h-6 w-6 text-[#00754a]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Review Your Information</h2>
-            <p className="text-muted-foreground">Please verify all information is correct. Click "Edit" to make changes.</p>
+            <h2 className="text-xl font-bold text-gray-900">Review Your Information</h2>
+            <p className="text-gray-500">Please verify all information is correct. Click "Edit" to make changes.</p>
           </div>
         </div>
       </div>
@@ -227,9 +274,9 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
 
       {/* Add Family Members Section - shown when callbacks are provided */}
       {canAddFamilyMembers && (
-        <div className="glass-card rounded-xl p-6">
-          <h3 className="text-lg font-semibold text-foreground mb-4">Add Family Members</h3>
-          <p className="text-sm text-muted-foreground mb-4">
+        <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Add Family Members</h3>
+          <p className="text-sm text-gray-500 mb-4">
             Need to add someone to your filing? You can add a spouse or dependents here.
           </p>
           <div className="flex flex-wrap gap-3">
@@ -238,7 +285,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
                 variant="outline"
                 onClick={onAddSpouse}
                 disabled={isLoading}
-                className="gap-2"
+                className="gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-[#00754a] hover:border-[#00754a]"
               >
                 <Heart className="h-4 w-4" />
                 Add Spouse
@@ -249,7 +296,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
                 variant="outline"
                 onClick={onAddDependent}
                 disabled={isLoading}
-                className="gap-2"
+                className="gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-[#00754a] hover:border-[#00754a]"
               >
                 <UserPlus className="h-4 w-4" />
                 Add Dependent
@@ -257,7 +304,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
             )}
           </div>
           {onAddSpouse && !isEligibleForSpouse && !spouse && (
-            <p className="text-xs text-muted-foreground mt-3">
+            <p className="text-xs text-gray-500 mt-3">
               To add a spouse, your marital status must be "Married" or "Common-Law".
             </p>
           )}
@@ -266,7 +313,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
 
       {/* Continue Button */}
       <div className="flex justify-end">
-        <Button onClick={() => setCurrentStep("payment")} size="lg" className="min-w-[200px]">
+        <Button onClick={() => setCurrentStep("payment")} size="lg" className="min-w-[200px] bg-[#00754a] hover:bg-[#005c3b] text-white">
           Continue to Payment
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
@@ -304,29 +351,29 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
   const totalAnswered = dataEntries.length
 
   return (
-    <div className="glass-card rounded-xl p-6">
+    <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
       {/* Header */}
       <div
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/20">
-            <Icon className="h-5 w-5 text-primary" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00754a]/10">
+            <Icon className="h-5 w-5 text-[#00754a]" />
           </div>
           <div>
-            <h3 className="font-semibold text-foreground">{displayName}</h3>
-            <p className="text-sm text-muted-foreground">{title} • {totalAnswered} answers</p>
+            <h3 className="font-semibold text-gray-900">{displayName}</h3>
+            <p className="text-sm text-gray-500">{title} • {totalAnswered} answers</p>
           </div>
         </div>
         <div className="flex items-center gap-3">
           {person.isComplete && (
-            <span className="flex items-center gap-1 rounded-full bg-primary/20 px-2 py-1 text-xs font-medium text-primary">
+            <span className="flex items-center gap-1 rounded-full bg-[#00754a]/10 px-2 py-1 text-xs font-medium text-[#00754a]">
               <Check className="h-3 w-3" />
               Complete
             </span>
           )}
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900 hover:bg-gray-100">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
@@ -334,7 +381,7 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
 
       {/* Expanded Details - All Answers by Section */}
       {isExpanded && (
-        <div className="mt-6 space-y-6 border-t border-border pt-6">
+        <div className="mt-6 space-y-6 border-t border-gray-200 pt-6">
           {sections.length > 0 ? (
             // Show by sections when available
             sections.map((section, sectionIndex) => {
@@ -347,12 +394,12 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
               return (
                 <div key={section.id} className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-sm font-semibold text-foreground">{section.title}</h4>
+                    <h4 className="text-sm font-semibold text-gray-900">{section.title}</h4>
                     {onEdit && (
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-muted-foreground hover:text-primary"
+                        className="h-7 text-xs text-gray-500 hover:text-[#00754a] hover:bg-gray-100"
                         onClick={(e) => {
                           e.stopPropagation()
                           onEdit(person.id, sectionIndex)
@@ -363,7 +410,7 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
                       </Button>
                     )}
                   </div>
-                  <div className="space-y-1 rounded-lg bg-muted/30 p-3">
+                  <div className="space-y-1 rounded-lg bg-gray-50 p-3">
                     {visibleQuestions.map((question) => (
                       <AnswerRow
                         key={question.id}
@@ -379,12 +426,12 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
             // Fallback: Show raw data when no sections
             <div>
               <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-semibold text-foreground">Information</h4>
+                <h4 className="text-sm font-semibold text-gray-900">Information</h4>
                 {onEdit && (
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-muted-foreground hover:text-primary"
+                    className="h-7 text-xs text-gray-500 hover:text-[#00754a] hover:bg-gray-100"
                     onClick={(e) => {
                       e.stopPropagation()
                       onEdit(person.id, 0)
@@ -395,17 +442,17 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
                   </Button>
                 )}
               </div>
-              <div className="space-y-1 rounded-lg bg-muted/30 p-3">
+              <div className="space-y-1 rounded-lg bg-gray-50 p-3">
                 {dataEntries.map(([key, value]) => (
                   <div key={key} className="flex justify-between py-1.5 text-sm">
-                    <span className="text-muted-foreground">{formatKeyLabel(key)}</span>
-                    <span className="text-foreground text-right max-w-[60%]">{formatValue(value)}</span>
+                    <span className="text-gray-500">{formatKeyLabel(key)}</span>
+                    <span className="text-gray-900 text-right max-w-[60%]">{formatValue(value)}</span>
                   </div>
                 ))}
               </div>
             </div>
           ) : (
-            <p className="text-sm text-muted-foreground">No information recorded yet.</p>
+            <p className="text-sm text-gray-500">No information recorded yet.</p>
           )}
         </div>
       )}
@@ -425,11 +472,11 @@ function AnswerRow({ question, value }: AnswerRowProps) {
 
   return (
     <div className="flex justify-between py-1.5 text-sm">
-      <span className={isEmpty ? "text-muted-foreground/60" : "text-muted-foreground"}>
+      <span className={isEmpty ? "text-gray-400" : "text-gray-500"}>
         {question.label}
-        {question.validation?.required && <span className="text-destructive ml-0.5">*</span>}
+        {question.validation?.required && <span className="text-rose-500 ml-0.5">*</span>}
       </span>
-      <span className={isEmpty ? "text-muted-foreground/60 italic" : "text-foreground text-right max-w-[60%]"}>
+      <span className={isEmpty ? "text-gray-400 italic" : "text-gray-900 text-right max-w-[60%]"}>
         {displayValue}
       </span>
     </div>

@@ -142,6 +142,7 @@ function transformFiling(data: any): Filing & { corporateFiling?: any; trustFili
     type: (normalizedType || 'INDIVIDUAL') as FilingType,
     status: (data.status || data.filingStatus?.statusCode || data.filingStatus?.code || 'DRAFT') as FilingStatus,
     totalPrice: data.totalPrice || 0,
+    paidAmount: data.paidAmount || 0,
     personalFilings: personalFilingsData.map(transformPersonalFiling),
     wizardProgress: data.wizardProgress || undefined,
     corporateFiling,
@@ -845,8 +846,8 @@ export const FilingService = {
    * Submit filing for review - updates status to UNDER_REVIEW and generates reference number
    * Also marks all child personal-filings as COMPLETED
    */
-  async submitForReview(filingId: string): Promise<Filing> {
-    console.log('[submitForReview] Submitting filing:', filingId)
+  async submitForReview(filingId: string, calculatedTotalPrice?: number): Promise<Filing> {
+    console.log('[submitForReview] Submitting filing:', filingId, 'with calculatedTotalPrice:', calculatedTotalPrice)
 
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
     const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null
@@ -898,13 +899,28 @@ export const FilingService = {
     console.log('[submitForReview] STEP 4: confirmationNumber =', confirmationNumber, existingConfirmationNumber ? '(preserved existing)' : '(newly generated)')
 
     // ============================================================
-    // STEP 5: Update the parent filing status and confirmation number
+    // STEP 5: Update the parent filing status, confirmation number, totalPrice, and paidAmount
+    // When submitting (new or amendment), paidAmount = totalPrice because user pays the full amount
+    // The "amount owed" shown to user is calculated client-side as (newTotal - previousPaidAmount)
+    // After submission, paidAmount reflects what they've now paid in total
     // ============================================================
     console.log('[submitForReview] STEP 5: Updating parent filing status...')
+
+    // Use the calculated total price if provided, otherwise fall back to stored value
+    const totalPrice = calculatedTotalPrice ?? filingData.totalPrice ?? 0
+
+    // After submission, paidAmount should equal totalPrice (user has paid for this filing)
+    // This way, if they amend again later, we know what they paid previously
+    const paidAmount = totalPrice
+
+    console.log('[submitForReview] STEP 5: totalPrice =', totalPrice, ', paidAmount =', paidAmount)
+
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
         filingStatus: statusId,
         confirmationNumber,
+        totalPrice,
+        paidAmount,
         submittedAt: new Date().toISOString()
       }
     })

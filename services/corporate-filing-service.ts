@@ -63,6 +63,7 @@ function transformFilingWithCorporate(data: any): CorporateFilingWithData {
     type: 'CORPORATE',
     status: (data.status || data.filingStatus?.statusCode || data.filingStatus?.code || 'DRAFT') as FilingStatus,
     totalPrice: data.totalPrice || 0,
+    paidAmount: data.paidAmount || 0,
     personalFilings: [], // Corporate filings don't have personal filings
     corporateFiling: corporateFilingData ? transformCorporateFiling(corporateFilingData) : undefined,
     createdAt: data.createdAt,
@@ -714,13 +715,26 @@ export class CorporateFilingService {
     console.log('[submitForReview] STEP 7 COMPLETE')
 
     // ============================================================
-    // STEP 8: Update parent filing status (final mutation)
+    // STEP 8: Update parent filing status, confirmation number, totalPrice, and paidAmount
+    // When submitting (new or amendment), paidAmount = totalPrice because user pays the full amount
+    // After submission, paidAmount reflects what they've now paid in total
     // ============================================================
     console.log('[submitForReview] STEP 8: Updating parent filing status...')
+
+    // Get the current total price from the filing
+    const totalPrice = (filingData as any).totalPrice || 0
+
+    // After submission, paidAmount should equal totalPrice (user has paid for this filing)
+    const paidAmount = totalPrice
+
+    console.log('[submitForReview] STEP 8: totalPrice =', totalPrice, ', paidAmount =', paidAmount)
+
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
         filingStatus: statusId,
         confirmationNumber,
+        totalPrice,
+        paidAmount,
         submittedAt: new Date().toISOString()
       }
     })

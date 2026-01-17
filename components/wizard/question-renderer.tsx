@@ -51,12 +51,12 @@ export function QuestionRenderer({
   }
 
   return (
-    <div className="glass-card rounded-xl p-6 md:p-8">
-      {/* Section Header ... */}
+    <div className="rounded-2xl bg-white border border-gray-200 p-6 md:p-8 shadow-sm">
+      {/* Section Header */}
       <div className="mb-8">
-        <p className="text-sm font-medium text-primary">{getRoleLabel()} Information</p>
-        <h2 className="mt-1 text-2xl font-bold text-foreground">{section.title}</h2>
-        {section.description && <p className="mt-2 text-muted-foreground">{section.description}</p>}
+        <p className="text-sm font-medium text-[#00754a]">{getRoleLabel()} Information</p>
+        <h2 className="mt-1 text-2xl font-bold text-gray-900">{section.title}</h2>
+        {section.description && <p className="mt-2 text-gray-500">{section.description}</p>}
       </div>
 
       {/* Questions */}
@@ -78,25 +78,29 @@ export function QuestionRenderer({
             )
           })
         ) : (
-          <p className="text-center text-muted-foreground py-4">
+          <p className="text-center text-gray-500 py-4">
             No questions in this section.
           </p>
         )}
       </div>
 
-      {/* Navigation ... */}
-      <div className="mt-8 flex items-center justify-between border-t border-border pt-6">
+      {/* Navigation */}
+      <div className="mt-8 flex items-center justify-between border-t border-gray-100 pt-6">
         <Button
           variant="ghost"
           onClick={onPrev}
           disabled={isFirstSection}
-          className={cn(isFirstSection && "invisible")}
+          className={cn("text-gray-600 hover:text-gray-900 hover:bg-gray-100", isFirstSection && "invisible")}
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Previous
         </Button>
 
-        <Button onClick={onNext} disabled={isSyncing}>
+        <Button
+          onClick={onNext}
+          disabled={isSyncing}
+          className="bg-[#00754a] hover:bg-[#005c3b] text-white"
+        >
           {isSyncing ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : isLastSection ? (
@@ -118,7 +122,12 @@ interface QuestionFieldProps {
 }
 
 function QuestionField({ question, value, error, onChange }: QuestionFieldProps) {
-  const inputClassName = cn("glass-input", error && "border-destructive ring-destructive/50")
+  // Clean white theme input styling
+  const inputClassName = cn(
+    "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400",
+    "focus:border-[#00754a] focus:ring-[#00754a]/20",
+    error && "border-rose-400 ring-rose-400/20"
+  )
 
   const renderInput = () => {
     switch (question.type) {
@@ -162,12 +171,16 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
       case "select":
         return (
           <Select value={(value as string) || ""} onValueChange={onChange}>
-            <SelectTrigger id={question.id} className={inputClassName}>
+            <SelectTrigger id={question.id} className={cn(inputClassName, "text-gray-900")}>
               <SelectValue placeholder={question.placeholder || "Select an option"} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="bg-white border-gray-200 shadow-lg">
               {question.options?.map((opt, idx) => (
-                <SelectItem key={opt.value || `opt-${idx}`} value={opt.value || ""}>
+                <SelectItem
+                  key={opt.value || `opt-${idx}`}
+                  value={opt.value || ""}
+                  className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
+                >
                   {opt.label}
                 </SelectItem>
               ))}
@@ -183,11 +196,18 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
             className="space-y-3"
           >
             {question.options?.map((opt, idx) => (
-              <div key={opt.value || `opt-${idx}`} className="flex items-center space-x-3">
-                <RadioGroupItem value={opt.value || ""} id={`${question.id}-${opt.value || idx}`} />
+              <div
+                key={opt.value || `opt-${idx}`}
+                className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
+              >
+                <RadioGroupItem
+                  value={opt.value || ""}
+                  id={`${question.id}-${opt.value || idx}`}
+                  className="border-gray-300 text-[#00754a] data-[state=checked]:border-[#00754a] data-[state=checked]:bg-[#00754a]"
+                />
                 <Label
                   htmlFor={`${question.id}-${opt.value || idx}`}
-                  className="cursor-pointer font-normal"
+                  className="cursor-pointer font-normal text-gray-700 flex-1"
                 >
                   {opt.label}
                 </Label>
@@ -203,7 +223,10 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
           return (
             <div className="space-y-3">
               {question.options.map((opt, idx) => (
-                <div key={opt.value || `opt-${idx}`} className="flex items-start space-x-3">
+                <div
+                  key={opt.value || `opt-${idx}`}
+                  className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
+                >
                   <Checkbox
                     id={`${question.id}-${opt.value || idx}`}
                     checked={selectedValues.includes(opt.value)}
@@ -214,11 +237,14 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
                         onChange(selectedValues.filter((v: string) => v !== opt.value))
                       }
                     }}
-                    className={error ? "border-destructive" : ""}
+                    className={cn(
+                      "border-gray-300 data-[state=checked]:bg-[#00754a] data-[state=checked]:border-[#00754a]",
+                      error && "border-rose-400"
+                    )}
                   />
                   <Label
                     htmlFor={`${question.id}-${opt.value || idx}`}
-                    className="cursor-pointer font-normal leading-snug"
+                    className="cursor-pointer font-normal leading-snug text-gray-700"
                   >
                     {opt.label}
                   </Label>
@@ -229,14 +255,17 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
         }
         // Single checkbox (boolean)
         return (
-          <div className="flex items-start space-x-3">
+          <div className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 border border-gray-200">
             <Checkbox
               id={question.id}
               checked={Boolean(value)}
               onCheckedChange={onChange}
-              className={error ? "border-destructive" : ""}
+              className={cn(
+                "border-gray-300 data-[state=checked]:bg-[#00754a] data-[state=checked]:border-[#00754a]",
+                error && "border-rose-400"
+              )}
             />
-            <Label htmlFor={question.id} className="cursor-pointer font-normal leading-snug">
+            <Label htmlFor={question.id} className="cursor-pointer font-normal leading-snug text-gray-700">
               {question.helpText || question.label}
             </Label>
           </div>
@@ -280,19 +309,19 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
   return (
     <div className="space-y-2">
       {question.type !== "checkbox" && (
-        <Label htmlFor={question.id} className={cn("flex items-center gap-1", error && "text-destructive")}>
+        <Label htmlFor={question.id} className={cn("flex items-center gap-1 text-gray-900", error && "text-rose-500")}>
           {question.label}
-          {isRequired && <span className="text-destructive">*</span>}
+          {isRequired && <span className="text-rose-500">*</span>}
         </Label>
       )}
       {question.helpText && question.type !== "checkbox" && (
-        <p className="text-sm text-muted-foreground">{question.helpText}</p>
+        <p className="text-sm text-gray-500">{question.helpText}</p>
       )}
 
       {renderInput()}
 
       {error && (
-        <p className="text-xs font-medium text-destructive animate-in fade-in-0 slide-in-from-top-1">
+        <p className="text-xs font-medium text-rose-500 animate-in fade-in-0 slide-in-from-top-1">
           {error}
         </p>
       )}
@@ -342,8 +371,8 @@ function FileUploadField({ question, value, onChange, error }: FileUploadFieldPr
   }
 
   const inputClassName = cn(
-    "glass-input",
-    error && "border-destructive focus-visible:ring-destructive"
+    "bg-white border-gray-200 text-gray-900",
+    error && "border-rose-400"
   )
 
   // If we have a file already
@@ -352,18 +381,18 @@ function FileUploadField({ question, value, onChange, error }: FileUploadFieldPr
       <div className="space-y-2">
         <div className={cn(
           "flex items-center justify-between p-3 rounded-lg border",
-          fileInfo?.url ? "border-primary/30 bg-primary/5" : "border-muted bg-muted/30"
+          fileInfo?.url ? "border-[#00754a]/30 bg-[#00754a]/5" : "border-gray-200 bg-gray-50"
         )}>
           <div className="flex items-center gap-3 min-w-0">
-            <File className="h-5 w-5 text-muted-foreground shrink-0" />
+            <File className="h-5 w-5 text-gray-500 shrink-0" />
             <div className="min-w-0">
-              <p className="text-sm font-medium truncate">{fileName}</p>
+              <p className="text-sm font-medium text-gray-900 truncate">{fileName}</p>
               {fileInfo?.url && (
                 <a
                   href={fileInfo.url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-xs text-primary hover:underline"
+                  className="text-xs text-[#00754a] hover:underline"
                 >
                   View file
                 </a>
@@ -378,13 +407,13 @@ function FileUploadField({ question, value, onChange, error }: FileUploadFieldPr
             variant="ghost"
             size="sm"
             onClick={handleRemove}
-            className="h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+            className="h-8 w-8 p-0 text-gray-400 hover:text-rose-500 hover:bg-rose-50"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
         {uploadError && (
-          <p className="text-xs text-destructive">{uploadError}</p>
+          <p className="text-xs text-rose-500">{uploadError}</p>
         )}
       </div>
     )
@@ -399,18 +428,18 @@ function FileUploadField({ question, value, onChange, error }: FileUploadFieldPr
           type="file"
           onChange={handleFileChange}
           disabled={isUploading}
-          className={cn(inputClassName, "file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-primary/10 file:text-primary hover:file:bg-primary/20")}
+          className={cn(inputClassName, "file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#00754a]/10 file:text-[#00754a] hover:file:bg-[#00754a]/20")}
           accept={(question as any).accept || ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"}
         />
         {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background/80 rounded-md">
-            <Loader2 className="h-5 w-5 animate-spin text-primary" />
-            <span className="ml-2 text-sm text-muted-foreground">Uploading...</span>
+          <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md">
+            <Loader2 className="h-5 w-5 animate-spin text-[#00754a]" />
+            <span className="ml-2 text-sm text-gray-600">Uploading...</span>
           </div>
         )}
       </div>
       {uploadError && (
-        <p className="text-xs text-destructive">{uploadError}</p>
+        <p className="text-xs text-rose-500">{uploadError}</p>
       )}
     </div>
   )
@@ -456,21 +485,21 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
   return (
     <div className="space-y-4">
       {items.length === 0 ? (
-        <p className="text-sm text-muted-foreground py-2">
+        <p className="text-sm text-gray-500 py-2">
           {question.config?.emptyMessage || "No items added yet."}
         </p>
       ) : (
         items.map((item: Record<string, unknown>, itemIndex: number) => (
           <div
             key={itemIndex}
-            className="relative rounded-lg border border-border bg-muted/30 p-4"
+            className="relative rounded-xl border border-gray-200 bg-gray-50 p-4"
           >
             {/* Remove button */}
             <Button
               type="button"
               variant="ghost"
               size="sm"
-              className="absolute right-2 top-2 h-8 w-8 p-0 text-muted-foreground hover:text-destructive"
+              className="absolute right-2 top-2 h-8 w-8 p-0 text-gray-400 hover:text-rose-500 hover:bg-rose-50"
               onClick={() => handleRemoveItem(itemIndex)}
             >
               <Trash2 className="h-4 w-4" />
@@ -480,9 +509,9 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
             <div className="grid gap-4 pr-10">
               {fields.map((field: any) => (
                 <div key={field.name} className="space-y-1.5">
-                  <Label className="text-sm">
+                  <Label className="text-sm text-gray-700">
                     {field.label}
-                    {field.validation?.required && <span className="text-destructive ml-1">*</span>}
+                    {field.validation?.required && <span className="text-rose-500 ml-1">*</span>}
                   </Label>
                   {renderRepeaterSubField(
                     field,
@@ -502,7 +531,7 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
         variant="outline"
         size="sm"
         onClick={handleAddItem}
-        className="w-full"
+        className="w-full border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
       >
         <Plus className="mr-2 h-4 w-4" />
         {addButtonLabel}
@@ -517,7 +546,7 @@ function renderRepeaterSubField(
   value: unknown,
   onChange: (value: unknown) => void
 ) {
-  const inputClassName = "glass-input"
+  const inputClassName = "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#00754a] focus:ring-[#00754a]/20"
 
   switch (field.type) {
     case "text":
@@ -564,12 +593,16 @@ function renderRepeaterSubField(
       }) || []
       return (
         <Select value={(value as string) || ""} onValueChange={onChange}>
-          <SelectTrigger className={inputClassName}>
+          <SelectTrigger className={cn(inputClassName, "text-gray-900")}>
             <SelectValue placeholder={field.placeholder || "Select an option"} />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="bg-white border-gray-200 shadow-lg">
             {normalizedOptions.map((opt: any, idx: number) => (
-              <SelectItem key={opt.value || `opt-${idx}`} value={opt.value || ""}>
+              <SelectItem
+                key={opt.value || `opt-${idx}`}
+                value={opt.value || ""}
+                className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
+              >
                 {opt.label}
               </SelectItem>
             ))}
