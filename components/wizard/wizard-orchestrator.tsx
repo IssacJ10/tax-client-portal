@@ -1,19 +1,23 @@
 "use client"
 
 import { useEffect, useCallback, useState, useRef } from "react"
+import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 import { useFilingContext } from "@/context/filing-context"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import { getPhaseInfo } from "@/lib/domain/filing-state-machine"
+import type { WizardPhase } from "@/lib/domain/types"
 import { WizardSidebar } from "./wizard-sidebar"
 import { WizardProgress } from "./wizard-progress"
 import { QuestionRenderer } from "./question-renderer"
 import { IntermissionCard } from "./intermission-card"
 import { ReviewScreen } from "./review-screen"
 import { CorporateReviewScreen } from "./corporate-review-screen"
+import { TrustReviewScreen } from "./trust-review-screen"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Loader2, Users, UserPlus, Heart, Minus, Plus } from "lucide-react"
+import { Loader2, Users, UserPlus, Heart, Minus, Plus, Save } from "lucide-react"
 
 interface WizardOrchestratorProps {
   filingId: string
@@ -21,6 +25,8 @@ interface WizardOrchestratorProps {
 }
 
 export function WizardOrchestrator({ filingId, initialPersonalFilingId }: WizardOrchestratorProps) {
+  const router = useRouter()
+  const { toast } = useToast()
   const {
     state,
     filing,
@@ -31,9 +37,10 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     addSpouse,
     addDependent,
     startDependent,
-    createPrimaryFiling,
     markFilingInProgress,
     refreshFiling,
+    saveWizardProgress,
+    saveAndExit,
     dispatch,
     schema,
   } = useFilingContext()
@@ -55,6 +62,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   const [completedPersonalFilingIds, setCompletedPersonalFilingIds] = useState<Set<string>>(new Set())
   // Track created dependent IDs with their order
   const [createdDependentIds, setCreatedDependentIds] = useState<string[]>([])
+  // Track if filing has been submitted (for progress bar to show step 5)
+  const [isSubmitted, setIsSubmitted] = useState(false)
+
 
   // Use refs to prevent duplicate calls (persists across React Strict Mode double-renders)
   const isCreatingPrimaryRef = useRef(false)
@@ -65,7 +75,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   const isTrustFiling = filing?.type === "TRUST"
   const isBusinessFiling = isCorporateFiling || isTrustFiling
 
-  // Initialize state when component mounts
+  // Initialize state when component mounts - with progress restoration support
   useEffect(() => {
     // Prevent duplicate initialization
     if (hasInitializedRef.current || state.phase !== "IDLE" || !filingId) {
@@ -76,6 +86,78 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     // This ensures we know the filing type (CORPORATE vs INDIVIDUAL) before choosing the path
     if (!filing || isLoading) {
       return
+    }
+
+    // Check if there's saved progress to restore
+    const savedProgress = filing.wizardProgress
+    console.log('[WizardOrchestrator] Checking for saved progress:', {
+      savedProgress,
+      filingStatus: filing.status,
+      hasWizardProgress: !!savedProgress
+    })
+
+    // AMENDMENT FLOW: Check if this is a reopened filing (was submitted, now IN_PROGRESS again)
+    // If the filing has a confirmationNumber, it was previously submitted.
+    // If it's now back to IN_PROGRESS, admin has reopened it for amendments.
+    const wasSubmitted = !!(filing as any).confirmationNumber
+    const isReopened = wasSubmitted && filing.status === "IN_PROGRESS"
+
+    if (isReopened) {
+      hasInitializedRef.current = true
+      console.log('[WizardOrchestrator] Reopened filing detected, going to REVIEW phase', { filingType: filing.type })
+
+      // Get the appropriate child filing ID based on filing type
+      let childFilingId: string
+      if (isCorporateFiling) {
+        childFilingId = (filing as any).corporateFiling?.id ||
+                        (filing as any).corporateFiling?.documentId ||
+                        initialPersonalFilingId
+      } else if (isTrustFiling) {
+        childFilingId = (filing as any).trustFiling?.id ||
+                        (filing as any).trustFiling?.documentId ||
+                        initialPersonalFilingId
+      } else {
+        // Personal filing - use primary personal filing
+        childFilingId = filing.personalFilings?.find(pf => pf.type === "primary")?.id ||
+                        savedProgress?.lastPersonalFilingId ||
+                        initialPersonalFilingId
+      }
+
+      dispatch({
+        type: "RESTORE_PROGRESS",
+        payload: {
+          filingId,
+          phase: "REVIEW" as WizardPhase,
+          sectionIndex: 0,
+          personalFilingId: childFilingId,
+          dependentIndex: 0,
+        },
+      })
+      return
+    }
+
+    const hasValidProgress = savedProgress &&
+      savedProgress.lastPhase &&
+      savedProgress.lastPersonalFilingId &&
+      // Only restore if filing is IN_PROGRESS (not completed or under review)
+      (filing.status === "IN_PROGRESS" || filing.status === "DRAFT")
+
+    if (hasValidProgress) {
+      hasInitializedRef.current = true
+      console.log('[WizardOrchestrator] Restoring saved progress:', savedProgress)
+      dispatch({
+        type: "RESTORE_PROGRESS",
+        payload: {
+          filingId,
+          phase: savedProgress.lastPhase as WizardPhase,
+          sectionIndex: savedProgress.lastSectionIndex,
+          personalFilingId: savedProgress.lastPersonalFilingId,
+          dependentIndex: savedProgress.lastDependentIndex,
+        },
+      })
+      return
+    } else {
+      console.log('[WizardOrchestrator] No valid progress to restore, starting fresh')
     }
 
     // Handle Corporate/Trust filings differently
@@ -144,29 +226,15 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         return
       }
 
-      // Only create a new primary filing if:
-      // 1. Filing data is loaded
-      // 2. No personal filings exist in the loaded data
-      // 3. No URL param was provided (indicating initFiling didn't create one)
-      // 4. We're not already creating one
-      // This is a last-resort fallback - normally initFiling() creates the primary
-      if (!isLoading &&
-          filing.personalFilings?.length === 0 &&
-          !initialPersonalFilingId &&
-          !isCreatingPrimaryRef.current) {
-        console.warn("No primary filing found, creating one as fallback")
-        isCreatingPrimaryRef.current = true
-        hasInitializedRef.current = true
-        createPrimaryFiling(filingId)
-          .catch((err) => {
-            console.error("Failed to create primary filing:", err)
-            // Reset flags on error to allow retry
-            isCreatingPrimaryRef.current = false
-            hasInitializedRef.current = false
-          })
+      // REMOVED: The fallback to create a new primary filing has been removed.
+      // If we reach this point without a personal filing, it means something went wrong
+      // during filing creation. We should NOT auto-create here as it causes duplicate records
+      // on page refresh. The filing page now resolves the personal filing ID from loaded data.
+      if (!isLoading && filing.personalFilings?.length === 0) {
+        console.error("No personal filing found for this filing. This should not happen - the filing may be corrupted.")
       }
     }
-  }, [filingId, initialPersonalFilingId, state.phase, dispatch, filing, isLoading, createPrimaryFiling, isBusinessFiling, isCorporateFiling, isTrustFiling])
+  }, [filingId, initialPersonalFilingId, state.phase, dispatch, filing, isLoading, isBusinessFiling, isCorporateFiling, isTrustFiling])
 
   // Track previous personal filing ID to detect switches
   const prevPersonalFilingIdRef = useRef<string | null>(null)
@@ -174,37 +242,40 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   const hasLoadedInitialDataRef = useRef(false)
 
   // Load form data when switching personal filings OR on initial load
+  // Also handles corporate and trust filings
   useEffect(() => {
     if (filing && state.currentPersonalFilingId) {
-      const currentFiling = filing.personalFilings.find((pf) => pf.id === state.currentPersonalFilingId)
-
-      // Detect if we switched to a different personal filing
+      // Detect if we switched to a different filing
       const didSwitchPerson = prevPersonalFilingIdRef.current !== state.currentPersonalFilingId
 
+      // For corporate/trust filings, get formData from the appropriate child
+      let savedData: Record<string, unknown> | undefined
+      if (isCorporateFiling) {
+        savedData = (filing as any).corporateFiling?.formData
+      } else if (isTrustFiling) {
+        savedData = (filing as any).trustFiling?.formData
+      } else {
+        // Personal filing - find from personalFilings array
+        const currentFiling = filing.personalFilings.find((pf) => pf.id === state.currentPersonalFilingId)
+        savedData = currentFiling?.formData
+      }
+
       // Also load data on initial mount if we haven't loaded yet
-      const isInitialLoad = !hasLoadedInitialDataRef.current && currentFiling
+      const isInitialLoad = !hasLoadedInitialDataRef.current
 
       if (didSwitchPerson || isInitialLoad) {
         // Always reset errors when switching person or on initial load
         setErrors({})
 
-        if (currentFiling) {
-          // Load from the personal filing's formData, or empty if it's a fresh record
-          const savedData = currentFiling.formData
-          // If formData is empty/undefined or has no meaningful keys, use empty object
-          const hasData = savedData && Object.keys(savedData).length > 0
-          setFormData(hasData ? savedData : {})
-          hasLoadedInitialDataRef.current = true
-        } else {
-          // Person not in filing data yet (newly created, SWR hasn't refetched)
-          // Start with clean slate
-          setFormData({})
-        }
+        // If formData is empty/undefined or has no meaningful keys, use empty object
+        const hasData = savedData && Object.keys(savedData).length > 0
+        setFormData(hasData ? savedData! : {})
+        hasLoadedInitialDataRef.current = true
 
         prevPersonalFilingIdRef.current = state.currentPersonalFilingId
       }
     }
-  }, [filing, state.currentPersonalFilingId])
+  }, [filing, state.currentPersonalFilingId, isCorporateFiling, isTrustFiling])
 
   // Calculate role based on phase
   const getCurrentRole = (phase: string): "primary" | "spouse" | "dependent" => {
@@ -259,7 +330,11 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   const sections = activeSchema ? QuestionRegistry.getSectionsForRole(activeSchema, currentRole, formData) : []
   const currentSection = sections[state.currentSectionIndex]
   const isLastSection = state.currentSectionIndex === sections.length - 1
-  const phaseInfo = getPhaseInfo(state.phase, filing?.type)
+  // Get phase info, but override to show step 5 (Complete) when submitted
+  const basePhaseInfo = getPhaseInfo(state.phase, filing?.type)
+  const phaseInfo = isSubmitted
+    ? { ...basePhaseInfo, step: basePhaseInfo.total, label: "Complete" }
+    : basePhaseInfo
 
 
   // Handle form field change
@@ -296,6 +371,13 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
     if (!isValid) {
       setErrors(newErrors)
+      // Show toast notification for validation errors
+      const errorCount = Object.keys(newErrors).length
+      toast({
+        variant: "destructive",
+        title: "Please complete required fields",
+        description: `${errorCount} ${errorCount === 1 ? 'field needs' : 'fields need'} your attention before continuing.`,
+      })
       return // STOP
     }
 
@@ -310,32 +392,14 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     }
 
     if (isLastSection) {
-      // For corporate/trust filings, mark the child record as complete
-      if (isBusinessFiling && state.currentPersonalFilingId) {
-        try {
-          if (isCorporateFiling) {
-            const { CorporateFilingService } = await import("@/services/corporate-filing-service")
-            await CorporateFilingService.markCorporateFilingComplete(state.currentPersonalFilingId)
-          }
-          // TODO: Add TrustFilingService.markTrustFilingComplete when implemented
-        } catch (err) {
-          console.error('Failed to mark business filing as completed:', err)
-        }
-      } else if (state.currentPersonalFilingId) {
-        // Mark current personal filing as COMPLETED before moving to next phase
-        try {
-          const { FilingService } = await import("@/services/filing-service")
-          await FilingService.updatePersonalFilingStatus(state.currentPersonalFilingId, 'COMPLETED')
+      // NOTE: We no longer mark child filings as COMPLETED here.
+      // All child filings (personal-filing, corporate-filing, trust-filing) stay as DRAFT
+      // until the user submits the entire filing. The submitForReview method in each
+      // service will mark them as COMPLETED at submission time.
 
-          // Track completed ID locally (don't depend on SWR cache refresh)
-          setCompletedPersonalFilingIds(prev => new Set([...prev, state.currentPersonalFilingId!]))
-
-          // Also trigger SWR refetch in background
-          const { mutate } = await import("swr")
-          mutate(`filing/${filingId}`)
-        } catch (err) {
-          console.error('Failed to mark personal filing as completed:', err)
-        }
+      // Track completed sections locally for UI progress display only
+      if (state.currentPersonalFilingId) {
+        setCompletedPersonalFilingIds(prev => new Set([...prev, state.currentPersonalFilingId!]))
       }
 
       console.log('[handleNext] Completing phase. Current state:', {
@@ -347,17 +411,48 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       })
 
       completeCurrentPhase()
+      // Don't save progress when completing phase - next phase will have different state
     } else {
+      // Calculate the new section index BEFORE dispatching
+      const newSectionIndex = state.currentSectionIndex + 1
       nextSection()
+
+      // Save progress with the NEW section index (since React state update is async)
+      // This ensures we save the correct position for resume
+      saveWizardProgress({ sectionIndex: newSectionIndex })
     }
-  }, [currentSection, formData, isLastSection, completeCurrentPhase, nextSection, filingId, markFilingInProgress, flushSave, state.currentPersonalFilingId, state.phase, state.totalDependents, state.currentDependentIndex, isBusinessFiling, isCorporateFiling])
+  }, [currentSection, formData, isLastSection, completeCurrentPhase, nextSection, filingId, markFilingInProgress, flushSave, state.currentPersonalFilingId, state.phase, state.totalDependents, state.currentDependentIndex, state.currentSectionIndex, isBusinessFiling, toast, saveWizardProgress])
 
   // Handle previous button - flush save before navigating back
   const handlePrev = useCallback(async () => {
     // Flush save immediately before navigation to ensure data is persisted
     await flushSave()
+
+    // Calculate the new section index BEFORE dispatching
+    const newSectionIndex = Math.max(0, state.currentSectionIndex - 1)
     prevSection()
-  }, [flushSave, prevSection])
+
+    // Save progress with the NEW section index (since React state update is async)
+    saveWizardProgress({ sectionIndex: newSectionIndex })
+  }, [flushSave, prevSection, saveWizardProgress, state.currentSectionIndex])
+
+  // Handle Save & Exit - save progress and navigate to dashboard
+  const handleSaveAndExit = useCallback(async () => {
+    const success = await saveAndExit()
+    if (success) {
+      toast({
+        title: "Progress saved",
+        description: "Your progress has been saved. You can continue later.",
+      })
+      router.push("/dashboard")
+    } else {
+      toast({
+        variant: "destructive",
+        title: "Failed to save",
+        description: "There was an error saving your progress. Please try again.",
+      })
+    }
+  }, [saveAndExit, toast, router])
 
   // Handle add spouse
   const handleAddSpouse = useCallback(async () => {
@@ -380,18 +475,21 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       }
 
       // Track created dependent IDs locally for reliable checkpoint logic
-      setCreatedDependentIds(newDependentIds)
+      setCreatedDependentIds(prev => [...prev, ...newDependentIds])
 
-      // Start the FIRST dependent
+      // Start the FIRST dependent (or next one if adding more)
       if (newDependentIds.length > 0) {
-        startDependent(newDependentIds[0], 0)
+        // Get total count of existing + new dependents for proper indexing
+        const existingDependents = filing?.personalFilings?.filter(pf => pf.type === "dependent") || []
+        const startIndex = existingDependents.length
+        startDependent(newDependentIds[0], startIndex)
       }
     } catch (err) {
       console.error("Failed to create dependents:", err)
     } finally {
       setIsCreatingDependents(false)
     }
-  }, [addDependent, startDependent, dependentCount])
+  }, [addDependent, startDependent, dependentCount, filing])
 
   // Handle edit from review screen - navigate to specific person's section
   const handleEditPerson = useCallback((personalFilingId: string, sectionIndex: number) => {
@@ -424,6 +522,16 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     dispatch({ type: "GO_TO_SECTION", payload: sectionIndex })
   }, [filing, filingId, dispatch])
 
+  // Handle add spouse from review screen
+  const handleAddSpouseFromReview = useCallback(async () => {
+    await handleAddSpouse()
+  }, [handleAddSpouse])
+
+  // Handle add dependent from review screen - go to DEPENDENT_CHECKPOINT
+  const handleAddDependentFromReview = useCallback(() => {
+    dispatch({ type: "GO_TO_DEPENDENT_CHECKPOINT" })
+  }, [dispatch])
+
   // Render loading state
   if (isLoading && !filing) {
     return (
@@ -439,7 +547,26 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   // Render based on current phase
   const renderContent = () => {
     switch (state.phase) {
-      case "SPOUSE_CHECKPOINT":
+      case "SPOUSE_CHECKPOINT": {
+        // Check if spouse already exists in the filing (for returning users)
+        const existingSpouse = filing?.personalFilings?.find(pf => pf.type === "spouse")
+
+        // If spouse already exists, show option to continue with spouse (no skip option to avoid orphan records)
+        if (existingSpouse) {
+          return (
+            <IntermissionCard
+              icon={Heart}
+              title="Continue with Spouse"
+              description="You've already started adding your spouse's information. Let's continue where you left off."
+              primaryAction={{
+                label: "Continue Spouse Info",
+                onClick: () => dispatch({ type: "START_SPOUSE", payload: { personalFilingId: existingSpouse.id } }),
+                isLoading: isLoading,
+              }}
+            />
+          )
+        }
+
         // If auto-skipping (not married/common_law), show loading briefly while useEffect handles the skip
         if (shouldAutoSkipSpouse) {
           return (
@@ -466,27 +593,103 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             }}
           />
         )
+      }
 
       case "DEPENDENT_CHECKPOINT": {
-        // Use LOCAL STATE for reliable dependent tracking (don't depend on SWR cache)
-        // createdDependentIds: ordered list of dependent IDs we created
-        // completedPersonalFilingIds: set of IDs we've marked as completed
+        // Check for EXISTING dependents from filing data (for returning users)
+        // This is crucial because local state (createdDependentIds) will be empty after page reload
+        const existingDependents = filing?.personalFilings?.filter(pf => pf.type === "dependent") || []
 
-        // Calculate which dependents are incomplete using local state
-        const incompleteDependentIds = createdDependentIds.filter(id => !completedPersonalFilingIds.has(id))
-        const completedCount = createdDependentIds.length - incompleteDependentIds.length
+        // Merge existing dependents with locally created ones (avoid duplicates)
+        const existingDependentIds = existingDependents.map(d => d.id)
+        const allDependentIds = [...new Set([...existingDependentIds, ...createdDependentIds])]
+
+        // Get saved wizard progress to check if user was mid-way through a dependent
+        const savedProgress = filing?.wizardProgress
+
+        // Calculate which dependents are incomplete
+        // A dependent is incomplete if:
+        // 1. The saved progress shows user was actively filling this dependent (DEPENDENT_ACTIVE)
+        // 2. OR the dependent has no data at all
+        // 3. OR the dependent is explicitly marked incomplete
+        const incompleteDependentIds = allDependentIds.filter(id => {
+          // If we marked it complete locally (in current session), it's done
+          if (completedPersonalFilingIds.has(id)) return false
+
+          // Check if saved progress indicates user was mid-way through THIS dependent
+          // This is the key fix - if progress says DEPENDENT_ACTIVE for this ID, it's incomplete
+          if (savedProgress?.lastPhase === "DEPENDENT_ACTIVE" && savedProgress?.lastPersonalFilingId === id) {
+            return true // Definitely incomplete - user was in the middle of filling this
+          }
+
+          // For existing dependents from DB, check completion status
+          const existingDep = existingDependents.find(d => d.id === id)
+          if (existingDep) {
+            // If explicitly marked complete in DB, it's done
+            if (existingDep.isComplete) return false
+
+            // If no data at all, it's incomplete
+            const hasData = existingDep.formData && Object.keys(existingDep.formData).length > 0
+            if (!hasData) return true
+
+            // Has some data but not marked complete - assume complete unless progress says otherwise
+            // (progress check above already handles the "was filling this dependent" case)
+            return false
+          }
+
+          return true // No record found - incomplete
+        })
+
+        const completedCount = allDependentIds.length - incompleteDependentIds.length
         const nextIncompleteDependentId = incompleteDependentIds[0]
 
-        console.log('[DEPENDENT_CHECKPOINT] Debug (using local state):', {
+        console.log('[DEPENDENT_CHECKPOINT] Debug:', {
+          existingDependentIds,
           createdDependentIds,
+          allDependentIds,
           completedPersonalFilingIds: Array.from(completedPersonalFilingIds),
           incompleteDependentIds,
           completedCount,
           nextIncompleteDependentId,
           totalDependents: state.totalDependents,
           currentDependentIndex: state.currentDependentIndex,
+          savedProgress: savedProgress,
         })
 
+        // RETURNING USER: Has existing dependents from previous session
+        if (existingDependents.length > 0 && createdDependentIds.length === 0) {
+          // If we have incomplete dependents, auto-jump to that dependent
+          if (incompleteDependentIds.length > 0 && nextIncompleteDependentId) {
+            // Show brief loading while we auto-navigate
+            // Use setTimeout to trigger the navigation after render
+            setTimeout(() => {
+              startDependent(nextIncompleteDependentId, completedCount)
+            }, 0)
+            return (
+              <div className="glass-card rounded-xl p-8 text-center">
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Continuing with your dependents...</p>
+              </div>
+            )
+          }
+
+          // All existing dependents appear complete - show confirmation instead of auto-skip
+          // This prevents accidentally skipping to review if data check is incomplete
+          return (
+            <IntermissionCard
+              icon={Users}
+              title="All Dependents Completed!"
+              description="You've completed information for all your dependents. Ready to review your filing?"
+              primaryAction={{
+                label: "Continue to Review",
+                onClick: goToReview,
+                isLoading: isLoading,
+              }}
+            />
+          )
+        }
+
+        // CURRENT SESSION: Using locally tracked dependents
         // If we have incomplete dependents, show "Continue with next dependent"
         if (incompleteDependentIds.length > 0 && nextIncompleteDependentId) {
           const remainingCount = incompleteDependentIds.length
@@ -521,6 +724,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
           )
         }
 
+        // FRESH START: No existing dependents - show the add dependents form
         return (
           <div className="glass-card mx-auto max-w-xl rounded-2xl p-8">
             {/* Icon */}
@@ -604,10 +808,21 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
       case "REVIEW":
         // Use different review screens for different filing types
-        if (isBusinessFiling && filing) {
-          return <CorporateReviewScreen filing={filing} schema={activeSchema!} formData={formData} />
+        if (isCorporateFiling && filing) {
+          return <CorporateReviewScreen filing={filing} schema={activeSchema!} formData={formData} onSubmitted={() => setIsSubmitted(true)} />
         }
-        return filing ? <ReviewScreen filing={filing} onEditPerson={handleEditPerson} /> : null
+        if (isTrustFiling && filing) {
+          return <TrustReviewScreen filing={filing} schema={activeSchema!} formData={formData} onSubmitted={() => setIsSubmitted(true)} />
+        }
+        return filing ? (
+          <ReviewScreen
+            filing={filing}
+            onEditPerson={handleEditPerson}
+            onSubmitted={() => setIsSubmitted(true)}
+            onAddSpouse={handleAddSpouseFromReview}
+            onAddDependent={handleAddDependentFromReview}
+          />
+        ) : null
 
       case "CORPORATE_ACTIVE":
       case "TRUST_ACTIVE":
@@ -695,6 +910,30 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-8 lg:ml-72">
         <div className="mx-auto max-w-3xl">
+          {/* Header with Save & Exit */}
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1" />
+            {/* Only show Save & Exit when actively filling (not on checkpoints or review) */}
+            {state.phase !== "IDLE" &&
+             state.phase !== "REVIEW" &&
+             !state.phase.includes("CHECKPOINT") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleSaveAndExit}
+                disabled={isSyncing}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                {isSyncing ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Save & Exit
+              </Button>
+            )}
+          </div>
+
           {/* Progress Bar */}
           <WizardProgress
             step={phaseInfo.step}

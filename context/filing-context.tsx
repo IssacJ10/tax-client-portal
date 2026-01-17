@@ -23,6 +23,13 @@ interface FilingContextType {
     flushSave: () => Promise<void>;
     submitForReview: () => Promise<Filing | null>;
     refreshFiling: () => Promise<void>;
+    saveWizardProgress: (overrides?: {
+        sectionIndex?: number;
+        phase?: string;
+        personalFilingId?: string;
+        dependentIndex?: number;
+    }) => Promise<void>;
+    saveAndExit: () => Promise<boolean>;
 }
 
 const FilingContext = createContext<FilingContextType | undefined>(undefined);
@@ -63,6 +70,8 @@ export function FilingProvider({
                 flushSave: filingLogic.flushSave,
                 submitForReview: filingLogic.submitForReview,
                 refreshFiling: filingLogic.refreshFiling,
+                saveWizardProgress: filingLogic.saveWizardProgress,
+                saveAndExit: filingLogic.saveAndExit,
             }}
         >
             {children}

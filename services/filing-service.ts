@@ -62,8 +62,8 @@ function transformFiling(data: any): Filing & { corporateFiling?: any; trustFili
     id: corporateFilingData.documentId || corporateFilingData.id,
     documentId: corporateFilingData.documentId || corporateFilingData.id,
     formData: corporateFilingData.formData || {},
-    status: corporateFilingData.status || 'DRAFT',
-    isComplete: corporateFilingData.status === 'COMPLETED',
+    corporateFilingStatus: corporateFilingData.corporateFilingStatus || 'DRAFT',
+    isComplete: corporateFilingData.corporateFilingStatus === 'COMPLETED',
     createdAt: corporateFilingData.createdAt,
     updatedAt: corporateFilingData.updatedAt,
   } : undefined;
@@ -81,8 +81,8 @@ function transformFiling(data: any): Filing & { corporateFiling?: any; trustFili
     id: trustFilingData.documentId || trustFilingData.id,
     documentId: trustFilingData.documentId || trustFilingData.id,
     formData: trustFilingData.formData || {},
-    status: trustFilingData.status || 'DRAFT',
-    isComplete: trustFilingData.status === 'COMPLETED',
+    trustFilingStatus: trustFilingData.trustFilingStatus || 'DRAFT',
+    isComplete: trustFilingData.trustFilingStatus === 'COMPLETED',
     createdAt: trustFilingData.createdAt,
     updatedAt: trustFilingData.updatedAt,
   } : undefined;
@@ -143,6 +143,7 @@ function transformFiling(data: any): Filing & { corporateFiling?: any; trustFili
     status: (data.status || data.filingStatus?.statusCode || data.filingStatus?.code || 'DRAFT') as FilingStatus,
     totalPrice: data.totalPrice || 0,
     personalFilings: personalFilingsData.map(transformPersonalFiling),
+    wizardProgress: data.wizardProgress || undefined,
     corporateFiling,
     trustFiling,
     createdAt: data.createdAt,
@@ -296,16 +297,58 @@ function ensureArray(value: any, clean: (val: any) => any): any[] | null {
 
 export const FilingService = {
 
-  async getFiling(documentId: string): Promise<Filing> {
-    // Strapi v5 requires explicit populate for relations
-    // Using deep populate syntax to ensure all child filings are included
+  /**
+   * Get all available tax years from the backend
+   */
+  async getTaxYears(): Promise<{ id: string; year: number }[]> {
+    const response = await strapiClient.get<StrapiResponse<any[]>>(
+      `/tax-years?sort=year:desc`
+    )
+    const years = response.data.data || []
+    return years.map((y: any) => ({
+      id: y.documentId || y.id,
+      year: y.year
+    }))
+  },
+
+  /**
+   * Get all filings for the current user
+   * Includes all relations needed for dashboard display
+   * @param year - Optional year filter
+   */
+  async getFilings(year?: number): Promise<Filing[]> {
     const populateQuery = [
       'populate[filingType]=true',
       'populate[filingStatus]=true',
       'populate[taxYear]=true',
       'populate[personalFilings]=true',
       'populate[corporateFiling]=true',
-      'populate[trustFiling]=true',
+      'populate[trustFiling]=true'
+    ].join('&')
+
+    let url = `/filings?${populateQuery}&sort[0]=updatedAt:desc`
+
+    // Add year filter if provided
+    if (year) {
+      url += `&filters[taxYear][year][$eq]=${year}`
+    }
+
+    const response = await strapiClient.get<StrapiResponse<any[]>>(url)
+
+    const filings = response.data.data || []
+    return filings.map(transformFiling)
+  },
+
+  async getFiling(documentId: string): Promise<Filing> {
+    // Strapi v5 requires explicit populate for relations
+    // Using deep populate syntax to ensure all child filings are included with their formData
+    const populateQuery = [
+      'populate[filingType]=true',
+      'populate[filingStatus]=true',
+      'populate[taxYear]=true',
+      'populate[personalFilings][populate]=*',
+      'populate[corporateFiling][populate]=*',
+      'populate[trustFiling][populate]=*',
       'populate[user]=true'
     ].join('&')
 
@@ -391,7 +434,7 @@ export const FilingService = {
             data: {
               filing: filingId,
               formData: {},
-              status: "DRAFT"
+              corporateFilingStatus: "DRAFT"
             }
           })
           // Transform to match PersonalFiling interface for compatibility
@@ -400,7 +443,7 @@ export const FilingService = {
             documentId: corpRes.data.data.documentId || corpRes.data.data.id,
             type: "primary", // Corporate filings use "primary" as the single entity type
             formData: corpRes.data.data.formData || {},
-            isComplete: corpRes.data.data.status === 'COMPLETED',
+            isComplete: corpRes.data.data.corporateFilingStatus === 'COMPLETED',
             createdAt: corpRes.data.data.createdAt,
             updatedAt: corpRes.data.data.updatedAt,
           }
@@ -414,7 +457,7 @@ export const FilingService = {
             data: {
               filing: filingId,
               formData: {},
-              status: "DRAFT"
+              trustFilingStatus: "DRAFT"
             }
           })
           // Transform to match PersonalFiling interface for compatibility
@@ -423,7 +466,7 @@ export const FilingService = {
             documentId: trustRes.data.data.documentId || trustRes.data.data.id,
             type: "primary",
             formData: trustRes.data.data.formData || {},
-            isComplete: trustRes.data.data.status === 'COMPLETED',
+            isComplete: trustRes.data.data.trustFilingStatus === 'COMPLETED',
             createdAt: trustRes.data.data.createdAt,
             updatedAt: trustRes.data.data.updatedAt,
           }
@@ -765,6 +808,30 @@ export const FilingService = {
   },
 
   /**
+   * Save wizard progress to the parent filing record
+   * This stores the current phase, section index, and active personal filing ID
+   * Used for resuming from where user left off
+   */
+  async saveWizardProgress(filingId: string, progress: {
+    lastPhase: string;
+    lastSectionIndex: number;
+    lastPersonalFilingId: string;
+    lastDependentIndex?: number;
+  }): Promise<void> {
+    console.log('[saveWizardProgress] Saving progress for filing:', filingId, progress)
+    try {
+      await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
+        data: {
+          wizardProgress: progress
+        }
+      })
+    } catch (err) {
+      console.error('[saveWizardProgress] Error saving progress:', err)
+      // Don't throw - progress saving is non-critical
+    }
+  },
+
+  /**
    * Generate a unique reference number for filing (JJ-XXXXXX)
    * Uses timestamp + random chars to ensure uniqueness
    */
@@ -776,6 +843,7 @@ export const FilingService = {
 
   /**
    * Submit filing for review - updates status to UNDER_REVIEW and generates reference number
+   * Also marks all child personal-filings as COMPLETED
    */
   async submitForReview(filingId: string): Promise<Filing> {
     console.log('[submitForReview] Submitting filing:', filingId)
@@ -785,7 +853,17 @@ export const FilingService = {
 
     if (!token) throw new Error('No authentication token')
 
-    // Get the UNDER_REVIEW status ID
+    // ============================================================
+    // STEP 1: Get the filing with all personal filings
+    // ============================================================
+    console.log('[submitForReview] STEP 1: Getting filing data...')
+    const filingData = await this.getFiling(filingId)
+    console.log('[submitForReview] STEP 1 COMPLETE: Found', filingData.personalFilings?.length || 0, 'personal filings')
+
+    // ============================================================
+    // STEP 2: Get the UNDER_REVIEW status ID
+    // ============================================================
+    console.log('[submitForReview] STEP 2: Getting UNDER_REVIEW status ID...')
     const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=UNDER_REVIEW`, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -795,11 +873,34 @@ export const FilingService = {
     const statusId = statusJson.data?.[0]?.id
 
     if (!statusId) throw new Error('UNDER_REVIEW status not found')
+    console.log('[submitForReview] STEP 2 COMPLETE: statusId =', statusId)
 
-    // Generate unique confirmation number
-    const confirmationNumber = this.generateReferenceNumber()
+    // ============================================================
+    // STEP 3: Mark ALL personal filings as COMPLETED
+    // This must complete before we update the parent filing status
+    // ============================================================
+    console.log('[submitForReview] STEP 3: Marking all personal filings as COMPLETED...')
+    const personalFilings = filingData.personalFilings || []
 
-    // Update the filing status and confirmation number
+    for (const pf of personalFilings) {
+      const pfId = pf.documentId || pf.id
+      console.log('[submitForReview] STEP 3: Marking personal filing', pfId, 'as COMPLETED')
+      await this.updatePersonalFilingStatus(pfId, 'COMPLETED')
+    }
+    console.log('[submitForReview] STEP 3 COMPLETE: All', personalFilings.length, 'personal filings marked as COMPLETED')
+
+    // ============================================================
+    // STEP 4: Use existing confirmation number or generate new one
+    // For reopened filings (amendments), preserve the original confirmation number
+    // ============================================================
+    const existingConfirmationNumber = filingData.referenceNumber
+    const confirmationNumber = existingConfirmationNumber || this.generateReferenceNumber()
+    console.log('[submitForReview] STEP 4: confirmationNumber =', confirmationNumber, existingConfirmationNumber ? '(preserved existing)' : '(newly generated)')
+
+    // ============================================================
+    // STEP 5: Update the parent filing status and confirmation number
+    // ============================================================
+    console.log('[submitForReview] STEP 5: Updating parent filing status...')
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
         filingStatus: statusId,
@@ -807,9 +908,9 @@ export const FilingService = {
         submittedAt: new Date().toISOString()
       }
     })
+    console.log('[submitForReview] STEP 5 COMPLETE: Filing submitted successfully')
 
     // Transform the response and ensure the confirmation number is included
-    // (Strapi PUT response may not include the updated field)
     const filing = transformFiling(response.data.data)
     filing.referenceNumber = confirmationNumber
     return filing

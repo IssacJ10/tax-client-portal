@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, AlertCircle } from "lucide-react"
+import { Loader2, AlertCircle, Info } from "lucide-react"
 import { useFiling } from "@/hooks/use-filing"
 import type { FilingType } from "@/lib/domain/types"
 import { Button } from "@/components/ui/button"
@@ -38,6 +38,7 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
     const [availableYears, setAvailableYears] = useState<Array<{ id: number, year: string }>>([])
     const [loadingYears, setLoadingYears] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [infoMessage, setInfoMessage] = useState<string | null>(null)
 
     // Fetch available tax years
     useEffect(() => {
@@ -69,11 +70,13 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
         if (open) {
             fetchYears()
             setError(null) // Clear error when dialog opens
+            setInfoMessage(null) // Clear info message when dialog opens
         }
     }, [open])
 
     const handleCreate = async () => {
         setError(null) // Clear previous errors
+        setInfoMessage(null) // Clear previous info message
         try {
             const token = localStorage.getItem('tax-auth-token')
             const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
@@ -108,10 +111,15 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
                     })
 
                     if (existingDraft) {
-                        // Redirect to existing personal filing instead of creating new one
+                        // Show info message and redirect to existing personal filing
+                        setInfoMessage(`You already have a ${year} personal tax filing in progress. Redirecting you to continue where you left off...`)
+
+                        // Wait a moment for user to see the message, then redirect
                         const existingId = existingDraft.documentId || existingDraft.id
-                        onOpenChange(false)
-                        router.push(`/filing/${existingId}`)
+                        setTimeout(() => {
+                            onOpenChange(false)
+                            router.push(`/filing/${existingId}`)
+                        }, 2000)
                         return
                     }
                 }
@@ -173,6 +181,13 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
+
+                {infoMessage && (
+                    <Alert className="border-blue-500/50 bg-blue-500/10">
+                        <Info className="h-4 w-4 text-blue-500" />
+                        <AlertDescription className="text-blue-200">{infoMessage}</AlertDescription>
                     </Alert>
                 )}
 

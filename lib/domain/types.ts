@@ -5,6 +5,14 @@ export type FilingRole = "primary" | "spouse" | "dependent";
 export type FilingStatus = "DRAFT" | "IN_PROGRESS" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "COMPLETED";
 export type FilingType = "INDIVIDUAL" | "CORPORATE" | "TRUST";
 
+// --- Progress Tracking for Resume ---
+export interface WizardProgress {
+  lastPhase: string;
+  lastSectionIndex: number;
+  lastPersonalFilingId: string;
+  lastDependentIndex?: number;
+}
+
 // --- Database Models ---
 export interface Filing {
   id: string; // Strapi documentId
@@ -15,6 +23,7 @@ export interface Filing {
   status: FilingStatus;
   totalPrice: number;
   personalFilings: PersonalFiling[];
+  wizardProgress?: WizardProgress; // Progress tracking for resume functionality
   createdAt: string;
   updatedAt: string;
 }

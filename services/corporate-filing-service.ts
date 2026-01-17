@@ -11,6 +11,7 @@ export interface CorporateFiling {
   documentId: string
   filingId?: string
   formData: Record<string, unknown>
+  corporateFilingStatus: 'DRAFT' | 'COMPLETED' | 'FLAGGED' | 'VERIFIED'
   isComplete: boolean
   createdAt: string
   updatedAt: string
@@ -27,12 +28,14 @@ export interface CorporateFilingWithData extends Filing {
 
 function transformCorporateFiling(data: any): CorporateFiling {
   const id = data.documentId || data.id || String(data.id)
+  const corporateFilingStatus = data.corporateFilingStatus || 'DRAFT'
   return {
     id,
     documentId: id,
     filingId: data.filing?.documentId || data.filing?.id || data.filing,
     formData: data.formData || {},
-    isComplete: data.status === 'COMPLETED',
+    corporateFilingStatus: corporateFilingStatus,
+    isComplete: corporateFilingStatus === 'COMPLETED',
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   }
@@ -75,10 +78,14 @@ export class CorporateFilingService {
    * Get a corporate filing by ID with its corporate data
    */
   static async getFiling(documentId: string): Promise<CorporateFilingWithData> {
+    console.log('[CorporateFilingService.getFiling] Fetching filing:', documentId)
     const response = await strapiClient.get<StrapiResponse<any>>(
       `/filings/${documentId}?populate[corporateFilings][populate]=*&populate[taxYear]=*&populate[filingType]=*&populate[filingStatus]=*`
     )
-    return transformFilingWithCorporate(response.data.data)
+    console.log('[CorporateFilingService.getFiling] Raw response taxYear:', JSON.stringify(response.data.data?.taxYear))
+    const result = transformFilingWithCorporate(response.data.data)
+    console.log('[CorporateFilingService.getFiling] Transformed year:', result.year)
+    return result
   }
 
   /**
@@ -149,7 +156,7 @@ export class CorporateFilingService {
         data: {
           filing: filingId,
           formData: {},
-          status: "DRAFT"
+          corporateFilingStatus: "DRAFT"
         }
       })
       const corporateFiling = transformCorporateFiling(corpRes.data.data)
@@ -171,51 +178,201 @@ export class CorporateFilingService {
 
   /**
    * Check if a corporate filing with the same business number already exists
-   * Returns the existing filing if found, null otherwise
+   * for the current user in the specified tax year.
+   * Returns details about the existing filing if found.
    */
   static async checkDuplicateBusinessNumber(
     businessNumber: string,
+    taxYear: number,
     excludeCorporateFilingId?: string
-  ): Promise<{ exists: boolean; existingFilingId?: string; legalName?: string }> {
+  ): Promise<{
+    exists: boolean
+    existingFilingId?: string
+    legalName?: string
+    filingStatus?: string
+    corporateFilingStatus?: string
+  }> {
     if (!businessNumber) return { exists: false }
 
-    // Normalize business number (remove spaces)
+    // Normalize business number (remove spaces for comparison)
     const normalizedBN = businessNumber.replace(/\s+/g, '')
 
+    console.log('[checkDuplicateBusinessNumber] Starting check:', {
+      businessNumber,
+      normalizedBN,
+      taxYear,
+      excludeCorporateFilingId
+    })
+
     try {
-      // Query corporate filings with the same business number
-      const response = await strapiClient.get<StrapiResponse<any[]>>(
-        `/corporate-filings?filters[businessNumber][$containsi]=${normalizedBN}&populate[filing][populate]=taxYear`
+      // Query CORPORATE type filings and then fetch their corporate-filing children
+      console.log('[checkDuplicateBusinessNumber] Querying CORPORATE filings...')
+
+      // Step 1: Get all CORPORATE type filings for this user
+      const filingsResponse = await strapiClient.get<StrapiResponse<any[]>>(
+        `/filings?populate[taxYear]=*&populate[filingStatus]=*&populate[filingType]=*`
       )
 
-      const results = response.data.data || []
+      const allFilings = filingsResponse.data.data || []
+      console.log('[checkDuplicateBusinessNumber] Total filings from API:', allFilings.length)
 
-      console.log('[checkDuplicateBusinessNumber] Query results:', results.length, 'excludeId:', excludeCorporateFilingId)
+      // Filter to CORPORATE type only
+      const corporateFilings = allFilings.filter((f: any) => {
+        const filingType = f.filingType?.type || f.filingType
+        return filingType === 'CORPORATE'
+      })
 
-      // Filter out the current filing being edited
-      // Compare both documentId and id to handle different ID formats
+      console.log('[checkDuplicateBusinessNumber] CORPORATE filings found:', corporateFilings.length)
+
+      // Step 2: For each corporate filing, fetch the corporate-filing child record
+      const results: any[] = []
+
+      for (const filing of corporateFilings) {
+        try {
+          // Query corporate-filings by parent filing documentId
+          const corpFilingResponse = await strapiClient.get<StrapiResponse<any[]>>(
+            `/corporate-filings?filters[filing][documentId][$eq]=${filing.documentId}`
+          )
+
+          const corpFilingData = corpFilingResponse.data.data
+          if (corpFilingData && corpFilingData.length > 0) {
+            const cf = corpFilingData[0]
+            results.push({
+              ...cf,
+              filing: {
+                documentId: filing.documentId,
+                id: filing.id,
+                taxYear: filing.taxYear,
+                filingStatus: filing.filingStatus
+              }
+            })
+            console.log(`[checkDuplicateBusinessNumber] Found corporate-filing for ${filing.documentId}: BN="${cf.businessNumber}", legalName="${cf.legalName}"`)
+          } else {
+            console.log(`[checkDuplicateBusinessNumber] No corporate-filing found for filing ${filing.documentId}`)
+          }
+        } catch (err) {
+          console.warn(`[checkDuplicateBusinessNumber] Error fetching corporate-filing for ${filing.documentId}:`, err)
+        }
+      }
+
+      console.log('[checkDuplicateBusinessNumber] Total corporate filings with data:', results.length)
+
+      // Log ALL corporate filings with their business numbers and years for debugging
+      results.forEach((cf: any, idx: number) => {
+        const cfBN = cf.businessNumber || '(none)'
+        const cfYear = cf.filing?.taxYear?.year || cf.filing?.taxYear || '(no year)'
+        const cfDocId = cf.documentId || cf.id
+        console.log(`[checkDuplicateBusinessNumber] Filing ${idx}: docId=${cfDocId}, BN="${cfBN}", year=${cfYear}, legalName="${cf.legalName || '(none)'}"`);
+        // Log the full filing object to see if relations are populated
+        console.log(`[checkDuplicateBusinessNumber] Filing ${idx} full data:`, JSON.stringify({
+          documentId: cf.documentId,
+          id: cf.id,
+          businessNumber: cf.businessNumber,
+          legalName: cf.legalName,
+          filing: cf.filing ? {
+            documentId: cf.filing.documentId,
+            id: cf.filing.id,
+            taxYear: cf.filing.taxYear,
+            filingStatus: cf.filing.filingStatus
+          } : null
+        }))
+      })
+
+      // Filter results:
+      // 1. Match business number (normalized, case-insensitive)
+      // 2. Exclude the current filing being edited
+      // 3. Only include filings for the same tax year
+      console.log('[checkDuplicateBusinessNumber] Starting filter with excludeId:', excludeCorporateFilingId, 'normalizedBN:', normalizedBN, 'taxYear:', taxYear)
+
       const duplicates = results.filter((cf: any) => {
         const cfDocumentId = cf.documentId
         const cfId = String(cf.id)
         const excludeId = excludeCorporateFilingId ? String(excludeCorporateFilingId) : null
 
+        console.log('[checkDuplicateBusinessNumber] Checking filing:', {
+          cfDocumentId,
+          cfId,
+          excludeId,
+          cfBusinessNumber: cf.businessNumber
+        })
+
         // Check if this is the same filing we're editing (by either ID format)
         const isSameFiling = excludeId && (cfDocumentId === excludeId || cfId === excludeId)
+        if (isSameFiling) {
+          console.log('[checkDuplicateBusinessNumber] Skipping same filing:', cfDocumentId)
+          return false
+        }
 
-        console.log('[checkDuplicateBusinessNumber] Comparing:', { cfDocumentId, cfId, excludeId, isSameFiling })
+        // Check business number match (normalize both for comparison)
+        const cfBusinessNumber = cf.businessNumber || ''
+        const cfNormalizedBN = cfBusinessNumber.replace(/\s+/g, '')
+        const bnMatches = cfNormalizedBN.toLowerCase() === normalizedBN.toLowerCase()
 
-        return !isSameFiling
+        console.log('[checkDuplicateBusinessNumber] BN comparison:', {
+          cfBusinessNumber,
+          cfNormalizedBN,
+          normalizedBN,
+          bnMatches
+        })
+
+        if (!bnMatches) {
+          return false
+        }
+
+        // Check if the filing is for the same tax year
+        const filingYear = cf.filing?.taxYear?.year || cf.filing?.taxYear
+        const isSameYear = Number(filingYear) === Number(taxYear)
+
+        // SAFETY: If we can't determine the year (relation not populated),
+        // still flag as duplicate to be safe - better to block than allow duplicates
+        const yearUnavailable = !filingYear && taxYear
+        const shouldBlock = isSameYear || yearUnavailable
+
+        console.log('[checkDuplicateBusinessNumber] Found BN match:', {
+          cfDocumentId,
+          cfBusinessNumber,
+          cfNormalizedBN,
+          filingYear,
+          taxYear,
+          isSameYear,
+          yearUnavailable,
+          shouldBlock,
+          legalName: cf.legalName
+        })
+
+        // If year is unavailable, warn but still block
+        if (yearUnavailable) {
+          console.warn('[checkDuplicateBusinessNumber] WARNING: Could not determine filing year for duplicate check. Blocking as safety measure.')
+        }
+
+        return shouldBlock
       })
+
+      console.log('[checkDuplicateBusinessNumber] Duplicates found:', duplicates.length)
 
       if (duplicates.length > 0) {
         const duplicate = duplicates[0]
+        const filingStatus = duplicate.filing?.filingStatus?.statusCode ||
+                            duplicate.filing?.filingStatus?.code ||
+                            'UNKNOWN'
+
+        console.log('[checkDuplicateBusinessNumber] Returning duplicate:', {
+          existingFilingId: duplicate.filing?.documentId || duplicate.filing?.id,
+          legalName: duplicate.legalName,
+          filingStatus,
+          corporateFilingStatus: duplicate.corporateFilingStatus
+        })
+
         return {
           exists: true,
           existingFilingId: duplicate.filing?.documentId || duplicate.filing?.id,
-          legalName: duplicate.legalName
+          legalName: duplicate.legalName,
+          filingStatus: filingStatus,
+          corporateFilingStatus: duplicate.corporateFilingStatus
         }
       }
 
+      console.log('[checkDuplicateBusinessNumber] No duplicates found')
       return { exists: false }
     } catch (error) {
       console.error('[CorporateFilingService.checkDuplicateBusinessNumber] Error:', error)
@@ -224,14 +381,49 @@ export class CorporateFilingService {
   }
 
   /**
+   * Get a user-friendly error message for duplicate business number
+   */
+  static getDuplicateErrorMessage(
+    businessNumber: string,
+    taxYear: number,
+    filingStatus?: string,
+    legalName?: string
+  ): string {
+    const bnDisplay = businessNumber || 'this Business Number'
+    const nameInfo = legalName ? ` for "${legalName}"` : ''
+
+    switch (filingStatus) {
+      case 'IN_PROGRESS':
+        return `A ${taxYear} corporate filing${nameInfo} with Business Number ${bnDisplay} is already in progress. Please continue with the existing filing or delete it to start a new one.`
+      case 'UNDER_REVIEW':
+        return `A ${taxYear} corporate filing${nameInfo} with Business Number ${bnDisplay} is already under review. Please wait for the review to complete before creating a new filing.`
+      case 'COMPLETED':
+      case 'APPROVED':
+        return `A ${taxYear} corporate filing${nameInfo} with Business Number ${bnDisplay} has already been completed. You cannot create another filing for the same business number in the same tax year.`
+      case 'FLAGGED':
+        return `A ${taxYear} corporate filing${nameInfo} with Business Number ${bnDisplay} has been flagged for review. Please address the issues with the existing filing before creating a new one.`
+      default:
+        return `A ${taxYear} corporate filing${nameInfo} with Business Number ${bnDisplay} already exists. Only one filing per business number per tax year is allowed.`
+    }
+  }
+
+  /**
    * Save form data to a corporate filing
    * Maps form fields to both individual columns AND the formData JSON blob
    */
   static async saveFormData(corporateFilingId: string, data: Record<string, unknown>): Promise<CorporateFiling> {
-    // Merge with existing formData
-    const existingRes = await strapiClient.get<StrapiResponse<any>>(`/corporate-filings/${corporateFilingId}`)
+    // Merge with existing formData - also get the filing relation to check tax year
+    const existingRes = await strapiClient.get<StrapiResponse<any>>(
+      `/corporate-filings/${corporateFilingId}?populate[filing][populate]=taxYear`
+    )
     const existingData = existingRes.data.data.formData || {}
     const existingBusinessNumber = existingRes.data.data.businessNumber
+    // Preserve existing status, default to DRAFT if not set
+    const existingStatus = existingRes.data.data.corporateFilingStatus || 'DRAFT'
+    // Get tax year from the parent filing
+    const taxYear = existingRes.data.data.filing?.taxYear?.year ||
+                    existingRes.data.data.filing?.taxYear ||
+                    new Date().getFullYear()
 
     // Check for duplicate business number if it's being set or changed
     const newBusinessNumber = data['corpInfo.businessNumber'] as string
@@ -243,15 +435,34 @@ export class CorporateFilingService {
     const isNewOrChanged = normalizedNew &&
       (!normalizedExisting || normalizedNew.toLowerCase() !== normalizedExisting.toLowerCase())
 
+    console.log('[saveFormData] BN check details:', {
+      newBusinessNumber,
+      existingBusinessNumber,
+      normalizedNew,
+      normalizedExisting,
+      isNewOrChanged,
+      taxYear,
+      corporateFilingId
+    })
+
     if (isNewOrChanged) {
-      console.log('[saveFormData] Checking for duplicate BN:', { newBusinessNumber, existingBusinessNumber, isNewOrChanged })
-      const duplicateCheck = await this.checkDuplicateBusinessNumber(newBusinessNumber, corporateFilingId)
+      console.log('[saveFormData] BN is new or changed - checking for duplicates...')
+      const duplicateCheck = await this.checkDuplicateBusinessNumber(newBusinessNumber, Number(taxYear), corporateFilingId)
+      console.log('[saveFormData] Duplicate check result:', duplicateCheck)
       if (duplicateCheck.exists) {
-        const msg = duplicateCheck.legalName
-          ? `A corporate filing with this Business Number already exists for "${duplicateCheck.legalName}".`
-          : 'A corporate filing with this Business Number already exists.'
+        // Use the status-aware error message
+        const msg = this.getDuplicateErrorMessage(
+          newBusinessNumber,
+          Number(taxYear),
+          duplicateCheck.filingStatus,
+          duplicateCheck.legalName
+        )
+        console.log('[saveFormData] BLOCKING - Duplicate found:', msg)
         throw new Error(msg)
       }
+      console.log('[saveFormData] No duplicate found - proceeding with save')
+    } else {
+      console.log('[saveFormData] BN unchanged or empty - skipping duplicate check')
     }
 
     const mergedFormData = { ...existingData, ...data }
@@ -293,19 +504,6 @@ export class CorporateFilingService {
       return val
     }
 
-    // Build expenses object from individual expense fields
-    const expensesData: Record<string, number | null> = {}
-    const salaries = cleanDecimal(mergedFormData['financials.expenses.salaries'])
-    const rent = cleanDecimal(mergedFormData['financials.expenses.rent'])
-    const professionalFees = cleanDecimal(mergedFormData['financials.expenses.professionalFees'])
-
-    if (salaries !== null) expensesData.salaries = salaries
-    if (rent !== null) expensesData.rent = rent
-    if (professionalFees !== null) expensesData.professionalFees = professionalFees
-
-    // Only include expenses if we have any values
-    const expenses = Object.keys(expensesData).length > 0 ? expensesData : null
-
     // Map form fields to individual columns
     // Form data comes in dot-notation like "corpInfo.legalName"
     const mappedData: Record<string, unknown> = {
@@ -323,8 +521,11 @@ export class CorporateFilingService {
       totalRevenue: cleanDecimal(mergedFormData['financials.totalRevenue']),
       netIncome: cleanDecimal(mergedFormData['financials.netIncome']),
 
-      // Expenses (JSON object with individual expense types)
-      expenses: expenses,
+      // Expenses (individual decimal fields instead of JSON)
+      expensesSalaries: cleanDecimal(mergedFormData['financials.expenses.salaries']),
+      expensesRent: cleanDecimal(mergedFormData['financials.expenses.rent']),
+      expensesProfessionalFees: cleanDecimal(mergedFormData['financials.expenses.professionalFees']),
+      expensesOther: cleanDecimal(mergedFormData['financials.expenses.other']),
 
       // Financial Statements (JSON type - wrap string filenames in object)
       financialStatements: cleanJson(mergedFormData['documents.financialStatements']),
@@ -334,19 +535,46 @@ export class CorporateFilingService {
     }
 
     // Remove null fields to avoid overwriting existing data with null
-    // But keep formData always
-    const cleanedData: Record<string, unknown> = { formData: mergedFormData }
+    // But keep formData and corporateFilingStatus always
+    const cleanedData: Record<string, unknown> = {
+      formData: mergedFormData,
+      // Always preserve/set corporateFilingStatus to prevent it from being cleared
+      corporateFilingStatus: existingStatus
+    }
     for (const [key, value] of Object.entries(mappedData)) {
       if (key !== 'formData' && value !== null && value !== undefined) {
         cleanedData[key] = value
       }
     }
 
-    console.log('[CorporateFilingService.saveFormData] Saving:', cleanedData)
+    // Explicitly remove any keys that are not in the schema
+    // This prevents validation errors from old/stale keys in formData
+    const schemaFields = [
+      'legalName', 'businessNumber', 'address', 'incorporationDate', 'fiscalYearEnd',
+      'shareholders', 'totalRevenue', 'netIncome',
+      'expensesSalaries', 'expensesRent', 'expensesProfessionalFees', 'expensesOther',
+      'financialStatements', 'formData', 'corporateFilingStatus'
+    ]
+    const finalData: Record<string, unknown> = {}
+    for (const key of schemaFields) {
+      if (cleanedData[key] !== undefined) {
+        finalData[key] = cleanedData[key]
+      }
+    }
+
+    console.log('[CorporateFilingService.saveFormData] Saving to:', corporateFilingId)
+    console.log('[CorporateFilingService.saveFormData] Final data keys:', Object.keys(finalData))
+    console.log('[CorporateFilingService.saveFormData] Status being saved:', finalData.corporateFilingStatus)
 
     const response = await strapiClient.put<StrapiResponse<any>>(`/corporate-filings/${corporateFilingId}`, {
-      data: cleanedData
+      data: finalData
     })
+
+    console.log('[CorporateFilingService.saveFormData] Response status:', response.data.data?.corporateFilingStatus)
+
+    // VERIFICATION: Fetch the record again to confirm it was actually persisted
+    const verifyRes = await strapiClient.get<StrapiResponse<any>>(`/corporate-filings/${corporateFilingId}`)
+    console.log('[CorporateFilingService.saveFormData] VERIFY - Fetched status after save:', verifyRes.data.data?.corporateFilingStatus)
 
     return transformCorporateFiling(response.data.data)
   }
@@ -399,12 +627,14 @@ export class CorporateFilingService {
     // ============================================================
     console.log('[submitForReview] STEP 1: Getting filing data...')
     const filingData = await this.getFiling(filingId)
-    const corporateFilingId = filingData.corporateFiling?.id || filingData.corporateFiling?.documentId
+    // Prefer documentId for Strapi v5
+    const corporateFilingId = filingData.corporateFiling?.documentId || filingData.corporateFiling?.id
 
     if (!corporateFilingId) {
       throw new Error('Corporate filing data not found')
     }
     console.log('[submitForReview] STEP 1 COMPLETE: corporateFilingId =', corporateFilingId)
+    console.log('[submitForReview] STEP 1: Full corporateFiling data:', JSON.stringify(filingData.corporateFiling, null, 2))
 
     // ============================================================
     // STEP 2: Get corporate filing details (must complete before proceeding)
@@ -430,80 +660,33 @@ export class CorporateFilingService {
 
     // ============================================================
     // STEP 4: DUPLICATE CHECK - MUST COMPLETE BEFORE ANY MUTATION
-    // This is a blocking operation - submission cannot proceed until
-    // we have confirmed no duplicates exist
+    // Check if another filing exists for same business number in same tax year
     // ============================================================
     console.log('[submitForReview] STEP 4: Starting duplicate check (BLOCKING)...')
+    console.log('[submitForReview] STEP 4: Checking BN:', businessNumber, 'for year:', filingData.year)
 
-    // Mutable flag - will be set based on search results
-    let duplicateCheckPassed = false
-    let duplicateErrorMessage: string | null = null
+    const duplicateCheck = await this.checkDuplicateBusinessNumber(
+      businessNumber,
+      filingData.year,
+      corporateFilingId
+    )
 
-    // Normalize values for search
-    const normalizedBN = businessNumber.replace(/\s+/g, '')
-
-    // Build query - search for BN OR legal name matches
-    const searchQuery = `/corporate-filings?filters[$or][0][businessNumber][$containsi]=${encodeURIComponent(normalizedBN)}&filters[$or][1][legalName][$eqi]=${encodeURIComponent(legalName)}&populate[filing][fields]=documentId,id`
-
-    console.log('[submitForReview] STEP 4: Executing search query:', searchQuery)
-
-    // Execute the search and WAIT for results
-    const searchResponse = await strapiClient.get<StrapiResponse<any[]>>(searchQuery)
-    const searchResults = searchResponse.data.data || []
-
-    console.log('[submitForReview] STEP 4: Search returned', searchResults.length, 'results')
-
-    // Process results - filter out current filing
-    const duplicates = searchResults.filter((cf: any) => {
-      const cfDocId = cf.documentId
-      const cfNumId = String(cf.id)
-      const currentId = String(corporateFilingId)
-
-      // Exclude current filing (match on either ID format)
-      const isCurrent = cfDocId === currentId || cfNumId === currentId
-
-      console.log('[submitForReview] STEP 4: Comparing filing:', { cfDocId, cfNumId, currentId, isCurrent })
-
-      return !isCurrent
-    })
-
-    console.log('[submitForReview] STEP 4: Found', duplicates.length, 'potential duplicates after filtering')
-
-    // Check for actual duplicates
-    if (duplicates.length > 0) {
-      const dup = duplicates[0]
-      const dupBN = dup.businessNumber
-      const dupName = dup.legalName
-
-      // Determine which field matched
-      if (dupBN && dupBN.replace(/\s+/g, '').toLowerCase() === normalizedBN.toLowerCase()) {
-        duplicateErrorMessage = `A corporate filing with Business Number "${businessNumber}" already exists${dupName ? ` for "${dupName}"` : ''}. Please use a unique Business Number or edit the existing filing.`
-      } else if (dupName && dupName.toLowerCase() === legalName.toLowerCase()) {
-        duplicateErrorMessage = `A corporate filing for "${legalName}" already exists. Please use a unique corporation name or edit the existing filing.`
-      } else {
-        duplicateErrorMessage = 'A corporate filing with the same Business Number or Corporation Name already exists.'
-      }
-
+    if (duplicateCheck.exists) {
+      const duplicateErrorMessage = this.getDuplicateErrorMessage(
+        businessNumber,
+        filingData.year,
+        duplicateCheck.filingStatus,
+        duplicateCheck.legalName
+      )
       console.log('[submitForReview] STEP 4 FAILED: Duplicate found -', duplicateErrorMessage)
-      duplicateCheckPassed = false
-    } else {
-      console.log('[submitForReview] STEP 4 PASSED: No duplicates found')
-      duplicateCheckPassed = true
+      throw new Error(duplicateErrorMessage)
     }
+    console.log('[submitForReview] STEP 4 PASSED: No duplicates found')
 
     // ============================================================
-    // STEP 5: GATE - Only proceed if duplicate check passed
+    // STEP 5: Get status ID for UNDER_REVIEW (must complete before mutation)
     // ============================================================
-    if (!duplicateCheckPassed) {
-      console.log('[submitForReview] STEP 5: BLOCKED - Throwing duplicate error')
-      throw new Error(duplicateErrorMessage || 'A duplicate corporate filing already exists.')
-    }
-    console.log('[submitForReview] STEP 5: Gate passed, proceeding to submission')
-
-    // ============================================================
-    // STEP 6: Get status ID for UNDER_REVIEW (must complete before mutation)
-    // ============================================================
-    console.log('[submitForReview] STEP 6: Getting UNDER_REVIEW status ID...')
+    console.log('[submitForReview] STEP 5: Getting UNDER_REVIEW status ID...')
     const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=UNDER_REVIEW`, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -513,25 +696,27 @@ export class CorporateFilingService {
     const statusId = statusJson.data?.[0]?.id
 
     if (!statusId) throw new Error('UNDER_REVIEW status not found')
-    console.log('[submitForReview] STEP 6 COMPLETE: statusId =', statusId)
+    console.log('[submitForReview] STEP 5 COMPLETE: statusId =', statusId)
 
     // ============================================================
-    // STEP 7: Generate confirmation number (synchronous)
+    // STEP 6: Use existing confirmation number or generate new one
+    // For reopened filings (amendments), preserve the original confirmation number
     // ============================================================
-    const confirmationNumber = this.generateReferenceNumber()
-    console.log('[submitForReview] STEP 7: Generated confirmationNumber =', confirmationNumber)
+    const existingConfirmationNumber = (filingData as any).referenceNumber
+    const confirmationNumber = existingConfirmationNumber || this.generateReferenceNumber()
+    console.log('[submitForReview] STEP 6: confirmationNumber =', confirmationNumber, existingConfirmationNumber ? '(preserved existing)' : '(newly generated)')
 
     // ============================================================
-    // STEP 8: Mark corporate filing as COMPLETED (mutation)
+    // STEP 7: Mark corporate filing as COMPLETED (mutation)
     // ============================================================
-    console.log('[submitForReview] STEP 8: Marking corporate filing as COMPLETED...')
+    console.log('[submitForReview] STEP 7: Marking corporate filing as COMPLETED...')
     await this.markCorporateFilingComplete(corporateFilingId)
-    console.log('[submitForReview] STEP 8 COMPLETE')
+    console.log('[submitForReview] STEP 7 COMPLETE')
 
     // ============================================================
-    // STEP 9: Update parent filing status (final mutation)
+    // STEP 8: Update parent filing status (final mutation)
     // ============================================================
-    console.log('[submitForReview] STEP 9: Updating parent filing status...')
+    console.log('[submitForReview] STEP 8: Updating parent filing status...')
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
         filingStatus: statusId,
@@ -539,7 +724,7 @@ export class CorporateFilingService {
         submittedAt: new Date().toISOString()
       }
     })
-    console.log('[submitForReview] STEP 9 COMPLETE: Filing submitted successfully')
+    console.log('[submitForReview] STEP 8 COMPLETE: Filing submitted successfully')
 
     // Return filing with the confirmation number set
     const filing = transformFilingWithCorporate(response.data.data)
@@ -551,9 +736,18 @@ export class CorporateFilingService {
    * Mark corporate filing child as complete
    */
   static async markCorporateFilingComplete(corporateFilingId: string): Promise<CorporateFiling> {
+    console.log('[markCorporateFilingComplete] Updating corporate filing:', corporateFilingId, 'with corporateFilingStatus: COMPLETED')
+
     const response = await strapiClient.put<StrapiResponse<any>>(`/corporate-filings/${corporateFilingId}`, {
-      data: { status: 'COMPLETED' }
+      data: { corporateFilingStatus: 'COMPLETED' }
     })
+
+    console.log('[markCorporateFilingComplete] Response status:', response.data.data?.corporateFilingStatus)
+
+    // VERIFICATION: Fetch the record again to confirm it was actually persisted
+    const verifyRes = await strapiClient.get<StrapiResponse<any>>(`/corporate-filings/${corporateFilingId}`)
+    console.log('[markCorporateFilingComplete] VERIFY - Fetched status after update:', verifyRes.data.data?.corporateFilingStatus)
+
     return transformCorporateFiling(response.data.data)
   }
 }

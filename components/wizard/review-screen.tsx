@@ -21,7 +21,8 @@ import {
   Pencil,
   ArrowRight,
   ArrowLeft,
-  CreditCard
+  CreditCard,
+  UserPlus
 } from "lucide-react"
 import type { Filing, PersonalFiling, FilingRole, TaxFilingSchema } from "@/lib/domain/types"
 
@@ -30,9 +31,12 @@ type ReviewStep = "review" | "payment" | "submitted"
 interface ReviewScreenProps {
   filing: Filing
   onEditPerson?: (personalFilingId: string, sectionIndex: number) => void
+  onSubmitted?: () => void
+  onAddSpouse?: () => void
+  onAddDependent?: () => void
 }
 
-export function ReviewScreen({ filing, onEditPerson }: ReviewScreenProps) {
+export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, onAddDependent }: ReviewScreenProps) {
   const router = useRouter()
   const { submitForReview, isLoading, schema } = useFilingContext()
   const [currentStep, setCurrentStep] = useState<ReviewStep>("review")
@@ -43,12 +47,20 @@ export function ReviewScreen({ filing, onEditPerson }: ReviewScreenProps) {
   const spouse = filing.personalFilings.find((pf) => pf.type === "spouse")
   const dependents = filing.personalFilings.filter((pf) => pf.type === "dependent")
 
+  // Check if user is eligible to add spouse (married or common_law and no spouse yet)
+  const maritalStatus = primary?.formData?.["maritalStatus.status"] as string | undefined
+  const isEligibleForSpouse = (maritalStatus === "MARRIED" || maritalStatus === "COMMON_LAW") && !spouse
+  // Can always add dependents
+  const canAddFamilyMembers = onAddSpouse || onAddDependent
+
   const handleSubmit = async () => {
     const updatedFiling = await submitForReview()
     if (updatedFiling) {
       // Store the reference number from the response
       setSubmittedRefNumber(updatedFiling.referenceNumber || null)
       setCurrentStep("submitted")
+      // Notify parent that submission is complete (for progress bar update)
+      onSubmitted?.()
     }
   }
 
@@ -212,6 +224,45 @@ export function ReviewScreen({ filing, onEditPerson }: ReviewScreenProps) {
           />
         ))}
       </div>
+
+      {/* Add Family Members Section - shown when callbacks are provided */}
+      {canAddFamilyMembers && (
+        <div className="glass-card rounded-xl p-6">
+          <h3 className="text-lg font-semibold text-foreground mb-4">Add Family Members</h3>
+          <p className="text-sm text-muted-foreground mb-4">
+            Need to add someone to your filing? You can add a spouse or dependents here.
+          </p>
+          <div className="flex flex-wrap gap-3">
+            {onAddSpouse && isEligibleForSpouse && (
+              <Button
+                variant="outline"
+                onClick={onAddSpouse}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <Heart className="h-4 w-4" />
+                Add Spouse
+              </Button>
+            )}
+            {onAddDependent && (
+              <Button
+                variant="outline"
+                onClick={onAddDependent}
+                disabled={isLoading}
+                className="gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                Add Dependent
+              </Button>
+            )}
+          </div>
+          {onAddSpouse && !isEligibleForSpouse && !spouse && (
+            <p className="text-xs text-muted-foreground mt-3">
+              To add a spouse, your marital status must be "Married" or "Common-Law".
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Continue Button */}
       <div className="flex justify-end">

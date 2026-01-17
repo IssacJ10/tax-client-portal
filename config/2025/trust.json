@@ -72,11 +72,19 @@
             "label": "Province of Residency",
             "name": "trustInfo.residency",
             "options": [
-                "ON",
-                "BC",
-                "AB",
-                "QC",
-                "Other"
+                { "value": "ON", "label": "Ontario" },
+                { "value": "BC", "label": "British Columbia" },
+                { "value": "AB", "label": "Alberta" },
+                { "value": "QC", "label": "Quebec" },
+                { "value": "MB", "label": "Manitoba" },
+                { "value": "SK", "label": "Saskatchewan" },
+                { "value": "NS", "label": "Nova Scotia" },
+                { "value": "NB", "label": "New Brunswick" },
+                { "value": "NL", "label": "Newfoundland and Labrador" },
+                { "value": "PE", "label": "Prince Edward Island" },
+                { "value": "NT", "label": "Northwest Territories" },
+                { "value": "YT", "label": "Yukon" },
+                { "value": "NU", "label": "Nunavut" }
             ],
             "validation": {
                 "required": true

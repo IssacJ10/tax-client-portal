@@ -26,6 +26,7 @@ export type FilingAction =
   | { type: "INIT_FILING"; payload: { filingId: string; personalFilingId: string } }
   | { type: "INIT_CORPORATE_FILING"; payload: { filingId: string; corporateFilingId: string } }
   | { type: "INIT_TRUST_FILING"; payload: { filingId: string; trustFilingId: string } }
+  | { type: "RESTORE_PROGRESS"; payload: { filingId: string; phase: WizardPhase; sectionIndex: number; personalFilingId: string; dependentIndex?: number } }
   | { type: "START_SPOUSE"; payload: { personalFilingId: string } }
   | { type: "START_DEPENDENT"; payload: { personalFilingId: string; index: number } }
   | { type: "NEXT_SECTION"; payload?: { totalSections: number } }
@@ -41,6 +42,7 @@ export type FilingAction =
   | { type: "SKIP_DEPENDENTS" }
   | { type: "ADD_DEPENDENT" }
   | { type: "GO_TO_REVIEW" }
+  | { type: "GO_TO_DEPENDENT_CHECKPOINT" }
   | { type: "RESET" }
 
 /**
@@ -103,6 +105,19 @@ export function filingReducer(state: WizardState, action: FilingAction): WizardS
         currentPersonalFilingId: action.payload.trustFilingId, // Reuse field for child filing ID
         phase: "TRUST_ACTIVE",
         currentSectionIndex: 0,
+        error: null,
+      }
+
+    case "RESTORE_PROGRESS":
+      // Restore wizard to a previously saved state (for resume functionality)
+      return {
+        ...state,
+        status: "success",
+        filingId: action.payload.filingId,
+        currentPersonalFilingId: action.payload.personalFilingId,
+        phase: action.payload.phase,
+        currentSectionIndex: action.payload.sectionIndex,
+        currentDependentIndex: action.payload.dependentIndex ?? -1,
         error: null,
       }
 
@@ -173,6 +188,9 @@ export function filingReducer(state: WizardState, action: FilingAction): WizardS
 
     case "GO_TO_REVIEW":
       return { ...state, phase: "REVIEW", currentSectionIndex: 0 }
+
+    case "GO_TO_DEPENDENT_CHECKPOINT":
+      return { ...state, phase: "DEPENDENT_CHECKPOINT", currentSectionIndex: 0 }
 
     case "RESET":
       return initialWizardState

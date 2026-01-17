@@ -9,6 +9,7 @@ import { CorporateFilingService } from "@/services/corporate-filing-service"
 import { TrustFilingService } from "@/services/trust-filing-service"
 import { filingReducer, initialWizardState } from "@/lib/domain/filing-state-machine"
 import type { Filing, FilingType } from "@/lib/domain/types"
+import { toast } from "@/hooks/use-toast"
 
 const fetchFiling = async (key: string) => {
   const docId = key.split("/")[1]
@@ -58,17 +59,12 @@ export function useFiling(filingId?: string, initialData?: Filing) {
   }, [])
 
   // Action: Add Spouse (with mutex guard)
-  // Also marks the primary PersonalFiling as COMPLETED
+  // NOTE: We no longer mark primary as COMPLETED here - all filings stay DRAFT until submission
   const addSpouse = useCallback(async () => {
     if (!state.filingId || isAddingSpouseRef.current) return null
     isAddingSpouseRef.current = true
     dispatch({ type: "SET_LOADING", payload: true })
     try {
-      // Mark primary as COMPLETED before creating spouse
-      if (state.currentPersonalFilingId) {
-        await FilingService.updatePersonalFilingStatus(state.currentPersonalFilingId, 'COMPLETED')
-      }
-
       const spouseFiling = await FilingService.addFamilyMember(state.filingId, "spouse")
       dispatch({ type: "START_SPOUSE", payload: { personalFilingId: spouseFiling.id } })
       await mutate(`filing/${state.filingId}`)
@@ -79,7 +75,7 @@ export function useFiling(filingId?: string, initialData?: Filing) {
       isAddingSpouseRef.current = false
       dispatch({ type: "SET_LOADING", payload: false })
     }
-  }, [state.filingId, state.currentPersonalFilingId])
+  }, [state.filingId])
 
   // Action: Add Dependent (with mutex guard)
   // Returns the created dependent but does NOT automatically start it
@@ -187,6 +183,15 @@ export function useFiling(filingId?: string, initialData?: Filing) {
         }
 
         if (state.filingId) mutate(`filing/${state.filingId}`)
+      } catch (err) {
+        // Show toast notification for validation errors (like duplicate business number)
+        const errorMessage = err instanceof Error ? err.message : "Failed to save data"
+        toast({
+          title: "Unable to Save",
+          description: errorMessage,
+          variant: "destructive",
+        })
+        console.error('[useFiling.saveFormData] Error:', errorMessage)
       } finally {
         dispatch({ type: "SET_SYNCING", payload: false })
       }
@@ -219,6 +224,17 @@ export function useFiling(filingId?: string, initialData?: Filing) {
         }
 
         if (state.filingId) mutate(`filing/${state.filingId}`)
+      } catch (err) {
+        // Show toast notification for validation errors (like duplicate business number)
+        const errorMessage = err instanceof Error ? err.message : "Failed to save data"
+        toast({
+          title: "Unable to Save",
+          description: errorMessage,
+          variant: "destructive",
+        })
+        console.error('[useFiling.flushSave] Error:', errorMessage)
+        // Re-throw to let caller know save failed
+        throw err
       } finally {
         dispatch({ type: "SET_SYNCING", payload: false })
       }
@@ -248,6 +264,63 @@ export function useFiling(filingId?: string, initialData?: Filing) {
     }
   }, [state.filingId])
 
+  // Save wizard progress for resume functionality
+  // This is called on section changes and save & exit
+  // Optional overrides can be passed to save expected values after navigation
+  // (needed because React state updates are async and the callback may have stale values)
+  const saveWizardProgress = useCallback(async (overrides?: {
+    sectionIndex?: number;
+    phase?: string;
+    personalFilingId?: string;
+    dependentIndex?: number;
+  }) => {
+    const filingId = state.filingId
+    const personalFilingId = overrides?.personalFilingId ?? state.currentPersonalFilingId
+    const phase = overrides?.phase ?? state.phase
+    const sectionIndex = overrides?.sectionIndex ?? state.currentSectionIndex
+    const dependentIndex = overrides?.dependentIndex ?? state.currentDependentIndex
+
+    if (!filingId || !personalFilingId) {
+      console.log('[saveWizardProgress] Skipping - missing IDs:', {
+        filingId,
+        personalFilingId
+      })
+      return
+    }
+
+    // Don't save progress for IDLE or REVIEW phases
+    if (phase === "IDLE" || phase === "REVIEW") {
+      console.log('[saveWizardProgress] Skipping - phase is:', phase)
+      return
+    }
+
+    const progressData = {
+      lastPhase: phase,
+      lastSectionIndex: sectionIndex,
+      lastPersonalFilingId: personalFilingId,
+      lastDependentIndex: dependentIndex >= 0 ? dependentIndex : undefined,
+    }
+    console.log('[saveWizardProgress] Saving progress:', progressData)
+
+    await FilingService.saveWizardProgress(filingId, progressData)
+  }, [state.filingId, state.currentPersonalFilingId, state.phase, state.currentSectionIndex, state.currentDependentIndex])
+
+  // Save & Exit: Flush form data and save progress, then return to dashboard
+  const saveAndExit = useCallback(async () => {
+    try {
+      // 1. Flush any pending form data
+      await flushSave()
+
+      // 2. Save wizard progress
+      await saveWizardProgress()
+
+      return true
+    } catch (err) {
+      console.error('[saveAndExit] Error:', err)
+      return false
+    }
+  }, [flushSave, saveWizardProgress])
+
   return {
     state,
     filing,
@@ -263,6 +336,8 @@ export function useFiling(filingId?: string, initialData?: Filing) {
     flushSave,
     submitForReview,
     refreshFiling,
+    saveWizardProgress,
+    saveAndExit,
     dispatch
   }
 }

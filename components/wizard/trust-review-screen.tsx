@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { useFilingContext } from "@/context/filing-context"
 import { formatFilingRef } from "@/lib/domain/pricing-engine"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
-import { CorporateFilingService } from "@/services/corporate-filing-service"
+import { TrustFilingService } from "@/services/trust-filing-service"
 import { toast } from "@/hooks/use-toast"
 import {
   Loader2,
@@ -15,20 +15,20 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
-  Building2
+  Landmark
 } from "lucide-react"
 import type { Filing, TaxFilingSchema } from "@/lib/domain/types"
 
 type ReviewStep = "review" | "submitted"
 
-interface CorporateReviewScreenProps {
+interface TrustReviewScreenProps {
   filing: Filing
   schema: TaxFilingSchema
   formData: Record<string, unknown>
   onSubmitted?: () => void
 }
 
-export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }: CorporateReviewScreenProps) {
+export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: TrustReviewScreenProps) {
   const router = useRouter()
   const { dispatch } = useFilingContext()
   const [currentStep, setCurrentStep] = useState<ReviewStep>("review")
@@ -36,21 +36,21 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  // Get corporation name from formData
-  const corpName = (formData["corpInfo.legalName"] as string) || "Your Corporation"
+  // Get trust name from formData
+  const trustName = (formData["trustInfo.name"] as string) || "Your Trust"
 
   const handleSubmit = async () => {
     setIsLoading(true)
     setError(null)
     try {
-      const updatedFiling = await CorporateFilingService.submitForReview(filing.id)
+      const updatedFiling = await TrustFilingService.submitForReview(filing.id)
       if (updatedFiling) {
         setSubmittedRefNumber(updatedFiling.referenceNumber || null)
         setCurrentStep("submitted")
         onSubmitted?.()
       }
     } catch (err: any) {
-      console.error("Failed to submit corporate filing:", err)
+      console.error("Failed to submit trust filing:", err)
       const errorMessage = err.message || "Failed to submit filing. Please try again."
       setError(errorMessage)
       toast({
@@ -64,13 +64,13 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
   }
 
   const handleEditSection = (sectionIndex: number) => {
-    // INIT_CORPORATE_FILING sets phase to CORPORATE_ACTIVE and resets sectionIndex to 0
+    // INIT_TRUST_FILING sets phase to TRUST_ACTIVE and resets sectionIndex to 0
     // So we dispatch it first, then GO_TO_SECTION to set the correct section
     dispatch({
-      type: "INIT_CORPORATE_FILING",
+      type: "INIT_TRUST_FILING",
       payload: {
         filingId: filing.id,
-        corporateFilingId: (filing as any).corporateFiling?.id || (filing as any).corporateFiling?.documentId || filing.id
+        trustFilingId: (filing as any).trustFiling?.id || (filing as any).trustFiling?.documentId || filing.id
       }
     })
     dispatch({ type: "GO_TO_SECTION", payload: sectionIndex })
@@ -85,9 +85,9 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
         <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
           <FileCheck className="h-10 w-10 text-primary" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Corporate Filing Submitted!</h2>
+        <h2 className="text-2xl font-bold text-foreground">Trust Filing Submitted!</h2>
         <p className="mt-2 text-muted-foreground">
-          Your T2 corporate tax return for <span className="font-medium text-foreground">{corpName}</span> has been submitted for review.
+          Your T3 trust tax return for <span className="font-medium text-foreground">{trustName}</span> has been submitted for review.
         </p>
         <div className="mt-6 rounded-lg bg-muted/50 p-4">
           <p className="text-sm text-muted-foreground">Reference Number</p>
@@ -110,12 +110,12 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
       <div className="glass-card rounded-xl p-6">
         <div className="flex items-center gap-4">
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
-            <Building2 className="h-6 w-6 text-primary" />
+            <Landmark className="h-6 w-6 text-primary" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">Review Corporate Filing</h2>
+            <h2 className="text-xl font-bold text-foreground">Review Trust Filing</h2>
             <p className="text-muted-foreground">
-              Please verify all information for <span className="font-medium text-foreground">{corpName}</span> is correct.
+              Please verify all information for <span className="font-medium text-foreground">{trustName}</span> is correct.
             </p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
         ))}
       </div>
 
-      {/* Submit Button - No payment step for corporate filings */}
+      {/* Submit Button */}
       <div className="flex justify-end">
         <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px]">
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
@@ -290,12 +290,9 @@ function formatAnswerValue(value: any, question: any): string {
     const num = Number(value)
     if (!isNaN(num)) {
       // Format as currency for financial fields
-      if (question.name?.toLowerCase().includes('revenue') ||
-          question.name?.toLowerCase().includes('expense') ||
-          question.name?.toLowerCase().includes('income') ||
-          question.name?.toLowerCase().includes('salary') ||
-          question.name?.toLowerCase().includes('rent') ||
-          question.name?.toLowerCase().includes('fee')) {
+      if (question.name?.toLowerCase().includes('income') ||
+          question.name?.toLowerCase().includes('distribution') ||
+          question.name?.toLowerCase().includes('capital')) {
         return new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(num)
       }
       return num.toLocaleString()

@@ -11,6 +11,7 @@ export interface TrustFiling {
   documentId: string
   filingId?: string
   formData: Record<string, unknown>
+  trustFilingStatus: 'DRAFT' | 'COMPLETED' | 'FLAGGED' | 'VERIFIED'
   isComplete: boolean
   createdAt: string
   updatedAt: string
@@ -27,12 +28,14 @@ export interface TrustFilingWithData extends Filing {
 
 function transformTrustFiling(data: any): TrustFiling {
   const id = data.documentId || data.id || String(data.id)
+  const trustFilingStatus = data.trustFilingStatus || 'DRAFT'
   return {
     id,
     documentId: id,
     filingId: data.filing?.documentId || data.filing?.id || data.filing,
     formData: data.formData || {},
-    isComplete: data.status === 'COMPLETED',
+    trustFilingStatus: trustFilingStatus,
+    isComplete: trustFilingStatus === 'COMPLETED',
     createdAt: data.createdAt,
     updatedAt: data.updatedAt,
   }
@@ -149,7 +152,7 @@ export class TrustFilingService {
         data: {
           filing: filingId,
           formData: {},
-          status: "DRAFT"
+          trustFilingStatus: "DRAFT"
         }
       })
       const trustFiling = transformTrustFiling(trustRes.data.data)
@@ -171,17 +174,104 @@ export class TrustFilingService {
 
   /**
    * Save form data to a trust filing
+   * Maps form fields to both individual columns AND the formData JSON blob
    */
   static async saveFormData(trustFilingId: string, data: Record<string, unknown>): Promise<TrustFiling> {
-    // Merge with existing data
+    // Merge with existing formData
     const existingRes = await strapiClient.get<StrapiResponse<any>>(`/trust-filings/${trustFilingId}`)
     const existingData = existingRes.data.data.formData || {}
+    // Preserve existing trustFilingStatus, default to DRAFT if not set
+    const existingStatus = existingRes.data.data.trustFilingStatus || 'DRAFT'
 
-    const mergedData = { ...existingData, ...data }
+    const mergedFormData = { ...existingData, ...data }
+
+    // Helper to clean empty strings to null
+    const clean = (val: unknown): unknown => {
+      if (val === '' || val === undefined) return null
+      return val
+    }
+
+    // Helper to clean date strings (must be YYYY-MM-DD format)
+    const cleanDate = (val: unknown): string | null => {
+      if (!val) return null
+      const strVal = String(val).trim()
+      const regex = /^\d{4}-\d{2}-\d{2}$/
+      if (regex.test(strVal)) return strVal
+      // Handle ISO date strings
+      if (strVal.includes('T')) {
+        const part = strVal.split('T')[0]
+        if (regex.test(part)) return part
+      }
+      return null
+    }
+
+    // Helper to convert to decimal (Strapi decimal type)
+    const cleanDecimal = (val: unknown): number | null => {
+      if (val === '' || val === undefined || val === null) return null
+      const num = Number(val)
+      return isNaN(num) ? null : num
+    }
+
+    // Map form fields to individual columns
+    // Form data comes in dot-notation like "trustInfo.name"
+    const mappedData: Record<string, unknown> = {
+      // Trust Info - note form uses "trustInfo.name" but schema has "trustName"
+      trustName: clean(mergedFormData['trustInfo.name']),
+      accountNumber: clean(mergedFormData['trustInfo.accountNumber']),
+      creationDate: cleanDate(mergedFormData['trustInfo.creationDate']),
+      residency: clean(mergedFormData['trustInfo.residency']),
+
+      // Trustees and Beneficiaries (JSON arrays)
+      trustees: mergedFormData['trustees'] || null,
+      beneficiaries: mergedFormData['beneficiaries'] || null,
+
+      // Income (individual decimal fields)
+      incomeInterest: cleanDecimal(mergedFormData['income.interest']),
+      incomeDividends: cleanDecimal(mergedFormData['income.dividends']),
+      incomeCapitalGains: cleanDecimal(mergedFormData['income.capitalGains']),
+      incomeDistributions: cleanDecimal(mergedFormData['income.distributions']),
+
+      // Always save the full merged form data as backup
+      formData: mergedFormData
+    }
+
+    // Remove null fields to avoid overwriting existing data with null
+    // But keep formData and trustFilingStatus always
+    const cleanedData: Record<string, unknown> = {
+      formData: mergedFormData,
+      // Always preserve/set trustFilingStatus to prevent it from being cleared
+      trustFilingStatus: existingStatus
+    }
+    for (const [key, value] of Object.entries(mappedData)) {
+      if (key !== 'formData' && value !== null && value !== undefined) {
+        cleanedData[key] = value
+      }
+    }
+
+    // Explicitly remove any keys that are not in the schema
+    // This prevents validation errors from old/stale keys in formData
+    const schemaFields = [
+      'trustName', 'accountNumber', 'creationDate', 'residency',
+      'trustees', 'beneficiaries',
+      'incomeInterest', 'incomeDividends', 'incomeCapitalGains', 'incomeDistributions',
+      'formData', 'trustFilingStatus'
+    ]
+    const finalData: Record<string, unknown> = {}
+    for (const key of schemaFields) {
+      if (cleanedData[key] !== undefined) {
+        finalData[key] = cleanedData[key]
+      }
+    }
+
+    console.log('[TrustFilingService.saveFormData] Saving to:', trustFilingId)
+    console.log('[TrustFilingService.saveFormData] Final data keys:', Object.keys(finalData))
+    console.log('[TrustFilingService.saveFormData] Status being saved:', finalData.trustFilingStatus)
 
     const response = await strapiClient.put<StrapiResponse<any>>(`/trust-filings/${trustFilingId}`, {
-      data: { formData: mergedData }
+      data: finalData
     })
+
+    console.log('[TrustFilingService.saveFormData] Response status:', response.data.data?.trustFilingStatus)
 
     return transformTrustFiling(response.data.data)
   }
@@ -221,6 +311,7 @@ export class TrustFilingService {
 
   /**
    * Submit trust filing for review
+   * Also marks the child trust-filing as COMPLETED
    */
   static async submitForReview(filingId: string): Promise<TrustFilingWithData> {
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
@@ -228,7 +319,22 @@ export class TrustFilingService {
 
     if (!token) throw new Error('No authentication token')
 
-    // Get the UNDER_REVIEW status ID
+    // ============================================================
+    // STEP 1: Get the filing to find the trust filing child
+    // ============================================================
+    console.log('[submitForReview] STEP 1: Getting filing data...')
+    const filingData = await this.getFiling(filingId)
+    const trustFilingId = filingData.trustFiling?.id || filingData.trustFiling?.documentId
+
+    if (!trustFilingId) {
+      throw new Error('Trust filing data not found')
+    }
+    console.log('[submitForReview] STEP 1 COMPLETE: trustFilingId =', trustFilingId)
+
+    // ============================================================
+    // STEP 2: Get the UNDER_REVIEW status ID
+    // ============================================================
+    console.log('[submitForReview] STEP 2: Getting UNDER_REVIEW status ID...')
     const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=UNDER_REVIEW`, {
       headers: { Authorization: `Bearer ${token}` }
     })
@@ -238,11 +344,27 @@ export class TrustFilingService {
     const statusId = statusJson.data?.[0]?.id
 
     if (!statusId) throw new Error('UNDER_REVIEW status not found')
+    console.log('[submitForReview] STEP 2 COMPLETE: statusId =', statusId)
 
-    // Generate unique confirmation number
-    const confirmationNumber = this.generateReferenceNumber()
+    // ============================================================
+    // STEP 3: Use existing confirmation number or generate new one
+    // For reopened filings (amendments), preserve the original confirmation number
+    // ============================================================
+    const existingConfirmationNumber = filingData.referenceNumber
+    const confirmationNumber = existingConfirmationNumber || this.generateReferenceNumber()
+    console.log('[submitForReview] STEP 3: confirmationNumber =', confirmationNumber, existingConfirmationNumber ? '(preserved existing)' : '(newly generated)')
 
-    // Update the filing status and confirmation number
+    // ============================================================
+    // STEP 4: Mark the trust filing child as COMPLETED
+    // ============================================================
+    console.log('[submitForReview] STEP 4: Marking trust filing as COMPLETED...')
+    await this.markTrustFilingComplete(trustFilingId)
+    console.log('[submitForReview] STEP 4 COMPLETE')
+
+    // ============================================================
+    // STEP 5: Update the parent filing status and confirmation number
+    // ============================================================
+    console.log('[submitForReview] STEP 5: Updating parent filing status...')
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
         filingStatus: statusId,
@@ -250,6 +372,7 @@ export class TrustFilingService {
         submittedAt: new Date().toISOString()
       }
     })
+    console.log('[submitForReview] STEP 5 COMPLETE: Filing submitted successfully')
 
     // Return filing with the confirmation number set
     const filing = transformFilingWithTrust(response.data.data)
@@ -262,7 +385,7 @@ export class TrustFilingService {
    */
   static async markTrustFilingComplete(trustFilingId: string): Promise<TrustFiling> {
     const response = await strapiClient.put<StrapiResponse<any>>(`/trust-filings/${trustFilingId}`, {
-      data: { status: 'COMPLETED' }
+      data: { trustFilingStatus: 'COMPLETED' }
     })
     return transformTrustFiling(response.data.data)
   }

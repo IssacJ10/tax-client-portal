@@ -66,11 +66,22 @@ export default function FilingPage() {
     return null;
   }
 
-  // 3. Render - pass the primary ID from URL as the authoritative source
+  // 3. Render - pass the primary ID from URL OR derive from loaded data
+  // This ensures page refresh works correctly (URL param may be lost on refresh)
+  const resolvedPrimaryId = primaryFromUrl ||
+    filingData.personalFilings?.find((pf: any) => pf.type === "primary")?.id ||
+    filingData.personalFilings?.[0]?.id ||
+    // For corporate/trust filings
+    filingData.corporateFiling?.id ||
+    filingData.corporateFiling?.documentId ||
+    filingData.trustFiling?.id ||
+    filingData.trustFiling?.documentId ||
+    "";
+
   return (
     <FilingWizard
       filingId={id}
-      initialPersonalFilingId={primaryFromUrl}
+      initialPersonalFilingId={resolvedPrimaryId}
       initialData={filingData}
       schema={schema}
     />
