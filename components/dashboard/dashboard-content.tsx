@@ -134,9 +134,7 @@ export default function DashboardContent() {
   const greeting = hours < 12 ? "Good morning" : hours < 18 ? "Good afternoon" : "Good evening"
 
   return (
-    <div className="min-h-screen relative overflow-x-hidden">
-      {/* Clean White Background */}
-      <div className="fixed inset-0 bg-[#f8faf9]" />
+    <div className="relative overflow-x-hidden bg-[#f8faf9]">
 
       {/* Header - H&R Block-style solid green */}
       <header className="sticky top-0 z-50 bg-[#00754a] shadow-lg">
@@ -485,39 +483,14 @@ function FilingCard({ filing }: { filing: Filing }) {
     router.push(`/filing/${fId}${pId ? `?primary=${pId}` : ''}`)
   }
 
-  // Card color theme - white cards with colored accents
+  // Card color theme - glassmorphic green gradient
   const getCardTheme = () => {
-    switch (filing.type) {
-      case 'CORPORATE':
-        return {
-          // White card with blue accent
-          cardBg: 'bg-white hover:bg-gray-50',
-          icon: 'from-blue-500 to-blue-600 shadow-blue-500/30',
-          accent: 'text-blue-600',
-          arrow: 'bg-blue-50 group-hover:bg-blue-500',
-          arrowIcon: 'text-blue-500 group-hover:text-white',
-          border: 'border-gray-200'
-        }
-      case 'TRUST':
-        return {
-          // White card with violet accent
-          cardBg: 'bg-white hover:bg-gray-50',
-          icon: 'from-violet-500 to-violet-600 shadow-violet-500/30',
-          accent: 'text-violet-600',
-          arrow: 'bg-violet-50 group-hover:bg-violet-500',
-          arrowIcon: 'text-violet-500 group-hover:text-white',
-          border: 'border-gray-200'
-        }
-      default: // INDIVIDUAL/PERSONAL
-        return {
-          // White card with H&R green accent
-          cardBg: 'bg-white hover:bg-gray-50',
-          icon: 'from-[#00754a] to-[#005c3b] shadow-[#00754a]/30',
-          accent: 'text-[#00754a]',
-          arrow: 'bg-[#00754a]/10 group-hover:bg-[#00754a]',
-          arrowIcon: 'text-[#00754a] group-hover:text-white',
-          border: 'border-gray-200'
-        }
+    return {
+      icon: 'bg-white/80',
+      iconColor: 'text-[#00754a]',
+      accent: 'text-[#00754a]',
+      arrow: 'bg-white/60 group-hover:bg-[#00754a]',
+      arrowIcon: 'text-[#00754a] group-hover:text-white',
     }
   }
 
@@ -535,14 +508,14 @@ function FilingCard({ filing }: { filing: Filing }) {
       case 'REJECTED':
         return 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
       default:
-        return 'bg-gray-100 text-gray-700 border border-gray-200'
+        return 'bg-white/80 text-gray-700 border border-white/50'
     }
   }
 
   return (
     <div
       onClick={handleClick}
-      className={`group relative rounded-2xl ${theme.cardBg} border ${theme.border} p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-gray-200 hover:-translate-y-0.5`}
+      className="group relative rounded-2xl bg-gradient-to-br from-[#e9ffe4] to-[#d4f5cd] backdrop-blur-sm border border-[#00754a]/10 p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-[#00754a]/10 hover:-translate-y-0.5"
     >
       {/* Floating Status Badge - positioned outside card boundary */}
       <div className={`absolute -top-2.5 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeStyle()}`}>
@@ -550,10 +523,10 @@ function FilingCard({ filing }: { filing: Filing }) {
         <span>{status.label}</span>
       </div>
 
-      {/* Type Icon - floating effect with type-specific color */}
+      {/* Type Icon - glassmorphic style */}
       <div className="absolute -top-4 left-5">
-        <div className={`flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${theme.icon} shadow-lg transition-shadow`}>
-          <TypeIcon className="h-6 w-6 text-white" />
+        <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${theme.icon} backdrop-blur-sm shadow-sm border border-white/50`}>
+          <TypeIcon className={`h-6 w-6 ${theme.iconColor}`} />
         </div>
       </div>
 
@@ -590,12 +563,12 @@ function FilingCard({ filing }: { filing: Filing }) {
         )}
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+        <div className="flex items-center justify-between pt-3 border-t border-white/50">
+          <div className="flex items-center gap-1.5 text-xs text-gray-600">
             <Calendar className="h-3.5 w-3.5" />
             <span>{new Date(filing.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
           </div>
-          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${theme.arrow} transition-colors`}>
+          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${theme.arrow} backdrop-blur-sm transition-colors`}>
             <ArrowRight className={`h-4 w-4 ${theme.arrowIcon} transition-colors`} />
           </div>
         </div>
@@ -616,20 +589,20 @@ function FamilyMember({
   icon: any
 }) {
   return (
-    <div className="flex items-center justify-between p-2.5 rounded-xl bg-gray-50 border border-gray-100">
+    <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/50 backdrop-blur-sm border border-white/60">
       <div className="flex items-center gap-2.5">
-        <div className="p-1.5 rounded-lg bg-[#00754a]/10">
+        <div className="p-1.5 rounded-lg bg-white/70">
           <Icon className="h-3.5 w-3.5 text-[#00754a]" />
         </div>
         <div>
           <p className="text-xs font-medium text-gray-900">{name}</p>
-          <p className="text-[10px] text-gray-500">{label}</p>
+          <p className="text-[10px] text-gray-600">{label}</p>
         </div>
       </div>
       <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full ${
         isComplete
-          ? 'bg-[#00754a]/10 text-[#00754a] border border-[#00754a]/20'
-          : 'bg-amber-100 text-amber-700 border border-amber-200'
+          ? 'bg-[#00754a] text-white'
+          : 'bg-amber-500 text-white'
       }`}>
         {isComplete ? 'Complete' : 'In Progress'}
       </span>

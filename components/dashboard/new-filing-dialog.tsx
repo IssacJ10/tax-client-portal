@@ -233,7 +233,7 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading} className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/30">
                         Cancel
                     </Button>
                     <Button

@@ -1173,6 +1173,10 @@
             "name": "disabilityCredit.affectedPersons",
             "options": [
                 {
+                    "value": "NA",
+                    "label": "N/A - Not Applicable"
+                },
+                {
                     "value": "SELF",
                     "label": "Self"
                 },

@@ -12,6 +12,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { extendCsrfToken, clearCsrfToken } from '@/lib/security/csrf';
 
 // --- CONFIGURATION ---
 const IDLE_WARNING_MS = 13 * 60 * 1000; // Warn after 13 mins
@@ -30,6 +31,8 @@ interface User {
     blocked: boolean;
     createdAt: string;
     updatedAt: string;
+    hasConsentedToTerms?: boolean;
+    consentDate?: string;
     role?: {
         name: string;
         type: string;
@@ -105,6 +108,8 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
             localStorage.removeItem('tax-auth-token');
             localStorage.removeItem('tax-auth-user');
             localStorage.removeItem('tax-refresh-token');
+            // Clear CSRF token on logout for security
+            clearCsrfToken();
             console.log('[LOGOUT] Auth data cleared');
         } catch (e) {
             console.error('[LOGOUT] Failed to clear localStorage', e);
@@ -153,9 +158,12 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
 
     /**
      * Activity Monitor
+     * Also extends CSRF token to prevent expiry during active sessions
      */
     const updateActivity = useCallback(() => {
         lastActivityRef.current = Date.now();
+        // Extend CSRF token on activity to prevent expiry during form filing
+        extendCsrfToken();
     }, []);
 
     /**

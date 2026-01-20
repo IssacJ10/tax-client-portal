@@ -29,20 +29,20 @@ export function FilingWizard({
   // Show blocking message if filing is already submitted
   if (isAlreadySubmitted) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background p-4">
-        <div className="glass-card mx-auto max-w-lg rounded-2xl p-8 text-center">
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="mx-auto max-w-lg rounded-2xl bg-white border border-gray-200 p-8 text-center shadow-sm">
           {/* Icon */}
-          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-primary/20">
-            <CheckCircle2 className="h-8 w-8 text-primary" />
+          <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#00754a]/10">
+            <CheckCircle2 className="h-8 w-8 text-[#00754a]" />
           </div>
 
           {/* Title & Description */}
-          <h2 className="text-2xl font-bold text-foreground">
+          <h2 className="text-2xl font-bold text-gray-900">
             Filing Already Submitted
           </h2>
-          <p className="mt-3 text-muted-foreground">
+          <p className="mt-3 text-gray-500">
             Your {initialData.year} personal tax filing has already been submitted and is currently{" "}
-            <span className="font-medium text-foreground">
+            <span className="font-medium text-[#00754a]">
               {initialData.status === 'UNDER_REVIEW' ? 'under review' :
                initialData.status === 'APPROVED' ? 'approved' :
                initialData.status === 'COMPLETED' ? 'completed' :
@@ -52,18 +52,18 @@ export function FilingWizard({
 
           {/* Reference Number */}
           {initialData.referenceNumber && (
-            <div className="mt-6 rounded-lg bg-muted/50 p-4">
-              <p className="text-sm text-muted-foreground">Reference Number</p>
-              <p className="mt-1 text-lg font-semibold text-foreground">
+            <div className="mt-6 rounded-lg bg-gray-100 p-4">
+              <p className="text-sm text-gray-500">Reference Number</p>
+              <p className="mt-1 text-lg font-semibold text-[#00754a]">
                 {initialData.referenceNumber}
               </p>
             </div>
           )}
 
           {/* Info message */}
-          <div className="mt-6 flex items-start gap-3 rounded-lg border border-border bg-muted/30 p-4 text-left">
-            <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-muted-foreground" />
-            <div className="text-sm text-muted-foreground">
+          <div className="mt-6 flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 p-4 text-left">
+            <FileText className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#00754a]" />
+            <div className="text-sm text-gray-600">
               <p>
                 You cannot make changes to a submitted filing. If you need to make corrections or have questions, please contact our support team.
               </p>
@@ -72,12 +72,12 @@ export function FilingWizard({
 
           {/* Actions */}
           <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <Button asChild>
+            <Button asChild className="bg-[#00754a] hover:bg-[#005c3b] text-white">
               <Link href="/dashboard">
                 Go to Dashboard
               </Link>
             </Button>
-            <Button variant="outline" asChild>
+            <Button variant="outline" asChild className="border-[#00754a] text-[#00754a] hover:bg-[#00754a]/10">
               <Link href="/contact">
                 Contact Support
               </Link>

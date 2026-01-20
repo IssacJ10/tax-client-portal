@@ -384,7 +384,13 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     setErrors({}) // Clear errors if valid
 
     // Flush save immediately before navigation to ensure data is persisted
-    await flushSave()
+    try {
+      await flushSave()
+    } catch (err) {
+      // flushSave already shows a toast for the error
+      // Stop navigation if save failed to prevent data loss
+      return
+    }
 
     // Mark filing as IN_PROGRESS on first successful "Next" click
     if (filingId) {
@@ -426,7 +432,13 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   // Handle previous button - flush save before navigating back
   const handlePrev = useCallback(async () => {
     // Flush save immediately before navigation to ensure data is persisted
-    await flushSave()
+    try {
+      await flushSave()
+    } catch (err) {
+      // flushSave already shows a toast for the error
+      // Stop navigation if save failed to prevent data loss
+      return
+    }
 
     // Calculate the new section index BEFORE dispatching
     const newSectionIndex = Math.max(0, state.currentSectionIndex - 1)

@@ -7,10 +7,44 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { DatePicker } from "@/components/ui/date-picker"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import { uploadFile, type UploadedFile } from "@/services/strapi-client"
 import { ArrowLeft, ArrowRight, Check, Loader2, Plus, Trash2, File, X } from "lucide-react"
 import type { Question, QuestionSection, FilingRole } from "@/lib/domain/types"
+
+// Date fields that are allowed to have future dates
+const FUTURE_DATE_ALLOWED_FIELDS = [
+  "corpInfo.fiscalYearEnd", // Fiscal year-end can be future
+]
+
+// Get today's date in YYYY-MM-DD format (using local time)
+const getTodayDate = () => {
+  const today = new Date()
+  const year = today.getFullYear()
+  const month = String(today.getMonth() + 1).padStart(2, '0')
+  const day = String(today.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+// Min date for all date fields (January 1, 1900)
+const MIN_DATE = "1900-01-01"
+
+// Check if a field allows future dates
+const allowsFutureDates = (fieldName: string): boolean => {
+  return FUTURE_DATE_ALLOWED_FIELDS.includes(fieldName)
+}
+
+// Get date constraints for a field
+const getDateConstraints = (fieldName: string): { min: string; max?: string } => {
+  const constraints: { min: string; max?: string } = { min: MIN_DATE }
+
+  if (!allowsFutureDates(fieldName)) {
+    constraints.max = getTodayDate()
+  }
+
+  return constraints
+}
 
 interface QuestionRendererProps {
   section: QuestionSection
@@ -158,13 +192,16 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
         )
 
       case "date":
+        const dateConstraints = getDateConstraints(question.name)
         return (
-          <Input
+          <DatePicker
             id={question.id}
-            type="date"
             value={(value as string) || ""}
-            onChange={(e) => onChange(e.target.value)}
-            className={inputClassName}
+            onChange={(val) => onChange(val)}
+            minDate={dateConstraints.min}
+            maxDate={dateConstraints.max}
+            placeholder={question.placeholder || "Select date"}
+            className={error ? "border-rose-400" : ""}
           />
         )
 
@@ -528,10 +565,9 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
       {/* Add button */}
       <Button
         type="button"
-        variant="outline"
         size="sm"
         onClick={handleAddItem}
-        className="w-full border-gray-200 text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+        className="w-full bg-[#00754a] hover:bg-[#005c3b] text-white"
       >
         <Plus className="mr-2 h-4 w-4" />
         {addButtonLabel}
@@ -574,12 +610,15 @@ function renderRepeaterSubField(
       )
 
     case "date":
+      // For repeater fields, apply same date constraints (no future dates by default)
+      const repeaterDateConstraints = getDateConstraints(field.name || "")
       return (
-        <Input
-          type="date"
+        <DatePicker
           value={(value as string) || ""}
-          onChange={(e) => onChange(e.target.value)}
-          className={inputClassName}
+          onChange={(val) => onChange(val)}
+          minDate={repeaterDateConstraints.min}
+          maxDate={repeaterDateConstraints.max}
+          placeholder={field.placeholder || "Select date"}
         />
       )
 

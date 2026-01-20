@@ -157,6 +157,8 @@ export function useFiling(filingId?: string, initialData?: Filing) {
 
   // Debounced auto-save logic
   // Handles both personal filings and corporate/trust filings based on filing type
+  // Note: This is a background operation - errors are logged but not shown to user
+  // User-initiated saves (flushSave, saveAndExit) will show error toasts
   const saveFormData = useCallback(async (pfId: string, data: Record<string, unknown>) => {
     // Reset accumulated form data if we switched to a different personal filing
     if (currentPfIdRef.current !== pfId) {
@@ -184,14 +186,10 @@ export function useFiling(filingId?: string, initialData?: Filing) {
 
         if (state.filingId) mutate(`filing/${state.filingId}`)
       } catch (err) {
-        // Show toast notification for validation errors (like duplicate business number)
+        // Silently log auto-save errors - don't show toast for background operations
+        // User will see errors when they explicitly try to save/submit
         const errorMessage = err instanceof Error ? err.message : "Failed to save data"
-        toast({
-          title: "Unable to Save",
-          description: errorMessage,
-          variant: "destructive",
-        })
-        console.error('[useFiling.saveFormData] Error:', errorMessage)
+        console.error('[useFiling.saveFormData] Background auto-save error (not shown to user):', errorMessage)
       } finally {
         dispatch({ type: "SET_SYNCING", payload: false })
       }

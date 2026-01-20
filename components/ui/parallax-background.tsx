@@ -2,17 +2,16 @@
 
 import { motion, useScroll, useTransform } from "framer-motion"
 import Image from "next/image"
-import { useRef } from "react"
 
 export function ParallaxBackground() {
     const { scrollYProgress } = useScroll()
 
     // Move background up slowly (standard parallax depth) ensuring no gaps
-    const y = useTransform(scrollYProgress, [0, 1], ["0%", "-25%"])
+    const y = useTransform(scrollYProgress, [0, 1], ["0%", "-15%"])
 
     return (
-        <div className="fixed inset-0 -z-50 overflow-hidden h-full w-full">
-            <motion.div style={{ y }} className="relative w-full h-[150vh] will-change-transform">
+        <div className="fixed inset-0 -z-50 overflow-hidden">
+            <motion.div style={{ y }} className="relative w-full h-[100vh] will-change-transform">
                 {/* ACCOUNTING IMAGE */}
                 <Image
                     src="/images/taxbg.png"
@@ -22,11 +21,11 @@ export function ParallaxBackground() {
                     priority
                     quality={90}
                 />
-                {/* DARK OVERLAY (Crucial for text readability) */}
-                <div className="absolute inset-0 bg-background/90 backdrop-blur-[1px]" />
+                {/* WHITE OVERLAY (for light theme readability) */}
+                <div className="absolute inset-0 bg-white/80" />
 
-                {/* Subtle Noise Texture for premium feel */}
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+                {/* Subtle green tint */}
+                <div className="absolute inset-0 bg-gradient-to-br from-[#00754a]/5 via-transparent to-[#00754a]/5" />
             </motion.div>
         </div>
     )

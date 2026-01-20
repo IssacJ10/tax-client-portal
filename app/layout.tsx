@@ -4,6 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/toaster"
 import { SessionProvider } from "@/context/session-provider"
+import { ConsentModal } from "@/components/dashboard/ConsentModal"
+import { SiteFooter } from "@/components/site-footer"
 import "./globals.css"
 
 const _geist = Geist({ subsets: ["latin"] })
@@ -48,6 +50,8 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <SessionProvider>
           {children}
+          <SiteFooter />
+          <ConsentModal />
           <Toaster />
           <Analytics />
         </SessionProvider>

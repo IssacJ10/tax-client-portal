@@ -84,19 +84,19 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
     const displayRefNumber = submittedRefNumber || formatFilingRef(filing.id)
 
     return (
-      <div className="glass-card mx-auto max-w-xl rounded-2xl p-8 text-center">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
-          <FileCheck className="h-10 w-10 text-primary" />
+      <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#00754a]/10">
+          <FileCheck className="h-10 w-10 text-[#00754a]" />
         </div>
-        <h2 className="text-2xl font-bold text-foreground">Corporate Filing Submitted!</h2>
-        <p className="mt-2 text-muted-foreground">
-          Your T2 corporate tax filing for <span className="font-medium text-foreground">{corpName}</span> has been submitted for review.
+        <h2 className="text-2xl font-bold text-gray-900">Corporate Filing Submitted!</h2>
+        <p className="mt-2 text-gray-600">
+          Your T2 corporate tax filing for <span className="font-medium text-gray-900">{corpName}</span> has been submitted for review.
         </p>
-        <div className="mt-6 rounded-lg bg-muted/50 p-4">
-          <p className="text-sm text-muted-foreground">Reference Number</p>
-          <p className="mt-1 font-mono text-2xl font-bold text-primary">{displayRefNumber}</p>
+        <div className="mt-6 rounded-lg bg-gray-100 p-4">
+          <p className="text-sm text-gray-500">Reference Number</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-[#00754a]">{displayRefNumber}</p>
         </div>
-        <Button className="mt-8" onClick={() => router.push("/dashboard")}>
+        <Button className="mt-8 bg-[#00754a] hover:bg-[#005c3b] text-white" onClick={() => router.push("/dashboard")}>
           Return to Dashboard
         </Button>
       </div>
@@ -110,19 +110,19 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="glass-card rounded-xl p-6">
+      <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/20">
-            <Building2 className="h-6 w-6 text-primary" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00754a]/10">
+            <Building2 className="h-6 w-6 text-[#00754a]" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-foreground">
+            <h2 className="text-xl font-bold text-gray-900">
               {isAmendment ? "Review Corporate Filing Amendment" : "Review Corporate Filing"}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-gray-600">
               {isAmendment
-                ? <>Amending filing <span className="font-mono text-primary">{filing.referenceNumber}</span> for <span className="font-medium text-foreground">{corpName}</span>.</>
-                : <>Please verify all information for <span className="font-medium text-foreground">{corpName}</span> is correct.</>
+                ? <>Amending filing <span className="font-mono text-[#00754a]">{filing.referenceNumber}</span> for <span className="font-medium text-gray-900">{corpName}</span>.</>
+                : <>Please verify all information for <span className="font-medium text-gray-900">{corpName}</span> is correct.</>
               }
             </p>
           </div>
@@ -131,8 +131,8 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
 
       {/* Error Alert */}
       {error && (
-        <div className="glass-card rounded-xl p-4 border border-destructive/50 bg-destructive/10">
-          <p className="text-destructive text-sm">{error}</p>
+        <div className="rounded-xl p-4 border border-red-300 bg-red-50">
+          <p className="text-red-600 text-sm">{error}</p>
         </div>
       )}
 
@@ -150,7 +150,7 @@ export function CorporateReviewScreen({ filing, schema, formData, onSubmitted }:
 
       {/* Submit Button - No payment step for corporate filings */}
       <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px]">
+        <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px] bg-[#00754a] hover:bg-[#005c3b] text-white">
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
           Submit for Review
         </Button>
@@ -183,7 +183,7 @@ function SectionCard({ section, formData, onEdit }: SectionCardProps) {
   }).length
 
   return (
-    <div className="glass-card rounded-xl p-6">
+    <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
       {/* Header */}
       <div
         className="flex items-center justify-between cursor-pointer"
@@ -191,8 +191,8 @@ function SectionCard({ section, formData, onEdit }: SectionCardProps) {
       >
         <div className="flex items-center gap-3">
           <div>
-            <h3 className="font-semibold text-foreground">{section.title}</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="font-semibold text-gray-900">{section.title}</h3>
+            <p className="text-sm text-gray-500">
               {answeredCount} of {visibleQuestions.length} answered
             </p>
           </div>
@@ -201,7 +201,7 @@ function SectionCard({ section, formData, onEdit }: SectionCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs text-muted-foreground hover:text-primary"
+            className="h-7 text-xs text-[#00754a] hover:text-[#005c3b] hover:bg-[#00754a]/10"
             onClick={(e) => {
               e.stopPropagation()
               onEdit()
@@ -210,7 +210,7 @@ function SectionCard({ section, formData, onEdit }: SectionCardProps) {
             <Pencil className="mr-1 h-3 w-3" />
             Edit
           </Button>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+          <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500 hover:text-gray-900 hover:bg-gray-100">
             {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </Button>
         </div>
@@ -218,7 +218,7 @@ function SectionCard({ section, formData, onEdit }: SectionCardProps) {
 
       {/* Expanded Details */}
       {isExpanded && (
-        <div className="mt-4 space-y-1 rounded-lg bg-muted/30 p-3">
+        <div className="mt-4 space-y-1 rounded-lg bg-gray-50 p-3">
           {visibleQuestions.map((question: any) => (
             <AnswerRow
               key={question.id}
@@ -244,11 +244,11 @@ function AnswerRow({ question, value }: AnswerRowProps) {
 
   return (
     <div className="flex justify-between py-1.5 text-sm">
-      <span className={isEmpty ? "text-muted-foreground/60" : "text-muted-foreground"}>
+      <span className={isEmpty ? "text-gray-400" : "text-gray-500"}>
         {question.label}
-        {question.validation?.required && <span className="text-destructive ml-0.5">*</span>}
+        {question.validation?.required && <span className="text-rose-500 ml-0.5">*</span>}
       </span>
-      <span className={isEmpty ? "text-muted-foreground/60 italic" : "text-foreground text-right max-w-[60%]"}>
+      <span className={isEmpty ? "text-gray-400 italic" : "text-gray-900 text-right max-w-[60%]"}>
         {displayValue}
       </span>
     </div>
