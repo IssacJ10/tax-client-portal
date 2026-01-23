@@ -98,7 +98,7 @@ export interface ConditionalLogic {
 
 export interface QuestionField {
   id: string;
-  type: 'text' | 'email' | 'phone' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'file' | 'repeater';
+  type: 'text' | 'email' | 'phone' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'file' | 'repeater' | 'textarea';
   name: string;
   label: string;
   placeholder?: string;

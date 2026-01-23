@@ -241,11 +241,12 @@ export function useFiling(filingId?: string, initialData?: Filing) {
 
   // Submit filing for review - returns the updated filing with reference number
   // Accepts optional calculatedTotalPrice to store the pricing at submission time
-  const submitForReview = useCallback(async (calculatedTotalPrice?: number): Promise<Filing | null> => {
+  // Accepts optional recaptchaToken for bot protection verification
+  const submitForReview = useCallback(async (calculatedTotalPrice?: number, recaptchaToken?: string | null): Promise<Filing | null> => {
     if (!state.filingId) return null
     dispatch({ type: "SET_LOADING", payload: true })
     try {
-      const updatedFiling = await FilingService.submitForReview(state.filingId, calculatedTotalPrice)
+      const updatedFiling = await FilingService.submitForReview(state.filingId, calculatedTotalPrice, recaptchaToken)
       await mutate(`filing/${state.filingId}`)
       return updatedFiling
     } catch (err) {

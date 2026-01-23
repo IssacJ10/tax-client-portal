@@ -71,6 +71,7 @@ export class PricingEngine {
   }
 
   // Schema-based calculation using pricing rules from the schema
+  // Evaluates pricing rules for EACH personal filing (primary, spouse, dependents)
   static calculateFromSchema(
     filing: Filing,
     schema: { pricing?: PricingSchema }
@@ -81,47 +82,76 @@ export class PricingEngine {
     }
 
     const items: { label: string; amount: number }[] = []
-    let subtotal = pricing.baseFee || 0
+    let subtotal = 0
+    const baseFee = pricing.baseFee || 0
 
-    // Get all form data from all personal filings
-    const allFormData: Record<string, unknown> = {}
-    filing.personalFilings?.forEach(pf => {
-      Object.assign(allFormData, pf.formData || {})
-    })
+    // Helper to get person label
+    const getPersonLabel = (pf: { type: string; formData?: Record<string, unknown> }, index?: number): string => {
+      const firstName = pf.formData?.["personalInfo.firstName"] as string || ""
+      const lastName = pf.formData?.["personalInfo.lastName"] as string || ""
+      const fullName = firstName && lastName ? `${firstName} ${lastName}` : ""
 
-    // Count people
-    const hasSpouse = filing.personalFilings?.some((pf) => pf.type === "spouse") || false
-    const dependentCount = filing.personalFilings?.filter((pf) => pf.type === "dependent").length || 0
-
-    // Add spouse fee (if applicable)
-    if (hasSpouse) {
-      // Use base fee for spouse too (or could be configured differently)
-      subtotal += pricing.baseFee || 0
-      items.push({ label: "Spouse Return", amount: pricing.baseFee || 0 })
+      switch (pf.type) {
+        case "primary":
+          return fullName || "Primary Filer"
+        case "spouse":
+          return fullName || "Spouse"
+        case "dependent":
+          return fullName || `Dependent ${(index || 0) + 1}`
+        default:
+          return fullName || "Person"
+      }
     }
 
-    // Add dependent fees
-    if (dependentCount > 0) {
-      const perDependent = pricing.baseFee || 0
-      const depTotal = dependentCount * perDependent
-      subtotal += depTotal
-      items.push({
-        label: `Dependents (${dependentCount} × $${perDependent.toFixed(2)})`,
-        amount: depTotal
-      })
-    }
+    // Helper to evaluate pricing rules for a single person's form data
+    const evaluateRulesForPerson = (
+      formData: Record<string, unknown>,
+      personLabel: string
+    ): { personSubtotal: number; personItems: { label: string; amount: number }[] } => {
+      const personItems: { label: string; amount: number }[] = []
+      let personSubtotal = baseFee
 
-    // Evaluate pricing rules
-    if (pricing.rules && Array.isArray(pricing.rules)) {
-      for (const rule of pricing.rules) {
-        if (evaluateCondition(rule.condition, allFormData)) {
-          subtotal += rule.amount
-          items.push({
-            label: rule.description,
-            amount: rule.amount
-          })
+      // Add base fee for this person
+      personItems.push({ label: `${personLabel} - Base Fee`, amount: baseFee })
+
+      // Evaluate pricing rules for this person's form data
+      if (pricing.rules && Array.isArray(pricing.rules)) {
+        for (const rule of pricing.rules) {
+          if (evaluateCondition(rule.condition, formData)) {
+            personSubtotal += rule.amount
+            personItems.push({
+              label: `${personLabel} - ${rule.description}`,
+              amount: rule.amount
+            })
+          }
         }
       }
+
+      return { personSubtotal, personItems }
+    }
+
+    // Process each personal filing
+    const personalFilings = filing.personalFilings || []
+    let dependentIndex = 0
+
+    for (const pf of personalFilings) {
+      const formData = pf.formData || {}
+      const personLabel = getPersonLabel(pf, pf.type === "dependent" ? dependentIndex : undefined)
+
+      if (pf.type === "dependent") {
+        dependentIndex++
+      }
+
+      const { personSubtotal, personItems } = evaluateRulesForPerson(formData, personLabel)
+
+      subtotal += personSubtotal
+      items.push(...personItems)
+    }
+
+    // If no personal filings exist, at least charge the base fee for primary
+    if (personalFilings.length === 0) {
+      subtotal = baseFee
+      items.push({ label: "Primary Filer - Base Fee", amount: baseFee })
     }
 
     // Calculate tax
@@ -130,7 +160,7 @@ export class PricingEngine {
     const total = subtotal + tax
 
     return {
-      baseFee: pricing.baseFee || 0,
+      baseFee: baseFee,
       items,
       subtotal,
       tax,

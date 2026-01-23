@@ -3,6 +3,7 @@
 import { useState, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { useSession } from "@/context/session-provider";
+import { useReCaptcha } from "@/components/recaptcha-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +67,7 @@ function AuthContent() {
     const [activeTab, setActiveTab] = useState(defaultTab);
 
     const { login } = useSession();
+    const { executeRecaptcha } = useReCaptcha();
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isRegistered, setIsRegistered] = useState(false);
@@ -104,6 +106,9 @@ function AuthContent() {
         setError(null);
 
         try {
+            // Execute reCAPTCHA and get token
+            const recaptchaToken = await executeRecaptcha("login");
+
             const strapiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api";
             const res = await fetch(`${strapiUrl}/auth/local`, {
                 method: "POST",
@@ -113,6 +118,7 @@ function AuthContent() {
                 body: JSON.stringify({
                     identifier: data.email,
                     password: data.password,
+                    recaptchaToken, // Send token for backend verification
                 }),
             });
 
@@ -144,6 +150,9 @@ function AuthContent() {
         setError(null);
 
         try {
+            // Execute reCAPTCHA and get token
+            const recaptchaToken = await executeRecaptcha("register");
+
             const strapiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api";
             const res = await fetch(`${strapiUrl}/auth/local/register`, {
                 method: "POST",
@@ -156,6 +165,7 @@ function AuthContent() {
                     password: data.password,
                     firstName: data.firstName,
                     lastName: data.lastName,
+                    recaptchaToken, // Send token for backend verification
                 }),
             });
 

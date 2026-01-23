@@ -6,6 +6,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useFilingContext } from "@/context/filing-context"
+import { useReCaptcha } from "@/components/recaptcha-provider"
 import { calculatePricingFromSchema, formatPrice, formatFilingRef } from "@/lib/domain/pricing-engine"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import {
@@ -39,6 +40,7 @@ interface ReviewScreenProps {
 export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, onAddDependent }: ReviewScreenProps) {
   const router = useRouter()
   const { submitForReview, isLoading, schema } = useFilingContext()
+  const { executeRecaptcha } = useReCaptcha()
   const [currentStep, setCurrentStep] = useState<ReviewStep>("review")
   const [submittedRefNumber, setSubmittedRefNumber] = useState<string | null>(null)
 
@@ -59,8 +61,11 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
   const canAddFamilyMembers = onAddSpouse || onAddDependent
 
   const handleSubmit = async () => {
-    // Pass the calculated total price to be stored in the filing
-    const updatedFiling = await submitForReview(pricing.total)
+    // Execute reCAPTCHA before submission
+    const recaptchaToken = await executeRecaptcha("filing_submit")
+
+    // Pass the calculated total price and reCAPTCHA token to be stored/verified
+    const updatedFiling = await submitForReview(pricing.total, recaptchaToken)
     if (updatedFiling) {
       // Store the reference number from the response
       setSubmittedRefNumber(updatedFiling.referenceNumber || null)

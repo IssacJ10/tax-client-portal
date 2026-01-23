@@ -191,6 +191,21 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
           />
         )
 
+      case "textarea":
+        return (
+          <textarea
+            id={question.id}
+            value={(value as string) || ""}
+            onChange={(e) => onChange(e.target.value)}
+            placeholder={question.placeholder}
+            rows={4}
+            className={cn(
+              "w-full rounded-md border px-3 py-2 text-sm resize-y min-h-[100px]",
+              inputClassName
+            )}
+          />
+        )
+
       case "date":
         const dateConstraints = getDateConstraints(question.name)
         return (
@@ -257,36 +272,65 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
         // Multi-select checkbox group (has options array)
         if (question.options && question.options.length > 0) {
           const selectedValues = Array.isArray(value) ? value : []
+          // Check if NA is selected - if so, disable other options
+          const naIsSelected = selectedValues.includes("NA")
+
           return (
             <div className="space-y-3">
-              {question.options.map((opt, idx) => (
-                <div
-                  key={opt.value || `opt-${idx}`}
-                  className="flex items-start space-x-3 p-3 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
-                >
-                  <Checkbox
-                    id={`${question.id}-${opt.value || idx}`}
-                    checked={selectedValues.includes(opt.value)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        onChange([...selectedValues, opt.value])
-                      } else {
-                        onChange(selectedValues.filter((v: string) => v !== opt.value))
-                      }
-                    }}
+              {question.options.map((opt, idx) => {
+                // Determine if this option should be disabled
+                // NA option is never disabled, but other options are disabled when NA is selected
+                const isNaOption = opt.value === "NA"
+                const isDisabled = !isNaOption && naIsSelected
+
+                return (
+                  <div
+                    key={opt.value || `opt-${idx}`}
                     className={cn(
-                      "border-gray-300 data-[state=checked]:bg-[#00754a] data-[state=checked]:border-[#00754a]",
-                      error && "border-rose-400"
+                      "flex items-start space-x-3 p-3 rounded-lg border transition-colors",
+                      isDisabled
+                        ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
+                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                     )}
-                  />
-                  <Label
-                    htmlFor={`${question.id}-${opt.value || idx}`}
-                    className="cursor-pointer font-normal leading-snug text-gray-700"
                   >
-                    {opt.label}
-                  </Label>
-                </div>
-              ))}
+                    <Checkbox
+                      id={`${question.id}-${opt.value || idx}`}
+                      checked={selectedValues.includes(opt.value)}
+                      disabled={isDisabled}
+                      onCheckedChange={(checked) => {
+                        if (isDisabled) return
+
+                        if (checked) {
+                          // If selecting NA, clear all other selections
+                          if (isNaOption) {
+                            onChange(["NA"])
+                          } else {
+                            // If selecting a non-NA option, remove NA if it was selected
+                            const newValues = selectedValues.filter((v: string) => v !== "NA")
+                            onChange([...newValues, opt.value])
+                          }
+                        } else {
+                          onChange(selectedValues.filter((v: string) => v !== opt.value))
+                        }
+                      }}
+                      className={cn(
+                        "border-gray-300 data-[state=checked]:bg-[#00754a] data-[state=checked]:border-[#00754a]",
+                        error && "border-rose-400",
+                        isDisabled && "cursor-not-allowed"
+                      )}
+                    />
+                    <Label
+                      htmlFor={`${question.id}-${opt.value || idx}`}
+                      className={cn(
+                        "font-normal leading-snug",
+                        isDisabled ? "text-gray-400 cursor-not-allowed" : "cursor-pointer text-gray-700"
+                      )}
+                    >
+                      {opt.label}
+                    </Label>
+                  </div>
+                )
+              })}
             </div>
           )
         }
@@ -343,15 +387,20 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
 
   const isRequired = question.validation?.required
 
+  // For checkbox type: show label if it has options (multi-select checkbox group)
+  // Don't show label for single boolean checkbox (it has inline label)
+  const isMultiSelectCheckbox = question.type === "checkbox" && question.options && question.options.length > 0
+  const shouldShowLabel = question.type !== "checkbox" || isMultiSelectCheckbox
+
   return (
     <div className="space-y-2">
-      {question.type !== "checkbox" && (
-        <Label htmlFor={question.id} className={cn("flex items-center gap-1 text-gray-900", error && "text-rose-500")}>
+      {shouldShowLabel && (
+        <Label htmlFor={question.id} className={cn("flex items-center gap-1 text-gray-900 font-medium", error && "text-rose-500")}>
           {question.label}
           {isRequired && <span className="text-rose-500">*</span>}
         </Label>
       )}
-      {question.helpText && question.type !== "checkbox" && (
+      {question.helpText && shouldShowLabel && (
         <p className="text-sm text-gray-500">{question.helpText}</p>
       )}
 
@@ -544,19 +593,44 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
 
             {/* Item fields */}
             <div className="grid gap-4 pr-10">
-              {fields.map((field: any) => (
-                <div key={field.name} className="space-y-1.5">
-                  <Label className="text-sm text-gray-700">
-                    {field.label}
-                    {field.validation?.required && <span className="text-rose-500 ml-1">*</span>}
-                  </Label>
-                  {renderRepeaterSubField(
-                    field,
-                    item[field.name],
-                    (newValue) => handleFieldChange(itemIndex, field.name, newValue)
-                  )}
-                </div>
-              ))}
+              {fields.map((field: any) => {
+                // Check conditional visibility for this field within the repeater item
+                if (field.conditional) {
+                  const { field: parentField, operator, value: condValue } = field.conditional
+                  const parentValue = item[parentField]
+
+                  let isVisible = false
+                  switch (operator) {
+                    case "equals":
+                      isVisible = parentValue === condValue
+                      break
+                    case "notEquals":
+                      isVisible = parentValue !== condValue
+                      break
+                    default:
+                      isVisible = true
+                  }
+
+                  if (!isVisible) return null
+                }
+
+                return (
+                  <div key={field.name} className="space-y-1.5">
+                    <Label className="text-sm text-gray-700">
+                      {field.label}
+                      {field.validation?.required && <span className="text-rose-500 ml-1">*</span>}
+                    </Label>
+                    {renderRepeaterSubField(
+                      field,
+                      item[field.name],
+                      (newValue) => handleFieldChange(itemIndex, field.name, newValue)
+                    )}
+                    {field.helpText && (
+                      <p className="text-xs text-gray-500">{field.helpText}</p>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           </div>
         ))
@@ -637,6 +711,33 @@ function renderRepeaterSubField(
           </SelectTrigger>
           <SelectContent className="bg-white border-gray-200 shadow-lg">
             {normalizedOptions.map((opt: any, idx: number) => (
+              <SelectItem
+                key={opt.value || `opt-${idx}`}
+                value={opt.value || ""}
+                className="text-gray-700 focus:bg-gray-100 focus:text-gray-900"
+              >
+                {opt.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )
+
+    case "radio":
+      // Render radio as a select dropdown for cleaner UI in repeater context
+      const radioOptions = field.options?.map((opt: any) => {
+        if (typeof opt === 'string') {
+          return { value: opt.toUpperCase(), label: opt }
+        }
+        return opt
+      }) || []
+      return (
+        <Select value={(value as string) || ""} onValueChange={onChange}>
+          <SelectTrigger className={cn(inputClassName, "text-gray-900")}>
+            <SelectValue placeholder={field.placeholder || "Select an option"} />
+          </SelectTrigger>
+          <SelectContent className="bg-white border-gray-200 shadow-lg">
+            {radioOptions.map((opt: any, idx: number) => (
               <SelectItem
                 key={opt.value || `opt-${idx}`}
                 value={opt.value || ""}

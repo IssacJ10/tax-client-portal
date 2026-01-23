@@ -70,11 +70,11 @@ export class QuestionRegistry {
 
     // Steps to exclude from the wizard flow (handled separately or not needed)
     // - filing_setup: handled by new-filing-dialog (personal only)
-    // - dependants: handled by DEPENDENT_CHECKPOINT phase in wizard orchestrator (personal only)
     // - review: handled by final REVIEW phase after all family members complete
     // - payment: handled by final REVIEW phase payment step
     // Note: Corporate/Trust filings use different step IDs, so these exclusions mainly apply to personal
-    const excludedSteps = ['filing_setup', 'dependants', 'review', 'payment'];
+    // Note: 'dependants' step is now included in primary questionnaire (repeater collects all dependant info)
+    const excludedSteps = ['filing_setup', 'review', 'payment'];
 
     // Filter steps by role, exclude certain steps, and sort by order
     const filteredSteps = schema.steps
@@ -124,6 +124,10 @@ export class QuestionRegistry {
         return Array.isArray(values) && values.includes(parentValue);
       case 'contains':
         return Array.isArray(parentValue) && parentValue.includes(value);
+      case 'notContains':
+        // Returns true if the array does NOT contain the value (or if array is empty/undefined)
+        if (!Array.isArray(parentValue)) return true;
+        return !parentValue.includes(value);
       case 'hasAny':
         if (!Array.isArray(parentValue) || !Array.isArray(values)) return false;
         return values.some(v => parentValue.includes(v));
@@ -133,14 +137,82 @@ export class QuestionRegistry {
   }
 
   /**
+   * Finds a related YES/NO question that should trigger file upload requirement.
+   * Maps file field names to their triggering question names.
+   * e.g., "assetReceipts" in "selfEmployment" namespace -> "selfEmployment.hasCapitalAssets"
+   */
+  private static findRelatedYesNoQuestion(
+    fileFieldName: string,
+    namespace: string,
+    questionsByName: Map<string, any>
+  ): string | null {
+    // Map of file field patterns to their triggering YES/NO question field names
+    const fileToTriggerMap: Record<string, string[]> = {
+      // selfEmployment namespace
+      'assetReceipts': ['hasCapitalAssets'],
+      'expenseDocuments': [], // Always required when self-employed (no specific YES/NO trigger)
+      'businessDocuments': [], // Always required when self-employed
+
+      // workExpenses namespace
+      't2200Document': [], // Required when work expenses selected
+      'receiptDocuments': [], // Required when work expenses selected
+
+      // rentalIncome namespace
+      'documents': [], // Required when rental income selected
+
+      // movingExpenses namespace
+      // 'documents': [], // Required when moving expenses selected
+
+      // Generic patterns
+    };
+
+    const possibleTriggers = fileToTriggerMap[fileFieldName];
+
+    if (possibleTriggers && possibleTriggers.length > 0) {
+      for (const triggerField of possibleTriggers) {
+        const fullFieldName = `${namespace}.${triggerField}`;
+        if (questionsByName.has(fullFieldName)) {
+          const triggerQuestion = questionsByName.get(fullFieldName);
+          // Verify it's a YES/NO question
+          const isYesNo = triggerQuestion?.options?.some((opt: any) =>
+            opt.value === 'YES' || opt.value === 'NO'
+          );
+          if (isYesNo) {
+            return fullFieldName;
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /**
    * Validates a section of questions against provided form data.
    * Returns validation result and error usage map.
+   * @param section - The current section with questions to validate
+   * @param formData - The form data to validate against
+   * @param allQuestions - Optional: all questions from the schema for cross-section parent lookups
    */
-  static validateSection(section: any, formData: any): { isValid: boolean; errors: Record<string, string> } {
+  static validateSection(section: any, formData: any, allQuestions?: any[]): { isValid: boolean; errors: Record<string, string> } {
     const errors: Record<string, string> = {};
     let isValid = true;
 
     if (!section || !section.questions) return { isValid: true, errors: {} };
+
+    // Build a map of all available questions by name for parent lookup
+    // Include both section questions and all schema questions if provided
+    const questionsByName = new Map<string, any>();
+    for (const q of section.questions) {
+      questionsByName.set(q.name, q);
+    }
+    if (allQuestions) {
+      for (const q of allQuestions) {
+        if (!questionsByName.has(q.name)) {
+          questionsByName.set(q.name, q);
+        }
+      }
+    }
 
     for (const question of section.questions) {
       // 1. Skip if question is hidden
@@ -150,8 +222,100 @@ export class QuestionRegistry {
       const validation = question.validation;
 
       // 2. Check Required
-      const isRequired = validation?.required ||
+      let isRequired = validation?.required ||
         (validation?.conditionalRequired && this.isQuestionVisible({ conditional: validation.conditionalRequired.when }, formData));
+
+      // 3. For file upload questions, determine if they should be required
+      // Rule: File uploads are required when there's a triggering question answered affirmatively
+      if (question.type === 'file' && !isRequired) {
+        const fileNamespace = question.name.split('.')[0]; // e.g., "selfEmployment" from "selfEmployment.assetReceipts"
+        const fileFieldName = question.name.split('.').slice(1).join('.'); // e.g., "assetReceipts"
+
+        // Case A: File has explicit conditional pointing to a YES/NO question
+        // Only require if the parent question's answer is affirmative (YES)
+        if (question.conditional) {
+          const parentQuestionId = question.conditional.parentQuestionId;
+          const parentValue = formData[parentQuestionId];
+          const parentQuestion = questionsByName.get(parentQuestionId);
+
+          // Check if parent is a YES/NO type question
+          const isYesNoQuestion = parentQuestion?.options?.some((opt: any) =>
+            opt.value === 'YES' || opt.value === 'NO'
+          );
+
+          if (isYesNoQuestion) {
+            // Only require file if user answered YES
+            if (parentValue === 'YES') {
+              isRequired = true;
+            }
+          } else if (question.conditional.operator === 'contains' || question.conditional.operator === 'hasAny') {
+            // For checkbox/multi-select conditionals (like income.sources contains SELF_EMPLOYMENT)
+            // Look for a more specific YES/NO question in the same namespace that relates to this file
+            // e.g., selfEmployment.assetReceipts should check selfEmployment.hasCapitalAssets
+            const relatedYesNoField = this.findRelatedYesNoQuestion(fileFieldName, fileNamespace, questionsByName);
+
+            if (relatedYesNoField) {
+              const relatedValue = formData[relatedYesNoField];
+              if (relatedValue === 'YES') {
+                isRequired = true;
+              }
+              // If NO or unanswered, file is not required
+            } else {
+              // No specific YES/NO question found, use original conditional logic
+              // File is visible, so it should be required
+              isRequired = true;
+            }
+          } else {
+            // For equals operator with YES value, the conditional already checks for YES
+            if (question.conditional.value === 'YES' && parentValue === 'YES') {
+              isRequired = true;
+            } else if (question.conditional.value !== 'YES' && question.conditional.value !== 'NO') {
+              // Non YES/NO conditional (like contains DEPENDANT), file is required when visible
+              isRequired = true;
+            }
+          }
+        }
+
+        // Case B: File has no conditional, but shares a namespace prefix with another question
+        // e.g., income.documents relates to income.sources
+        // If the related question has a meaningful answer, file becomes required
+        if (!isRequired && !question.conditional) {
+          // Find related questions in same namespace that might trigger file requirement
+          for (const [qName, q] of questionsByName) {
+            if (qName === question.name) continue;
+            const qNamespace = qName.split('.')[0];
+
+            if (qNamespace === fileNamespace && q.type !== 'file') {
+              const relatedValue = formData[qName];
+
+              // Check if the related question has a meaningful answer
+              if (relatedValue !== undefined && relatedValue !== null && relatedValue !== '') {
+                // For checkbox/multi-select: check if any meaningful selection
+                if (Array.isArray(relatedValue)) {
+                  // Filter out "NA" or "N/A" type values
+                  const meaningfulSelections = relatedValue.filter(v =>
+                    v !== 'NA' && v !== 'N/A' && v !== 'NONE' && v !== ''
+                  );
+                  if (meaningfulSelections.length > 0) {
+                    isRequired = true;
+                    break;
+                  }
+                } else if (typeof relatedValue === 'string') {
+                  // For single value: check it's not NA
+                  if (relatedValue !== 'NA' && relatedValue !== 'N/A' && relatedValue !== 'NONE') {
+                    isRequired = true;
+                    break;
+                  }
+                } else {
+                  // For other types (numbers, etc.), treat as meaningful
+                  isRequired = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+      }
 
       if (isRequired) {
         if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
@@ -161,7 +325,7 @@ export class QuestionRegistry {
         }
       }
 
-      // 3. Check Patterns (if value exists)
+      // 4. Check Patterns (if value exists)
       if (value) {
         if (validation?.pattern) {
           const regex = new RegExp(validation.pattern);

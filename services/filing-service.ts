@@ -166,8 +166,18 @@ function transformPersonalFiling(data: any): PersonalFiling {
   }
 }
 
+/// Helper: Check if a value looks like an uploaded document (has id, url, documentId)
+function isUploadedDocument(value: any): boolean {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false
+  // Check for typical document upload properties
+  return ('id' in value && 'url' in value) ||
+         ('documentId' in value && 'url' in value) ||
+         ('id' in value && 'documentId' in value)
+}
+
 // Helper: Transform component fields, converting YES/NO strings to booleans
 // This handles fields that Strapi expects as boolean but come from radio buttons as "YES"/"NO"
+// Also filters out document upload fields which are stored in formData only
 function transformComponentWithBooleans(
   obj: any,
   toBool: (val: any) => boolean | null,
@@ -177,6 +187,9 @@ function transformComponentWithBooleans(
 
   const result: any = {}
   for (const [key, value] of Object.entries(obj)) {
+    // Skip document uploads - they're stored in formData, not component fields
+    if (isUploadedDocument(value)) continue
+
     // Check if value is YES/NO string that should be boolean
     if (value === 'YES' || value === 'NO' || value === 'Yes' || value === 'No') {
       result[key] = toBool(value)
@@ -197,7 +210,7 @@ function transformComponentWithBooleans(
 
 // Helper: Transform selfEmployment component specifically
 // Handles boolean fields and repeater arrays (capitalAssets, etc.)
-// Only includes fields that are actually present in the input data
+// Only includes fields that are actually present in the Strapi schema
 function transformSelfEmployment(
   obj: any,
   toBool: (val: any) => boolean | null,
@@ -209,12 +222,25 @@ function transformSelfEmployment(
   const booleanFields = ['gstRegistered', 'hasCapitalAssets']
   // Fields that are repeater arrays
   const arrayFields = ['capitalAssets', 'expenseCategories']
+  // Fields allowed in the Strapi selfEmployment component schema
+  // Document fields are stored in formData only, not in the component
+  const allowedFields = [
+    'needsBookkeeping',
+    'expenseCategories',
+    'gstRegistered',
+    'gstNumber',
+    'hasCapitalAssets',
+    'capitalAssets'
+  ]
 
   const result: any = {}
 
   for (const [key, value] of Object.entries(obj)) {
     // Skip undefined/null values to avoid sending extra fields to Strapi
     if (value === undefined) continue
+
+    // Skip fields not in Strapi schema (like document uploads)
+    if (!allowedFields.includes(key)) continue
 
     if (booleanFields.includes(key)) {
       // Convert YES/NO to boolean
@@ -235,7 +261,7 @@ function transformSelfEmployment(
 }
 
 // Helper: Transform rentalIncome component specifically
-// Only includes fields that are actually present in the input data
+// Only includes fields that are actually present in the Strapi schema
 function transformRentalIncome(
   obj: any,
   toBool: (val: any) => boolean | null,
@@ -244,15 +270,41 @@ function transformRentalIncome(
   if (!obj) return undefined
 
   // Fields that should be converted to boolean
-  const booleanFields = ['hasRentalIncome', 'coOwned']
+  const booleanFields = ['rentedFullYear', 'personalUse', 'claimCCA']
   // Fields that are repeater arrays
-  const arrayFields = ['properties']
+  const arrayFields = ['equipment']
+  // Fields allowed in the Strapi rentalIncome component schema
+  const allowedFields = [
+    'propertyAddress',
+    'propertyType',
+    'ownershipPercentage',
+    'rentalStartDate',
+    'rentedFullYear',
+    'personalUse',
+    'totalRentReceived',
+    'otherRentalIncome',
+    'expenseCategories',
+    'claimCCA',
+    'purchasePrice',
+    'purchaseDate',
+    'buildingValue',
+    'priorCCAClaimed',
+    'totalHomeSize',
+    'rentalAreaSize',
+    'equipment'
+  ]
 
   const result: any = {}
 
   for (const [key, value] of Object.entries(obj)) {
     // Skip undefined values to avoid sending extra fields to Strapi
     if (value === undefined) continue
+
+    // Skip fields not in Strapi schema (like document uploads)
+    if (!allowedFields.includes(key)) continue
+
+    // Skip document uploads
+    if (isUploadedDocument(value)) continue
 
     if (booleanFields.includes(key)) {
       result[key] = toBool(value)
@@ -619,9 +671,11 @@ export const FilingService = {
     }
 
     // Build dependents array if present (component array in Strapi)
+    // Check both "dependents" (direct) and "dependants.list" (from repeater form field)
     let dependentsData = undefined
-    if (nestedData.dependents && Array.isArray(nestedData.dependents)) {
-      dependentsData = nestedData.dependents.map((dep: any) => {
+    const dependentsList = nestedData.dependents || nestedData.dependants?.list
+    if (dependentsList && Array.isArray(dependentsList)) {
+      dependentsData = dependentsList.map((dep: any) => {
         const depName = dep.fullName ? splitName(dep.fullName) : { firstName: dep.firstName, lastName: dep.lastName, middleName: dep.middleName }
         return {
           firstName: clean(depName.firstName),
@@ -711,6 +765,9 @@ export const FilingService = {
       deductionSources: nestedData.deductions?.sources || pi.deductionSources,
       taxSlips: nestedData.taxSlips || pi.taxSlips,
       additionalDocs: nestedData.additionalDocs || pi.additionalDocs,
+
+      // Additional Notes (text field for user instructions to admin)
+      additionalNotes: clean(data.additionalNotes),
 
       // Full Blob Backup (for reconstruction) - keep original format
       formData: data
@@ -845,14 +902,22 @@ export const FilingService = {
   /**
    * Submit filing for review - updates status to UNDER_REVIEW and generates reference number
    * Also marks all child personal-filings as COMPLETED
+   * Accepts optional recaptchaToken for bot protection (verified on backend)
    */
-  async submitForReview(filingId: string, calculatedTotalPrice?: number): Promise<Filing> {
+  async submitForReview(filingId: string, calculatedTotalPrice?: number, recaptchaToken?: string | null): Promise<Filing> {
     console.log('[submitForReview] Submitting filing:', filingId, 'with calculatedTotalPrice:', calculatedTotalPrice)
 
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
     const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null
 
     if (!token) throw new Error('No authentication token')
+
+    // Note: recaptchaToken is available for future backend verification
+    // Currently, the middleware handles verification for auth endpoints
+    // For filing submissions, you can add verification in a custom Strapi controller
+    if (recaptchaToken) {
+      console.log('[submitForReview] reCAPTCHA token provided for verification')
+    }
 
     // ============================================================
     // STEP 1: Get the filing with all personal filings

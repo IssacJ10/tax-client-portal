@@ -854,10 +854,11 @@
         {
             "id": "q_dependants",
             "type": "repeater",
-            "label": "Dependants",
+            "label": "Dependant Details",
             "name": "dependants.list",
             "step": "dependants",
             "order": 10,
+            "helpText": "Please add all your dependants (children, elderly parents, or family members who rely on you for support).",
             "config": {
                 "addButtonLabel": "Add Dependant"
             },
@@ -950,6 +951,22 @@
                     "validation": {
                         "required": true
                     }
+                },
+                {
+                    "type": "number",
+                    "name": "netIncome",
+                    "label": "Dependant's Net Income",
+                    "placeholder": "Enter annual net income",
+                    "validation": {
+                        "required": false,
+                        "min": 0
+                    },
+                    "conditional": {
+                        "field": "earnsIncome",
+                        "operator": "equals",
+                        "value": "YES"
+                    },
+                    "helpText": "Enter the dependant's total net income for the tax year"
                 }
             ]
         },
@@ -1720,6 +1737,20 @@
             }
         },
         {
+            "id": "q_vehicle_na",
+            "type": "checkbox",
+            "label": "N/A - I do not have a vehicle for work-related travel",
+            "name": "vehicleExpenses.notApplicable",
+            "helpText": "Check this box if you do not use a personal vehicle for work-related travel. If checked, you can skip the vehicle details below.",
+            "step": "vehicle_expenses",
+            "order": 5,
+            "conditional": {
+                "parentQuestionId": "workExpenses.categories",
+                "operator": "contains",
+                "value": "TRAVEL_FOR_WORK"
+            }
+        },
+        {
             "id": "q_vehicle_make",
             "type": "text",
             "label": "Vehicle Make",
@@ -1736,9 +1767,9 @@
             "step": "vehicle_expenses",
             "order": 10,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1758,9 +1789,9 @@
             "step": "vehicle_expenses",
             "order": 15,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1780,9 +1811,9 @@
             "step": "vehicle_expenses",
             "order": 20,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1802,9 +1833,9 @@
             "step": "vehicle_expenses",
             "order": 25,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1824,9 +1855,9 @@
             "step": "vehicle_expenses",
             "order": 30,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1846,9 +1877,9 @@
             "step": "vehicle_expenses",
             "order": 35,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1868,9 +1899,9 @@
             "step": "vehicle_expenses",
             "order": 40,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1890,9 +1921,9 @@
             "step": "vehicle_expenses",
             "order": 45,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1907,9 +1938,9 @@
             "order": 50,
             "helpText": "Used to calculate depreciation expenses of the vehicle",
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1924,9 +1955,9 @@
             "order": 55,
             "helpText": "Enter total monthly amounts. We will calculate the work-related yearly portion.",
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1940,9 +1971,9 @@
             "step": "vehicle_expenses",
             "order": 60,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1956,9 +1987,9 @@
             "step": "vehicle_expenses",
             "order": 65,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1972,9 +2003,9 @@
             "step": "vehicle_expenses",
             "order": 70,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -1988,9 +2019,9 @@
             "step": "vehicle_expenses",
             "order": 75,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -2004,9 +2035,9 @@
             "step": "vehicle_expenses",
             "order": 80,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -2020,9 +2051,9 @@
             "step": "vehicle_expenses",
             "order": 85,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -2036,9 +2067,9 @@
             "step": "vehicle_expenses",
             "order": 90,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -2052,9 +2083,9 @@
             "step": "vehicle_expenses",
             "order": 95,
             "conditional": {
-                "parentQuestionId": "workExpenses.categories",
-                "operator": "contains",
-                "value": "TRAVEL_FOR_WORK"
+                "parentQuestionId": "vehicleExpenses.notApplicable",
+                "operator": "notEquals",
+                "value": true
             }
         },
         {
@@ -3185,6 +3216,19 @@
             },
             "step": "documents",
             "order": 10
+        },
+        {
+            "id": "q_additional_notes",
+            "type": "textarea",
+            "label": "Additional Notes",
+            "name": "additionalNotes",
+            "helpText": "If you have any additional information or special instructions for our tax team, please enter them here.",
+            "placeholder": "Enter any additional notes or special instructions for our team...",
+            "validation": {
+                "required": false
+            },
+            "step": "documents",
+            "order": 20
         }
     ],
     "pricing": {

@@ -15,9 +15,7 @@ import { ReviewScreen } from "./review-screen"
 import { CorporateReviewScreen } from "./corporate-review-screen"
 import { TrustReviewScreen } from "./trust-review-screen"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Loader2, Users, UserPlus, Heart, Minus, Plus, Save } from "lucide-react"
+import { Loader2, Users, UserPlus, Heart, Save } from "lucide-react"
 
 interface WizardOrchestratorProps {
   filingId: string
@@ -55,7 +53,6 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
   const [formData, setFormData] = useState<Record<string, unknown>>({})
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [dependentCount, setDependentCount] = useState(1)
   const [isCreatingDependents, setIsCreatingDependents] = useState(false)
 
   // Track completed personal filing IDs locally (don't depend on SWR cache)
@@ -317,6 +314,30 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     }
   }, [state.phase, shouldAutoSkipSpouse, skipSpouse])
 
+  // Check dependants list for DEPENDENT_CHECKPOINT logic
+  // Get dependants list from formData (current session) or stored data (page reload)
+  const dependantsFromForm = formData["dependants.list"] as Array<{ earnsIncome?: string; fullName?: string }> | undefined
+  const dependantsFromStored = primaryFiling?.formData?.["dependants.list"] as Array<{ earnsIncome?: string; fullName?: string }> | undefined
+  const dependantsList = dependantsFromForm || dependantsFromStored || []
+
+  // Check if any dependant has earnsIncome = "YES" (for filtering which dependants need filings)
+  const earningDependants = dependantsList.filter(dep => dep?.earnsIncome === "YES")
+  const hasEarningDependant = earningDependants.length > 0
+
+  // Show DEPENDENT_CHECKPOINT if there are any dependants added
+  // But only create filings for earning dependants
+  const hasDependants = dependantsList.length > 0
+
+  // Auto-skip ONLY if no dependants were added at all
+  const shouldAutoSkipDependents = !hasDependants
+
+  // Auto-skip dependent checkpoint if no dependants were added
+  useEffect(() => {
+    if (state.phase === "DEPENDENT_CHECKPOINT" && shouldAutoSkipDependents) {
+      skipDependents()
+    }
+  }, [state.phase, shouldAutoSkipDependents, skipDependents])
+
   // Refresh filing data when entering REVIEW phase to get latest data from server
   useEffect(() => {
     if (state.phase === "REVIEW") {
@@ -366,8 +387,8 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
   // Handle next button with Validation
   const handleNext = useCallback(async () => {
-    // Validate current section
-    const { isValid, errors: newErrors } = QuestionRegistry.validateSection(currentSection, formData)
+    // Validate current section (pass all schema questions for cross-section parent lookups)
+    const { isValid, errors: newErrors } = QuestionRegistry.validateSection(currentSection, formData, schema?.questions)
 
     if (!isValid) {
       setErrors(newErrors)
@@ -417,17 +438,22 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       })
 
       completeCurrentPhase()
+      // Scroll to top when completing phase
+      window.scrollTo({ top: 0, behavior: 'smooth' })
       // Don't save progress when completing phase - next phase will have different state
     } else {
       // Calculate the new section index BEFORE dispatching
       const newSectionIndex = state.currentSectionIndex + 1
       nextSection()
 
+      // Scroll to top when navigating to next section
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+
       // Save progress with the NEW section index (since React state update is async)
       // This ensures we save the correct position for resume
       saveWizardProgress({ sectionIndex: newSectionIndex })
     }
-  }, [currentSection, formData, isLastSection, completeCurrentPhase, nextSection, filingId, markFilingInProgress, flushSave, state.currentPersonalFilingId, state.phase, state.totalDependents, state.currentDependentIndex, state.currentSectionIndex, isBusinessFiling, toast, saveWizardProgress])
+  }, [currentSection, formData, isLastSection, completeCurrentPhase, nextSection, filingId, markFilingInProgress, flushSave, state.currentPersonalFilingId, state.phase, state.totalDependents, state.currentDependentIndex, state.currentSectionIndex, isBusinessFiling, toast, saveWizardProgress, schema])
 
   // Handle previous button - flush save before navigating back
   const handlePrev = useCallback(async () => {
@@ -443,6 +469,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     // Calculate the new section index BEFORE dispatching
     const newSectionIndex = Math.max(0, state.currentSectionIndex - 1)
     prevSection()
+
+    // Scroll to top when navigating to previous section
+    window.scrollTo({ top: 0, behavior: 'smooth' })
 
     // Save progress with the NEW section index (since React state update is async)
     saveWizardProgress({ sectionIndex: newSectionIndex })
@@ -471,15 +500,17 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     await addSpouse()
   }, [addSpouse])
 
-  // Handle add multiple dependents based on count
+  // Handle add dependents - creates filings for earning dependants only
   const handleAddDependents = useCallback(async () => {
-    if (dependentCount <= 0) return
+    // Get the count of earning dependants from the dependants list
+    const earningCount = earningDependants.length
+    if (earningCount <= 0) return
 
     setIsCreatingDependents(true)
     try {
       // Create all dependents first, collecting their IDs
       const newDependentIds: string[] = []
-      for (let i = 0; i < dependentCount; i++) {
+      for (let i = 0; i < earningCount; i++) {
         const dependent = await addDependent()
         if (dependent) {
           newDependentIds.push(dependent.id)
@@ -501,7 +532,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     } finally {
       setIsCreatingDependents(false)
     }
-  }, [addDependent, startDependent, dependentCount, filing])
+  }, [addDependent, startDependent, earningDependants.length, filing])
 
   // Handle edit from review screen - navigate to specific person's section
   const handleEditPerson = useCallback((personalFilingId: string, sectionIndex: number) => {
@@ -608,6 +639,32 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       }
 
       case "DEPENDENT_CHECKPOINT": {
+        // If auto-skipping (no dependants added at all), show loading briefly while useEffect handles the skip
+        if (shouldAutoSkipDependents) {
+          return (
+            <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+              <p className="mt-4 text-gray-500">Continuing to review...</p>
+            </div>
+          )
+        }
+
+        // If dependants exist but NONE earn income, show info and skip to review
+        if (hasDependants && !hasEarningDependant) {
+          return (
+            <IntermissionCard
+              icon={Users}
+              title="Dependants Recorded"
+              description={`You've added ${dependantsList.length} dependant${dependantsList.length > 1 ? 's' : ''}. Since none of them earn income, no separate tax filing is needed for them. Your dependant information has been saved for tax credits and deductions.`}
+              primaryAction={{
+                label: "Continue to Review",
+                onClick: goToReview,
+                isLoading: isLoading,
+              }}
+            />
+          )
+        }
+
         // Check for EXISTING dependents from filing data (for returning users)
         // This is crucial because local state (createdDependentIds) will be empty after page reload
         const existingDependents = filing?.personalFilings?.filter(pf => pf.type === "dependent") || []
@@ -666,6 +723,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
           totalDependents: state.totalDependents,
           currentDependentIndex: state.currentDependentIndex,
           savedProgress: savedProgress,
+          earningDependants: earningDependants.length,
         })
 
         // RETURNING USER: Has existing dependents from previous session
@@ -736,7 +794,8 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
           )
         }
 
-        // FRESH START: No existing dependents - show the add dependents form
+        // FRESH START with EARNING dependants: Show option to add filings for earning dependants
+        const earningDependantNames = earningDependants.map(d => d.fullName || 'Unnamed').join(', ')
         return (
           <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 shadow-sm">
             {/* Icon */}
@@ -746,49 +805,10 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
             {/* Title & Description */}
             <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900">Add Dependents</h2>
+              <h2 className="text-2xl font-bold text-gray-900">File for Earning Dependants</h2>
               <p className="mt-2 text-gray-500">
-                Do you have any dependents to claim on your tax filing? You can add children or other qualifying relatives.
+                You indicated that {earningDependants.length === 1 ? 'your dependant' : `${earningDependants.length} of your dependants`} ({earningDependantNames}) {earningDependants.length === 1 ? 'earns' : 'earn'} income. Would you like to include their tax filing as part of this submission?
               </p>
-            </div>
-
-            {/* Dependent Count Input */}
-            <div className="mt-6">
-              <Label htmlFor="dependentCount" className="text-sm font-medium text-gray-700">
-                How many dependents do you want to add?
-              </Label>
-              <div className="mt-2 flex items-center justify-center gap-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setDependentCount(Math.max(1, dependentCount - 1))}
-                  disabled={dependentCount <= 1 || isCreatingDependents}
-                  className="border-gray-200 text-gray-600 hover:bg-gray-100"
-                >
-                  <Minus className="h-4 w-4" />
-                </Button>
-                <Input
-                  id="dependentCount"
-                  type="number"
-                  min={1}
-                  max={10}
-                  value={dependentCount}
-                  onChange={(e) => setDependentCount(Math.max(1, Math.min(10, parseInt(e.target.value) || 1)))}
-                  className="w-20 text-center bg-white border-gray-200 text-gray-900"
-                  disabled={isCreatingDependents}
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  onClick={() => setDependentCount(Math.min(10, dependentCount + 1))}
-                  disabled={dependentCount >= 10 || isCreatingDependents}
-                  className="border-gray-200 text-gray-600 hover:bg-gray-100"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </div>
             </div>
 
             {/* Actions */}
@@ -804,7 +824,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
                 ) : (
                   <UserPlus className="mr-2 h-4 w-4" />
                 )}
-                {isCreatingDependents ? "Adding..." : `Add ${dependentCount} Dependent${dependentCount > 1 ? "s" : ""}`}
+                {isCreatingDependents ? "Adding..." : `Yes, Add ${earningDependants.length} Filing${earningDependants.length > 1 ? 's' : ''}`}
               </Button>
               <Button
                 variant="ghost"
@@ -813,7 +833,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
                 size="lg"
                 disabled={isCreatingDependents}
               >
-                Skip & Review
+                No, Skip to Review
               </Button>
             </div>
           </div>
