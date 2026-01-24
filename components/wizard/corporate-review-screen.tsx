@@ -310,9 +310,16 @@ function formatAnswerValue(value: any, question: any): string {
     }
   }
 
-  // Handle dates
+  // Handle dates - parse as local date to avoid timezone shift
   if (question.type === 'date' && value) {
     try {
+      // Parse YYYY-MM-DD string as local date (not UTC)
+      const dateStr = String(value)
+      if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        const [year, month, day] = dateStr.split('-').map(Number)
+        const date = new Date(year, month - 1, day)
+        return date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
+      }
       const date = new Date(value)
       return date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
     } catch {

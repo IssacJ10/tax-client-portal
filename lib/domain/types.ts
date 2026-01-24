@@ -121,6 +121,11 @@ export interface WizardStep {
   visibleForRoles?: FilingRole[];
   conditional?: {
     anyQuestionVisible?: boolean;
+    // Step-level gating conditional - step only shows if this condition is met
+    parentQuestionId?: string;
+    operator?: 'equals' | 'notEquals' | 'contains' | 'notContains' | 'in' | 'hasAny' | 'greaterThan';
+    value?: unknown;
+    values?: unknown[];
   };
 }
 

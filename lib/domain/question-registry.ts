@@ -96,7 +96,15 @@ export class QuestionRegistry {
         };
       })
       .filter(step => {
-        // If step has conditional.anyQuestionVisible, check if any question would be visible
+        // Check step-level gating conditional first (e.g., requires TRAVEL_FOR_WORK)
+        if (step.conditional?.parentQuestionId) {
+          const gatingConditionMet = this.evaluateConditional(step.conditional, formData);
+          if (!gatingConditionMet) {
+            return false; // Step's primary condition not met, hide entire step
+          }
+        }
+
+        // If step also has anyQuestionVisible, check if any question would be visible
         if (step.conditional?.anyQuestionVisible) {
           const hasVisibleQuestion = step.questions.some(q => this.isQuestionVisible(q, formData));
           return hasVisibleQuestion;
@@ -105,18 +113,22 @@ export class QuestionRegistry {
       });
   }
   /**
-   * Determines if a question should be visible based on current form data and conditional logic.
+   * Evaluates a single conditional clause against formData.
+   * This is the core conditional evaluation logic.
    */
-  static isQuestionVisible(question: any, formData: any): boolean {
-    if (!question.conditional) return true;
-
-    const { parentQuestionId, operator, value, values } = question.conditional;
+  private static evaluateConditional(conditional: any, formData: any): boolean {
+    const { parentQuestionId, operator, value, values } = conditional;
     const parentValue = formData[parentQuestionId];
 
     switch (operator) {
       case 'equals':
         return parentValue === value;
       case 'notEquals':
+        return parentValue !== value;
+      case 'notEqualsStrict':
+        // Strict version: treats undefined as NOT passing the condition
+        // Use this when you want "not checked" to require explicit false, not just undefined
+        if (parentValue === undefined || parentValue === null) return false;
         return parentValue !== value;
       case 'greaterThan':
         return Number(parentValue) > Number(value);
@@ -134,6 +146,30 @@ export class QuestionRegistry {
       default:
         return true;
     }
+  }
+
+  /**
+   * Determines if a question should be visible based on current form data and conditional logic.
+   * Supports compound conditionals with 'and' array for multiple conditions that must ALL be true.
+   */
+  static isQuestionVisible(question: any, formData: any): boolean {
+    if (!question.conditional) return true;
+
+    const conditional = question.conditional;
+
+    // Support for compound conditionals using 'and' array
+    // Example: { "and": [{ parentQuestionId: "...", operator: "...", value: "..." }, ...] }
+    if (conditional.and && Array.isArray(conditional.and)) {
+      return conditional.and.every((clause: any) => this.evaluateConditional(clause, formData));
+    }
+
+    // Support for 'or' array - any condition being true shows the question
+    if (conditional.or && Array.isArray(conditional.or)) {
+      return conditional.or.some((clause: any) => this.evaluateConditional(clause, formData));
+    }
+
+    // Single conditional (backward compatible)
+    return this.evaluateConditional(conditional, formData);
   }
 
   /**

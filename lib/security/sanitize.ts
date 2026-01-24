@@ -16,23 +16,29 @@ const HTML_ENTITIES: Record<string, string> = {
 }
 
 // Dangerous patterns that could indicate XSS attempts
+// Note: Patterns must be specific to avoid false positives with legitimate content
 const DANGEROUS_PATTERNS = [
   /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
   /javascript:/gi,
-  /on\w+\s*=/gi,
-  /data:/gi,
+  /on\w+\s*=/gi, // onclick=, onload=, etc.
+  /data:\s*(text\/html|application\/x|image\/svg)/gi, // Only dangerous data: URIs, not plain "data" word
   /vbscript:/gi,
   /expression\s*\(/gi,
-  /url\s*\(/gi,
+  /url\s*\(\s*["']?\s*data:/gi, // CSS url() with data: scheme
 ]
 
-// SQL injection patterns
+// SQL injection patterns - must be specific to avoid false positives
+// Only match actual SQL injection attempts, not legitimate text containing SQL keywords
 const SQL_INJECTION_PATTERNS = [
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|CREATE|ALTER|TRUNCATE|EXEC|EXECUTE|UNION|DECLARE)\b)/gi,
-  /(--)|(\/\*)|(\*\/)/g,
+  // SQL statements with specific table/column patterns
+  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP)\b\s+.{0,20}\b(FROM|INTO|TABLE|WHERE|SET)\b)/gi,
+  // SQL comment injection
   /['"]\s*;\s*--/gi,
-  /['"]\s*OR\s*['"]/gi,
-  /['"]\s*AND\s*['"]/gi,
+  // Boolean injection patterns with quotes
+  /['"]\s*OR\s+['"]?\d+['"]?\s*=\s*['"]?\d+/gi, // 'OR 1=1
+  /['"]\s*AND\s+['"]?\d+['"]?\s*=\s*['"]?\d+/gi, // 'AND 1=1
+  // UNION-based injection
+  /\bUNION\s+(ALL\s+)?SELECT\b/gi,
 ]
 
 /**
@@ -61,7 +67,9 @@ export function stripDangerousHtml(str: string): string {
   // Remove javascript: and vbscript: protocols
   result = result.replace(/javascript:/gi, '')
   result = result.replace(/vbscript:/gi, '')
-  result = result.replace(/data:/gi, '')
+  // Only remove dangerous data: URIs (text/html, application/x, image/svg can contain executable code)
+  // Don't remove plain "data:" as it breaks legitimate form field values
+  result = result.replace(/data:\s*(text\/html|application\/x-|image\/svg)/gi, '')
 
   // Remove expression() in CSS
   result = result.replace(/expression\s*\([^)]*\)/gi, '')
@@ -89,17 +97,18 @@ export function containsSqlInjection(str: string): boolean {
 }
 
 /**
- * Sanitize user input - main function to use throughout the app
- * Removes dangerous content and escapes HTML entities
+ * Sanitize user input for API calls
+ * Removes dangerous HTML content but preserves legitimate characters
+ * Note: HTML entity escaping (escapeHtml) should only be used for DISPLAY output,
+ * not for data being sent to APIs (the backend handles its own sanitization)
  */
 export function sanitizeInput(input: unknown): unknown {
   if (input === null || input === undefined) return input
 
   if (typeof input === 'string') {
-    // First strip dangerous HTML
+    // Strip dangerous HTML (script tags, event handlers, etc.)
+    // but do NOT escape HTML entities - that corrupts legitimate data
     let result = stripDangerousHtml(input)
-    // Then escape remaining HTML entities
-    result = escapeHtml(result)
     // Trim whitespace
     result = result.trim()
     return result
@@ -112,12 +121,11 @@ export function sanitizeInput(input: unknown): unknown {
   if (typeof input === 'object') {
     const sanitized: Record<string, unknown> = {}
     for (const [key, value] of Object.entries(input)) {
-      // Also sanitize keys to prevent prototype pollution
-      const sanitizedKey = typeof key === 'string' ? escapeHtml(key) : key
-      if (sanitizedKey === '__proto__' || sanitizedKey === 'constructor' || sanitizedKey === 'prototype') {
+      // Check for prototype pollution attempts
+      if (key === '__proto__' || key === 'constructor' || key === 'prototype') {
         continue // Skip dangerous keys
       }
-      sanitized[sanitizedKey] = sanitizeInput(value)
+      sanitized[key] = sanitizeInput(value)
     }
     return sanitized
   }

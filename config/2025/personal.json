@@ -104,6 +104,9 @@
             "order": 78,
             "description": "T777 Details",
             "conditional": {
+                "parentQuestionId": "workExpenses.categories",
+                "operator": "contains",
+                "value": "WORKED_FROM_HOME",
                 "anyQuestionVisible": true
             }
         },
@@ -113,6 +116,9 @@
             "order": 80,
             "description": "Travel Costs",
             "conditional": {
+                "parentQuestionId": "workExpenses.categories",
+                "operator": "contains",
+                "value": "TRAVEL_FOR_WORK",
                 "anyQuestionVisible": true
             }
         },
@@ -122,6 +128,9 @@
             "order": 85,
             "description": "Business Details",
             "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "SELF_EMPLOYMENT",
                 "anyQuestionVisible": true
             }
         },
@@ -131,6 +140,9 @@
             "order": 90,
             "description": "Property Income",
             "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "RENTAL_INCOME",
                 "anyQuestionVisible": true
             }
         },
@@ -140,6 +152,9 @@
             "order": 95,
             "description": "Relocation Costs",
             "conditional": {
+                "parentQuestionId": "deductions.sources",
+                "operator": "contains",
+                "value": "MOVING_EXPENSES",
                 "anyQuestionVisible": true
             }
         },
