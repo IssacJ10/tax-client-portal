@@ -258,12 +258,17 @@ function AnswerRow({ question, value }: AnswerRowProps) {
 function formatAnswerValue(value: any, question: any): string {
   if (value === undefined || value === null || value === '') return 'Not provided'
 
-  // Handle arrays (multi-select, checkboxes, repeaters)
+  // Handle arrays (multi-select, checkboxes, file uploads, repeaters)
   if (Array.isArray(value)) {
     if (value.length === 0) return 'Not provided'
 
-    // Check if it's a repeater (array of objects)
+    // Check if it's an array of objects
     if (typeof value[0] === 'object' && value[0] !== null) {
+      // File uploads have 'name' property - show file names
+      if (value[0]?.name && (value[0]?.url || value[0]?.documentId || question.type === 'file')) {
+        return value.map((f: any) => f.name).join(', ')
+      }
+      // Other repeaters - show count
       return `${value.length} item${value.length > 1 ? 's' : ''}`
     }
 
@@ -276,6 +281,18 @@ function formatAnswerValue(value: any, question: any): string {
       return labels.join(', ')
     }
     return value.join(', ')
+  }
+
+  // Handle single file upload object
+  if (typeof value === 'object' && value !== null) {
+    // File upload objects have name property
+    if (value.name && (value.url || value.documentId || question.type === 'file')) {
+      return value.name
+    }
+    // Other objects - show a summary
+    const keys = Object.keys(value).filter(k => value[k] !== null && value[k] !== undefined && value[k] !== '')
+    if (keys.length === 0) return 'Not provided'
+    return `${keys.length} field${keys.length > 1 ? 's' : ''} provided`
   }
 
   // Handle boolean
@@ -322,6 +339,18 @@ function formatAnswerValue(value: any, question: any): string {
     } catch {
       return String(value)
     }
+  }
+
+  // Handle objects (file uploads, nested data)
+  if (typeof value === 'object' && value !== null) {
+    // Handle file upload objects (have name and url properties)
+    if (value.name && (value.url || value.documentId)) {
+      return value.name
+    }
+    // Handle other objects - show a summary instead of [object Object]
+    const keys = Object.keys(value).filter(k => value[k] !== null && value[k] !== undefined && value[k] !== '')
+    if (keys.length === 0) return 'Not provided'
+    return `${keys.length} field${keys.length > 1 ? 's' : ''} provided`
   }
 
   return String(value)
