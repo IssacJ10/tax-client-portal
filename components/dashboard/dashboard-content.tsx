@@ -44,22 +44,27 @@ import {
   CalendarClock,
   AlertTriangle,
   Filter,
+  Hash,
 } from "lucide-react"
 import type { Filing } from "@/lib/domain/types"
 
 const ITEMS_PER_PAGE = 6
 
-// Status configuration
+// Status configuration (matches admin dashboard options)
 const statusConfig: Record<string, { label: string; icon: any; color: string }> = {
-  DRAFT: { label: "Draft", icon: FileText, color: "text-emerald-700/60" },
   NOT_STARTED: { label: "Not Started", icon: FileText, color: "text-emerald-700/60" },
+  DRAFT: { label: "Draft", icon: FileText, color: "text-emerald-700/60" },
   IN_PROGRESS: { label: "In Progress", icon: Clock, color: "text-amber-600" },
-  UNDER_REVIEW: { label: "Under Review", icon: Clock, color: "text-emerald-600" },
+  UNDER_REVIEW: { label: "Under Review", icon: Clock, color: "text-blue-600" },
+  SUBMITTED: { label: "Submitted", icon: CheckCircle, color: "text-blue-600" },
   APPROVED: { label: "Approved", icon: CheckCircle, color: "text-emerald-600" },
   REJECTED: { label: "Needs Attention", icon: AlertCircle, color: "text-rose-600" },
-  COMPLETED: { label: "Completed", icon: CheckCircle, color: "text-emerald-600" },
   DEFAULT: { label: "Unknown", icon: FileText, color: "text-emerald-700/60" }
 }
+
+// Statuses that prevent editing (filing is locked)
+// Note: REJECTED is NOT locked - user needs to fix and resubmit
+const lockedStatuses = ['SUBMITTED', 'UNDER_REVIEW', 'APPROVED']
 
 // Filing type configuration
 const typeConfig: Record<string, { label: string; icon: any; shortLabel: string }> = {
@@ -399,7 +404,7 @@ export default function DashboardContent() {
                   </div>
                   <div className="text-center p-3 rounded-xl bg-[#00754a]/10 border border-[#00754a]/20">
                     <p className="text-2xl font-bold text-[#00754a]">
-                      {filings.filter(f => ['APPROVED', 'COMPLETED'].includes(f.status)).length}
+                      {filings.filter(f => f.status === 'APPROVED').length}
                     </p>
                     <p className="text-[10px] text-[#00754a] mt-1 uppercase tracking-wide">Done</p>
                   </div>
@@ -496,13 +501,17 @@ function FilingCard({ filing }: { filing: Filing }) {
 
   const theme = getCardTheme()
 
+  // Check if filing is locked (cannot be edited)
+  const isLocked = lockedStatuses.includes(statusKey)
+
   // Status badge color based on status
   const getStatusBadgeStyle = () => {
     switch (statusKey) {
       case 'APPROVED':
-      case 'COMPLETED':
-      case 'UNDER_REVIEW':
         return 'bg-[#00754a] text-white shadow-md shadow-[#00754a]/30'
+      case 'SUBMITTED':
+      case 'UNDER_REVIEW':
+        return 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
       case 'IN_PROGRESS':
         return 'bg-amber-500 text-white shadow-md shadow-amber-500/30'
       case 'REJECTED':
@@ -514,8 +523,12 @@ function FilingCard({ filing }: { filing: Filing }) {
 
   return (
     <div
-      onClick={handleClick}
-      className="group relative rounded-2xl bg-gradient-to-br from-[#e9ffe4] to-[#d4f5cd] backdrop-blur-sm border border-[#00754a]/10 p-5 cursor-pointer transition-all duration-300 hover:shadow-lg hover:shadow-[#00754a]/10 hover:-translate-y-0.5"
+      onClick={isLocked ? undefined : handleClick}
+      className={`group relative rounded-2xl bg-gradient-to-br from-[#e9ffe4] to-[#d4f5cd] backdrop-blur-sm border border-[#00754a]/10 p-5 transition-all duration-300 ${
+        isLocked
+          ? 'cursor-default opacity-80'
+          : 'cursor-pointer hover:shadow-lg hover:shadow-[#00754a]/10 hover:-translate-y-0.5'
+      }`}
     >
       {/* Floating Status Badge - positioned outside card boundary */}
       <div className={`absolute -top-2.5 right-4 flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadgeStyle()}`}>
@@ -537,6 +550,17 @@ function FilingCard({ filing }: { filing: Filing }) {
           <h4 className="text-lg font-semibold text-gray-900 line-clamp-1">{entityName}</h4>
           <p className="text-sm text-gray-500 mt-0.5">{filingType.label} · {filing.year}</p>
         </div>
+
+        {/* Reference Number - shown for submitted/approved filings */}
+        {filing.referenceNumber && (
+          <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-white/50 border border-white/60">
+            <Hash className="h-3.5 w-3.5 text-[#00754a]" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[10px] text-gray-500 uppercase tracking-wide">Reference</p>
+              <p className="text-sm font-semibold text-[#00754a] truncate">{filing.referenceNumber}</p>
+            </div>
+          </div>
+        )}
 
         {/* Family Roster for Personal Filings - Only show spouse and dependents */}
         {isPersonal && (spouseFilings.length > 0 || dependentFilings.length > 0) && (
@@ -568,9 +592,15 @@ function FilingCard({ filing }: { filing: Filing }) {
             <Calendar className="h-3.5 w-3.5" />
             <span>{new Date(filing.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
           </div>
-          <div className={`flex h-8 w-8 items-center justify-center rounded-full ${theme.arrow} backdrop-blur-sm transition-colors`}>
-            <ArrowRight className={`h-4 w-4 ${theme.arrowIcon} transition-colors`} />
-          </div>
+          {isLocked ? (
+            <span className="text-xs font-medium text-gray-500 px-2 py-1 rounded-full bg-white/50">
+              View Only
+            </span>
+          ) : (
+            <div className={`flex h-8 w-8 items-center justify-center rounded-full ${theme.arrow} backdrop-blur-sm transition-colors`}>
+              <ArrowRight className={`h-4 w-4 ${theme.arrowIcon} transition-colors`} />
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@
 
 // --- Enums (Lowercase to match Strapi v5) ---
 export type FilingRole = "primary" | "spouse" | "dependent";
-export type FilingStatus = "DRAFT" | "IN_PROGRESS" | "UNDER_REVIEW" | "APPROVED" | "REJECTED" | "COMPLETED";
+export type FilingStatus = "NOT_STARTED" | "DRAFT" | "IN_PROGRESS" | "UNDER_REVIEW" | "SUBMITTED" | "APPROVED" | "REJECTED";
 export type FilingType = "INDIVIDUAL" | "CORPORATE" | "TRUST";
 
 // --- Progress Tracking for Resume ---

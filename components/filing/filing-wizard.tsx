@@ -22,9 +22,10 @@ export function FilingWizard({
   initialData,
   schema
 }: FilingWizardProps) {
-  // Check if filing is already submitted (UNDER_REVIEW, APPROVED, COMPLETED, REJECTED)
-  const submittedStatuses = ['UNDER_REVIEW', 'APPROVED', 'COMPLETED', 'REJECTED'];
-  const isAlreadySubmitted = submittedStatuses.includes(initialData.status);
+  // Check if filing is already submitted and locked (UNDER_REVIEW, SUBMITTED, APPROVED)
+  // Note: REJECTED is NOT locked - user needs to fix issues and resubmit
+  const lockedStatuses = ['UNDER_REVIEW', 'SUBMITTED', 'APPROVED'];
+  const isAlreadySubmitted = lockedStatuses.includes(initialData.status);
 
   // Show blocking message if filing is already submitted
   if (isAlreadySubmitted) {
@@ -44,9 +45,8 @@ export function FilingWizard({
             Your {initialData.year} personal tax filing has already been submitted and is currently{" "}
             <span className="font-medium text-[#00754a]">
               {initialData.status === 'UNDER_REVIEW' ? 'under review' :
-               initialData.status === 'APPROVED' ? 'approved' :
-               initialData.status === 'COMPLETED' ? 'completed' :
-               initialData.status === 'REJECTED' ? 'rejected' : initialData.status.toLowerCase()}
+               initialData.status === 'SUBMITTED' ? 'submitted' :
+               initialData.status === 'APPROVED' ? 'approved' : initialData.status.toLowerCase()}
             </span>.
           </p>
 
