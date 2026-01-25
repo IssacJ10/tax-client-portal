@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { DatePicker } from "@/components/ui/date-picker"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
-import { uploadFile, type UploadedFile } from "@/services/strapi-client"
+import { uploadSecureDocumentWithRetry, type SecureDocumentInfo } from "@/services/document-upload-service"
 import { ArrowLeft, ArrowRight, Check, Loader2, Plus, Trash2, File, X } from "lucide-react"
 import type { Question, QuestionSection, FilingRole } from "@/lib/domain/types"
 
@@ -58,6 +58,9 @@ interface QuestionRendererProps {
   isSyncing: boolean
   role: FilingRole
   dependentIndex?: number
+  // Document upload context
+  filingId?: string
+  personalFilingId?: string
 }
 
 export function QuestionRenderer({
@@ -72,6 +75,8 @@ export function QuestionRenderer({
   isSyncing,
   role,
   dependentIndex,
+  filingId,
+  personalFilingId,
 }: QuestionRendererProps) {
   const getRoleLabel = () => {
     switch (role) {
@@ -108,6 +113,8 @@ export function QuestionRenderer({
                 value={formData[question.name]}
                 error={errors[question.id]}
                 onChange={(value) => onFieldChange(question.name, value)}
+                filingId={filingId}
+                personalFilingId={personalFilingId}
               />
             )
           })
@@ -153,9 +160,12 @@ interface QuestionFieldProps {
   value: unknown
   error?: string // <--- Add error prop
   onChange: (value: unknown) => void
+  // Document upload context
+  filingId?: string
+  personalFilingId?: string
 }
 
-function QuestionField({ question, value, error, onChange }: QuestionFieldProps) {
+function QuestionField({ question, value, error, onChange, filingId, personalFilingId }: QuestionFieldProps) {
   // Clean white theme input styling
   const inputClassName = cn(
     "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400",
@@ -359,6 +369,8 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
             value={value}
             onChange={onChange}
             error={error}
+            filingId={filingId}
+            personalFilingId={personalFilingId}
           />
         )
 
@@ -415,44 +427,138 @@ function QuestionField({ question, value, error, onChange }: QuestionFieldProps)
   )
 }
 
-// File Upload Field Component
+// File Upload Field Component - Supports single and multiple file uploads
 interface FileUploadFieldProps {
   question: Question
   value: unknown
   onChange: (value: unknown) => void
   error?: string
+  filingId?: string
+  personalFilingId?: string
 }
 
-function FileUploadField({ question, value, onChange, error }: FileUploadFieldProps) {
+function FileUploadField({ question, value, onChange, error, filingId, personalFilingId }: FileUploadFieldProps) {
   const [isUploading, setIsUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [currentUploadIndex, setCurrentUploadIndex] = useState(0)
+  const [totalUploads, setTotalUploads] = useState(0)
 
-  // Parse existing value - could be string (filename), object (uploaded file info), or null
-  const fileInfo = typeof value === 'object' && value !== null ? value as UploadedFile : null
-  const fileName = fileInfo?.name || (typeof value === 'string' ? value : null)
+  // Multiple file upload is enabled by default, can be disabled with config.multiple = false
+  const allowMultiple = question.config?.multiple !== false
+  const maxFiles = question.config?.maxFiles || 10
+  const acceptTypes = question.config?.accept || ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
 
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  // File size limit: 10 MB
+  const MAX_FILE_SIZE_MB = 10
+  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
 
-    setIsUploading(true)
-    setUploadError(null)
-
-    try {
-      const uploaded = await uploadFile(file)
-      onChange(uploaded)
-    } catch (err: any) {
-      console.error('[FileUploadField] Upload failed:', err)
-      setUploadError(err.message || 'Failed to upload file')
-      // Still store the filename so user knows what they selected
-      onChange({ name: file.name, error: true })
-    } finally {
-      setIsUploading(false)
-    }
+  // Normalize value to always work with arrays internally for multi-file mode
+  const getFilesArray = (): SecureDocumentInfo[] => {
+    if (!value) return []
+    if (Array.isArray(value)) return value as SecureDocumentInfo[]
+    // Single file - wrap in array for consistent handling
+    if (typeof value === 'object') return [value as SecureDocumentInfo]
+    if (typeof value === 'string') return [{ originalFilename: value } as SecureDocumentInfo]
+    return []
   }
 
-  const handleRemove = () => {
-    onChange(null)
+  const files = getFilesArray()
+  const hasFiles = files.length > 0
+  const canAddMore = allowMultiple && files.length < maxFiles
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = e.target.files
+    if (!selectedFiles || selectedFiles.length === 0) return
+
+    // Check if we have filingId - required for secure upload
+    if (!filingId) {
+      setUploadError('Unable to upload: Filing context not available')
+      return
+    }
+
+    // Convert FileList to array
+    const filesToUpload = Array.from(selectedFiles)
+
+    // Validate file sizes (10 MB max per file)
+    const oversizedFiles = filesToUpload.filter(f => f.size > MAX_FILE_SIZE_BYTES)
+    if (oversizedFiles.length > 0) {
+      const fileNames = oversizedFiles.map(f => f.name).join(', ')
+      setUploadError(`File${oversizedFiles.length > 1 ? 's' : ''} too large (max ${MAX_FILE_SIZE_MB}MB): ${fileNames}`)
+      return
+    }
+
+    // Check max files limit (10 files max)
+    if (allowMultiple && files.length + filesToUpload.length > maxFiles) {
+      setUploadError(`Maximum ${maxFiles} files allowed. You can add ${maxFiles - files.length} more.`)
+      return
+    }
+
+    // For single file mode, also enforce limit of 1
+    if (!allowMultiple && filesToUpload.length > 1) {
+      setUploadError('Only one file can be uploaded for this field.')
+      return
+    }
+
+    setIsUploading(true)
+    setUploadProgress(0)
+    setUploadError(null)
+    setTotalUploads(filesToUpload.length)
+    setCurrentUploadIndex(0)
+
+    const uploadedFiles: SecureDocumentInfo[] = [...files]
+    const failedFiles: string[] = []
+
+    for (let i = 0; i < filesToUpload.length; i++) {
+      const file = filesToUpload[i]
+      setCurrentUploadIndex(i + 1)
+
+      try {
+        const uploaded = await uploadSecureDocumentWithRetry(file, {
+          filingId,
+          personalFilingId,
+          documentType: 'supporting_doc',
+          questionId: question.id,
+          fieldName: question.name,
+          onProgress: (progress) => setUploadProgress(progress),
+        })
+        uploadedFiles.push(uploaded)
+      } catch (err: any) {
+        console.error('[FileUploadField] Upload failed:', file.name, err)
+        failedFiles.push(file.name)
+        // Still track the file with error state
+        uploadedFiles.push({ originalFilename: file.name, error: true } as any)
+      }
+    }
+
+    // Update value based on mode
+    if (allowMultiple) {
+      onChange(uploadedFiles)
+    } else {
+      // Single file mode - just use the last uploaded file
+      onChange(uploadedFiles[uploadedFiles.length - 1] || null)
+    }
+
+    if (failedFiles.length > 0) {
+      setUploadError(`Failed to upload: ${failedFiles.join(', ')}`)
+    }
+
+    setIsUploading(false)
+    setUploadProgress(0)
+    setTotalUploads(0)
+    setCurrentUploadIndex(0)
+
+    // Reset input so same file can be selected again
+    e.target.value = ''
+  }
+
+  const handleRemove = (index: number) => {
+    if (allowMultiple) {
+      const newFiles = files.filter((_, i) => i !== index)
+      onChange(newFiles.length > 0 ? newFiles : null)
+    } else {
+      onChange(null)
+    }
     setUploadError(null)
   }
 
@@ -461,69 +567,97 @@ function FileUploadField({ question, value, onChange, error }: FileUploadFieldPr
     error && "border-rose-400"
   )
 
-  // If we have a file already
-  if (fileName) {
+  // Render single file item
+  const renderFileItem = (fileInfo: SecureDocumentInfo, index: number) => {
+    const fileName = fileInfo?.originalFilename || 'Unknown file'
+    const hasError = (fileInfo as any)?.error === true
+
     return (
-      <div className="space-y-2">
-        <div className={cn(
+      <div
+        key={`${fileName}-${index}`}
+        className={cn(
           "flex items-center justify-between p-3 rounded-lg border",
-          fileInfo?.url ? "border-[#00754a]/30 bg-[#00754a]/5" : "border-gray-200 bg-gray-50"
-        )}>
-          <div className="flex items-center gap-3 min-w-0">
-            <File className="h-5 w-5 text-gray-500 shrink-0" />
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">{fileName}</p>
-              {fileInfo?.url && (
-                <a
-                  href={fileInfo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-xs text-[#00754a] hover:underline"
-                >
-                  View file
-                </a>
-              )}
-              {fileInfo && !fileInfo.url && (
-                <p className="text-xs text-amber-600">Upload pending...</p>
-              )}
-            </div>
-          </div>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            onClick={handleRemove}
-            className="h-8 w-8 p-0 text-gray-400 hover:text-rose-500 hover:bg-rose-50"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        {uploadError && (
-          <p className="text-xs text-rose-500">{uploadError}</p>
+          hasError
+            ? "border-rose-300 bg-rose-50"
+            : fileInfo?.documentId
+              ? "border-[#00754a]/30 bg-[#00754a]/5"
+              : "border-gray-200 bg-gray-50"
         )}
+      >
+        <div className="flex items-center gap-3 min-w-0">
+          <File className={cn("h-5 w-5 shrink-0", hasError ? "text-rose-500" : "text-gray-500")} />
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-gray-900 truncate">{fileName}</p>
+            {fileInfo?.documentId && (
+              <p className="text-xs text-[#00754a]">Uploaded securely</p>
+            )}
+            {hasError && (
+              <p className="text-xs text-rose-600">Upload failed</p>
+            )}
+            {!fileInfo?.documentId && !hasError && (
+              <p className="text-xs text-amber-600">Upload pending...</p>
+            )}
+          </div>
+        </div>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => handleRemove(index)}
+          className="h-8 w-8 p-0 text-gray-400 hover:text-rose-500 hover:bg-rose-50"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
     )
   }
 
-  // No file yet - show upload input
   return (
-    <div className="space-y-2">
-      <div className="relative">
-        <Input
-          id={question.id}
-          type="file"
-          onChange={handleFileChange}
-          disabled={isUploading}
-          className={cn(inputClassName, "file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#00754a]/10 file:text-[#00754a] hover:file:bg-[#00754a]/20")}
-          accept={(question as any).accept || ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"}
-        />
-        {isUploading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md">
-            <Loader2 className="h-5 w-5 animate-spin text-[#00754a]" />
-            <span className="ml-2 text-sm text-gray-600">Uploading...</span>
-          </div>
-        )}
-      </div>
+    <div className="space-y-3">
+      {/* Show existing files */}
+      {hasFiles && (
+        <div className="space-y-2">
+          {files.map((file, index) => renderFileItem(file, index))}
+        </div>
+      )}
+
+      {/* Upload input - show if no files (single mode) or can add more (multi mode) */}
+      {(!hasFiles || canAddMore) && (
+        <div className="relative">
+          <Input
+            id={question.id}
+            type="file"
+            onChange={handleFileChange}
+            disabled={isUploading}
+            multiple={allowMultiple}
+            className={cn(inputClassName, "file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#00754a]/10 file:text-[#00754a] hover:file:bg-[#00754a]/20")}
+            accept={acceptTypes}
+          />
+          {isUploading && (
+            <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md">
+              <Loader2 className="h-5 w-5 animate-spin text-[#00754a]" />
+              <span className="ml-2 text-sm text-gray-600">
+                {totalUploads > 1
+                  ? `Uploading ${currentUploadIndex}/${totalUploads} (${uploadProgress}%)...`
+                  : uploadProgress > 0 ? `Uploading ${uploadProgress}%...` : 'Uploading...'}
+              </span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Helper text for file limits */}
+      {!isUploading && (
+        <p className="text-xs text-gray-500">
+          {allowMultiple
+            ? hasFiles
+              ? `${files.length} file${files.length !== 1 ? 's' : ''} uploaded. ${canAddMore ? `You can add ${maxFiles - files.length} more.` : 'Maximum reached.'} Max ${MAX_FILE_SIZE_MB}MB per file.`
+              : `You can upload up to ${maxFiles} files. Max ${MAX_FILE_SIZE_MB}MB per file.`
+            : `Max file size: ${MAX_FILE_SIZE_MB}MB`}
+        </p>
+      )}
+
+      {/* Error message */}
       {uploadError && (
         <p className="text-xs text-rose-500">{uploadError}</p>
       )}

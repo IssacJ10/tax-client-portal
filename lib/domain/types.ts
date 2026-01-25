@@ -110,7 +110,14 @@ export interface QuestionField {
   order?: number;
   helpText?: string;
   fields?: QuestionField[];
-  config?: { addButtonLabel?: string; emptyMessage?: string };
+  config?: {
+    addButtonLabel?: string;
+    emptyMessage?: string;
+    // File upload options
+    multiple?: boolean;  // Allow multiple file uploads
+    maxFiles?: number;   // Maximum number of files (default: 10)
+    accept?: string;     // Accepted file types (e.g., ".pdf,.jpg")
+  };
 }
 
 export interface WizardStep {

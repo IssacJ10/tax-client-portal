@@ -497,9 +497,10 @@ function formatAnswerValue(value: any, question: any): string {
 
     // Check if it's an array of objects
     if (typeof value[0] === 'object' && value[0] !== null) {
-      // File uploads have 'name' property - show file names
-      if (value[0]?.name && (value[0]?.url || value[0]?.documentId || question.type === 'file')) {
-        return value.map(f => f.name).join(', ')
+      // File uploads - check for 'originalFilename' (secure upload) or 'name' (legacy)
+      const fileName = value[0]?.originalFilename || value[0]?.name
+      if (fileName && (value[0]?.url || value[0]?.documentId || question.type === 'file')) {
+        return value.map(f => f.originalFilename || f.name).join(', ')
       }
       // Other repeaters - show count
       return `${value.length} item${value.length > 1 ? 's' : ''}`
@@ -518,9 +519,10 @@ function formatAnswerValue(value: any, question: any): string {
 
   // Handle single file upload object
   if (typeof value === 'object' && value !== null) {
-    // File upload objects have name property
-    if (value.name && (value.url || value.documentId || question.type === 'file')) {
-      return value.name
+    // File upload objects - check for 'originalFilename' (secure upload) or 'name' (legacy)
+    const fileName = value.originalFilename || value.name
+    if (fileName && (value.url || value.documentId || question.type === 'file')) {
+      return fileName
     }
     // Other objects - show a summary
     const keys = Object.keys(value).filter(k => value[k] !== null && value[k] !== undefined && value[k] !== '')
@@ -576,9 +578,10 @@ function formatValue(value: any): string {
     if (value.length === 0) return 'Not provided'
     // Check if array contains file upload objects
     if (typeof value[0] === 'object') {
-      // If items have 'name' property (file uploads), show file names
-      if (value[0]?.name) {
-        return value.map(f => f.name).join(', ')
+      // File uploads - check for 'originalFilename' (secure upload) or 'name' (legacy)
+      const fileName = value[0]?.originalFilename || value[0]?.name
+      if (fileName) {
+        return value.map(f => f.originalFilename || f.name).join(', ')
       }
       return `${value.length} item${value.length > 1 ? 's' : ''}`
     }
@@ -588,9 +591,10 @@ function formatValue(value: any): string {
   if (value === 'YES') return 'Yes'
   if (value === 'NO') return 'No'
   if (typeof value === 'object') {
-    // Handle file upload objects (have name and url properties)
-    if (value.name && (value.url || value.documentId)) {
-      return value.name
+    // Handle file upload objects - check for 'originalFilename' (secure upload) or 'name' (legacy)
+    const fileName = value.originalFilename || value.name
+    if (fileName && (value.url || value.documentId)) {
+      return fileName
     }
     // Handle other objects - show a summary instead of raw JSON
     const keys = Object.keys(value).filter(k => value[k] !== null && value[k] !== undefined && value[k] !== '')

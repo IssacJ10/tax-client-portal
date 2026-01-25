@@ -16,6 +16,7 @@ interface WizardSidebarProps {
   filing: Filing | undefined
   formData: Record<string, unknown>
   onSectionClick: (index: number) => void
+  onPhaseClick?: (phaseId: string) => void
 }
 
 // Personal filing (INDIVIDUAL) phase steps
@@ -48,7 +49,7 @@ const trustPhaseSteps = [
   { id: "REVIEW", label: "Review & Submit", icon: FileCheck, phases: ["REVIEW"] },
 ]
 
-function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, formData, onSectionClick }: WizardSidebarProps) {
+function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, formData, onSectionClick, onPhaseClick }: WizardSidebarProps) {
   // Determine which phase steps to use based on filing type
   const phaseSteps = useMemo(() => {
     if (filing?.type === "CORPORATE") return corporatePhaseSteps
@@ -62,6 +63,34 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
     const currentIndex = phaseOrder.indexOf(currentPhase)
     const stepIndex = phaseOrder.indexOf(phases[0])
     return stepIndex < currentIndex ? "complete" : "pending"
+  }
+
+  // Check if a phase can be navigated to (has data to show)
+  const canNavigateToPhase = (stepId: string): boolean => {
+    if (!filing?.personalFilings) return false
+
+    switch (stepId) {
+      case "PRIMARY":
+        return filing.personalFilings.some(pf => pf.type === "primary")
+      case "SPOUSE":
+        return filing.personalFilings.some(pf => pf.type === "spouse")
+      case "DEPENDENT":
+        return filing.personalFilings.some(pf => pf.type === "dependent")
+      case "REVIEW":
+        return true // Always navigable
+      case "CORPORATE":
+      case "TRUST":
+        return true // Corporate/Trust filings always have their child
+      default:
+        return false
+    }
+  }
+
+  const handlePhaseClick = (stepId: string, status: string) => {
+    // Can navigate to complete or current phases (but not pending)
+    if (status === "pending") return
+    if (!canNavigateToPhase(stepId)) return
+    if (onPhaseClick) onPhaseClick(stepId)
   }
 
   // Show sections for active phases (personal, corporate, or trust)
@@ -110,12 +139,15 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
 
             return (
               <li key={step.id}>
-                <div
+                <button
+                  onClick={() => handlePhaseClick(step.id, status)}
+                  disabled={status === "pending" || !canNavigateToPhase(step.id)}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl px-3 py-3 transition-colors",
+                    "flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors text-left",
                     status === "current" && "bg-[#00754a]/10 text-gray-900",
-                    status === "complete" && "text-[#00754a]",
-                    status === "pending" && "text-gray-400",
+                    status === "complete" && "text-[#00754a] hover:bg-[#00754a]/5 cursor-pointer",
+                    status === "pending" && "text-gray-400 cursor-not-allowed",
+                    status !== "pending" && canNavigateToPhase(step.id) && status !== "current" && "hover:bg-gray-50",
                   )}
                 >
                   <div
@@ -129,7 +161,7 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
                     {status === "complete" ? <Check className="h-4 w-4" /> : <Icon className="h-4 w-4" />}
                   </div>
                   <span className="text-sm font-medium">{step.label}</span>
-                </div>
+                </button>
 
                 {/* Section sub-items - only show visible sections */}
                 {showSections && step.phases.includes(currentPhase) && (

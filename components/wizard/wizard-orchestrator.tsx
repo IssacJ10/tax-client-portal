@@ -96,36 +96,41 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     // AMENDMENT FLOW: Check if this is a reopened filing (was submitted, now IN_PROGRESS again)
     // If the filing has a confirmationNumber, it was previously submitted.
     // If it's now back to IN_PROGRESS, admin has reopened it for amendments.
+    // User should start from PRIMARY_ACTIVE section 0 to review/edit their filing.
     const wasSubmitted = !!(filing as any).confirmationNumber
     const isReopened = wasSubmitted && filing.status === "IN_PROGRESS"
 
     if (isReopened) {
       hasInitializedRef.current = true
-      console.log('[WizardOrchestrator] Reopened filing detected, going to REVIEW phase', { filingType: filing.type })
+      console.log('[WizardOrchestrator] Reopened filing detected, starting from PRIMARY_ACTIVE for amendments', { filingType: filing.type })
 
       // Get the appropriate child filing ID based on filing type
       let childFilingId: string
+      let startPhase: WizardPhase
+
       if (isCorporateFiling) {
         childFilingId = (filing as any).corporateFiling?.id ||
                         (filing as any).corporateFiling?.documentId ||
                         initialPersonalFilingId
+        startPhase = "CORPORATE_ACTIVE"
       } else if (isTrustFiling) {
         childFilingId = (filing as any).trustFiling?.id ||
                         (filing as any).trustFiling?.documentId ||
                         initialPersonalFilingId
+        startPhase = "TRUST_ACTIVE"
       } else {
-        // Personal filing - use primary personal filing
+        // Personal filing - use primary personal filing, start from PRIMARY_ACTIVE
         childFilingId = filing.personalFilings?.find(pf => pf.type === "primary")?.id ||
-                        savedProgress?.lastPersonalFilingId ||
                         initialPersonalFilingId
+        startPhase = "PRIMARY_ACTIVE"
       }
 
       dispatch({
         type: "RESTORE_PROGRESS",
         payload: {
           filingId,
-          phase: "REVIEW" as WizardPhase,
-          sectionIndex: 0,
+          phase: startPhase,
+          sectionIndex: 0, // Start from first section
           personalFilingId: childFilingId,
           dependentIndex: 0,
         },
@@ -575,6 +580,83 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     dispatch({ type: "GO_TO_DEPENDENT_CHECKPOINT" })
   }, [dispatch])
 
+  // Handle phase navigation from sidebar (jumping between Primary/Spouse/Dependent)
+  const handlePhaseNavigation = useCallback(async (phaseId: string) => {
+    // Flush any unsaved data before switching phases
+    try {
+      await flushSave()
+    } catch (err) {
+      // Continue even if save fails - user explicitly wants to navigate
+    }
+
+    // Find the appropriate filing for this phase
+    switch (phaseId) {
+      case "PRIMARY": {
+        const primaryFiling = filing?.personalFilings?.find(pf => pf.type === "primary")
+        if (primaryFiling) {
+          dispatch({
+            type: "INIT_FILING",
+            payload: { filingId, personalFilingId: primaryFiling.id }
+          })
+          dispatch({ type: "GO_TO_SECTION", payload: 0 })
+        }
+        break
+      }
+      case "SPOUSE": {
+        const spouseFiling = filing?.personalFilings?.find(pf => pf.type === "spouse")
+        if (spouseFiling) {
+          dispatch({
+            type: "START_SPOUSE",
+            payload: { personalFilingId: spouseFiling.id }
+          })
+          dispatch({ type: "GO_TO_SECTION", payload: 0 })
+        }
+        break
+      }
+      case "DEPENDENT": {
+        const dependentFilings = filing?.personalFilings?.filter(pf => pf.type === "dependent") || []
+        if (dependentFilings.length > 0) {
+          dispatch({
+            type: "START_DEPENDENT",
+            payload: { personalFilingId: dependentFilings[0].id, index: 0 }
+          })
+          dispatch({ type: "GO_TO_SECTION", payload: 0 })
+        }
+        break
+      }
+      case "REVIEW":
+        goToReview()
+        break
+      case "CORPORATE": {
+        const corporateFilingId = (filing as any)?.corporateFiling?.id ||
+                                  (filing as any)?.corporateFiling?.documentId
+        if (corporateFilingId) {
+          dispatch({
+            type: "INIT_CORPORATE_FILING",
+            payload: { filingId, corporateFilingId }
+          })
+          dispatch({ type: "GO_TO_SECTION", payload: 0 })
+        }
+        break
+      }
+      case "TRUST": {
+        const trustFilingId = (filing as any)?.trustFiling?.id ||
+                              (filing as any)?.trustFiling?.documentId
+        if (trustFilingId) {
+          dispatch({
+            type: "INIT_TRUST_FILING",
+            payload: { filingId, trustFilingId }
+          })
+          dispatch({ type: "GO_TO_SECTION", payload: 0 })
+        }
+        break
+      }
+    }
+
+    // Scroll to top when switching phases
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [filing, filingId, dispatch, flushSave, goToReview])
+
   // Render loading state
   if (isLoading && !filing) {
     return (
@@ -649,22 +731,10 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
           )
         }
 
-        // If dependants exist but NONE earn income, show info and skip to review
-        if (hasDependants && !hasEarningDependant) {
-          return (
-            <IntermissionCard
-              icon={Users}
-              title="Dependants Recorded"
-              description={`You've added ${dependantsList.length} dependant${dependantsList.length > 1 ? 's' : ''}. Since none of them earn income, no separate tax filing is needed for them. Your dependant information has been saved for tax credits and deductions.`}
-              primaryAction={{
-                label: "Continue to Review",
-                onClick: goToReview,
-                isLoading: isLoading,
-              }}
-            />
-          )
-        }
-
+        // IMPORTANT: Check for EXISTING dependent filings FIRST (for returning/reopened users)
+        // This must happen BEFORE the "no earning dependants" check, because reopened filings
+        // may have existing dependent filings that need to be edited, regardless of current
+        // earnsIncome values in the dependants list.
         // Check for EXISTING dependents from filing data (for returning users)
         // This is crucial because local state (createdDependentIds) will be empty after page reload
         const existingDependents = filing?.personalFilings?.filter(pf => pf.type === "dependent") || []
@@ -728,7 +798,10 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
         // RETURNING USER: Has existing dependents from previous session
         if (existingDependents.length > 0 && createdDependentIds.length === 0) {
-          // If we have incomplete dependents, auto-jump to that dependent
+          // Check if user has edited ANY existing dependent in this session
+          const hasEditedAnyExistingDependent = existingDependentIds.some(id => completedPersonalFilingIds.has(id))
+
+          // If we have incomplete dependents AND user hasn't started editing yet, offer to edit
           if (incompleteDependentIds.length > 0 && nextIncompleteDependentId) {
             // Show brief loading while we auto-navigate
             // Use setTimeout to trigger the navigation after render
@@ -743,17 +816,41 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             )
           }
 
-          // All existing dependents appear complete - show confirmation instead of auto-skip
-          // This prevents accidentally skipping to review if data check is incomplete
+          // If user has already edited dependents this session, they're done - go to review
+          if (hasEditedAnyExistingDependent) {
+            return (
+              <IntermissionCard
+                icon={Users}
+                title="Dependent Information Updated!"
+                description="You've reviewed your dependent information. Ready to continue to the final review?"
+                primaryAction={{
+                  label: "Continue to Review",
+                  onClick: goToReview,
+                  isLoading: isLoading,
+                }}
+                secondaryAction={{
+                  label: "Edit Another Dependent",
+                  onClick: () => startDependent(existingDependentIds[0], 0),
+                }}
+              />
+            )
+          }
+
+          // First time at checkpoint with existing dependents - offer to edit or skip
+          const firstDependentId = existingDependentIds[0]
           return (
             <IntermissionCard
               icon={Users}
-              title="All Dependents Completed!"
-              description="You've completed information for all your dependents. Ready to review your filing?"
+              title="Review Dependent Information"
+              description={`You have ${existingDependents.length} dependent${existingDependents.length > 1 ? 's' : ''} on file. Would you like to review or update their information?`}
               primaryAction={{
-                label: "Continue to Review",
-                onClick: goToReview,
+                label: "Edit Dependent Details",
+                onClick: () => startDependent(firstDependentId, 0),
                 isLoading: isLoading,
+              }}
+              secondaryAction={{
+                label: "Skip to Review",
+                onClick: goToReview,
               }}
             />
           )
@@ -785,6 +882,24 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
               icon={Users}
               title="All Dependents Completed!"
               description="You've completed information for all your dependents. Ready to review your filing?"
+              primaryAction={{
+                label: "Continue to Review",
+                onClick: goToReview,
+                isLoading: isLoading,
+              }}
+            />
+          )
+        }
+
+        // NO EXISTING DEPENDENT FILINGS: Check if we need to create any
+        // If dependants exist but NONE earn income, show info and continue to review
+        // (No separate tax filing needed for non-earning dependants)
+        if (hasDependants && !hasEarningDependant) {
+          return (
+            <IntermissionCard
+              icon={Users}
+              title="Dependants Recorded"
+              description={`You've added ${dependantsList.length} dependant${dependantsList.length > 1 ? 's' : ''}. Since none of them earn income, no separate tax filing is needed for them. Your dependant information has been saved for tax credits and deductions.`}
               primaryAction={{
                 label: "Continue to Review",
                 onClick: goToReview,
@@ -880,6 +995,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             isLastSection={isLastSection}
             isSyncing={isSyncing}
             role="primary"
+            filingId={filingId}
           />
         )
 
@@ -906,6 +1022,8 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             isSyncing={isSyncing}
             role={currentRole}
             dependentIndex={currentRole === "dependent" ? state.currentDependentIndex : undefined}
+            filingId={filingId}
+            personalFilingId={state.currentPersonalFilingId}
           />
         )
 
@@ -942,6 +1060,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         filing={filing}
         formData={formData}
         onSectionClick={(index) => dispatch({ type: "GO_TO_SECTION", payload: index })}
+        onPhaseClick={handlePhaseNavigation}
       />
 
       {/* Main Content */}
