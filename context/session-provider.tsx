@@ -340,7 +340,7 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
                 }
             } else {
                 // No session - check if redirect needed
-                const publicRoutes = ['/auth/login', '/auth/register', '/', '/about', '/contact', '/connect'];
+                const publicRoutes = ['/auth/login', '/auth/register', '/', '/about', '/contact', '/connect', '/reset-password', '/forgot-password'];
                 const currentPath = pathname || '';
                 const isPublic = publicRoutes.some(route => currentPath === route || currentPath.startsWith(route + '/'));
 

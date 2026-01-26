@@ -66,10 +66,17 @@ export default function ForgotPasswordPage() {
             setSubmittedEmail(data.email);
             setIsSubmitted(true);
         } catch (err: any) {
-            // Don't reveal if email exists or not for security
-            // Always show success message
-            setSubmittedEmail(data.email);
-            setIsSubmitted(true);
+            const errorMessage = err.message || "";
+
+            // Show specific errors that should be visible to users (like Google Sign-In guidance)
+            if (errorMessage.includes("Google Sign-In") || errorMessage.includes("Google")) {
+                setError(errorMessage);
+            } else {
+                // For other errors (including "email not found"), show success message
+                // to prevent email enumeration attacks
+                setSubmittedEmail(data.email);
+                setIsSubmitted(true);
+            }
         } finally {
             setIsLoading(false);
         }

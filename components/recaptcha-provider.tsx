@@ -42,7 +42,12 @@ declare global {
 export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps) {
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const recaptchaSiteKey = siteKey || process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
+  const recaptchaSiteKey = siteKey || process.env.JJ_PORTAL_CAPTCHA_KEY;
+
+  // Debug: Log if key is loaded (remove in production)
+  if (typeof window !== 'undefined') {
+    console.log("[ReCaptcha] Site key loaded:", recaptchaSiteKey ? "Yes" : "No");
+  }
 
   // Define callbacks BEFORE any conditional returns (React hooks rule)
   const executeRecaptcha = useCallback(
@@ -52,9 +57,17 @@ export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps)
         return null;
       }
 
-      if (!isLoaded || !window.grecaptcha) {
-        console.warn("[ReCaptcha] grecaptcha not loaded yet");
-        return null;
+      // Wait for script to load (max 5 seconds)
+      if (!window.grecaptcha) {
+        console.log("[ReCaptcha] Waiting for script to load...");
+        for (let i = 0; i < 50; i++) {
+          await new Promise(r => setTimeout(r, 100));
+          if (window.grecaptcha) break;
+        }
+        if (!window.grecaptcha) {
+          console.error("[ReCaptcha] Script failed to load after 5 seconds");
+          return null;
+        }
       }
 
       try {
@@ -72,7 +85,7 @@ export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps)
         return null;
       }
     },
-    [isLoaded, recaptchaSiteKey]
+    [recaptchaSiteKey]
   );
 
   const handleScriptLoad = useCallback(() => {
@@ -96,7 +109,7 @@ export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps)
       <Script
         src={`https://www.google.com/recaptcha/api.js?render=${recaptchaSiteKey}`}
         onLoad={handleScriptLoad}
-        strategy="lazyOnload"
+        strategy="afterInteractive"
       />
       {children}
     </ReCaptchaContext.Provider>

@@ -66,8 +66,8 @@ function ResetPasswordContent() {
         setError(null);
 
         try {
-            // Execute reCAPTCHA
-            const recaptchaToken = await executeRecaptcha("reset_password");
+            // Execute reCAPTCHA for client-side bot protection (score checked locally)
+            await executeRecaptcha("reset_password");
 
             const strapiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api";
             const res = await fetch(`${strapiUrl}/auth/reset-password`, {
@@ -79,7 +79,6 @@ function ResetPasswordContent() {
                     code,
                     password: data.password,
                     passwordConfirmation: data.confirmPassword,
-                    recaptchaToken,
                 }),
             });
 

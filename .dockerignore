@@ -1,0 +1,48 @@
+# Dependencies
+node_modules
+
+# Next.js build output (we build in Docker)
+.next
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Git
+.git
+.gitignore
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Test files
+coverage
+.nyc_output
+__tests__
+*.test.*
+*.spec.*
+
+# Documentation
+*.md
+!README.md
+
+# Docker
+Dockerfile
+docker-compose*.yml
+.dockerignore
+
+# Misc
+.eslintcache
+.turbo

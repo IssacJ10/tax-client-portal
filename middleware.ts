@@ -89,11 +89,12 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   // Content Security Policy - adjust based on your needs
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'", // Needed for Next.js
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com", // Needed for Next.js + reCAPTCHA
     "style-src 'self' 'unsafe-inline'", // Needed for Tailwind
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' http://localhost:1337 https://*.strapi.io", // API endpoints
+    "connect-src 'self' http://localhost:1337 https://*.strapi.io https://www.google.com", // API endpoints + reCAPTCHA
+    "frame-src 'self' https://www.google.com", // For reCAPTCHA iframe
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

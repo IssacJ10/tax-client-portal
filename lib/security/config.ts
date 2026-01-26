@@ -88,11 +88,12 @@ export const SecurityConfig = {
    */
   csp: {
     'default-src': ["'self'"],
-    'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'"], // Needed for Next.js
+    'script-src': ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'https://www.google.com', 'https://www.gstatic.com'], // Needed for Next.js + reCAPTCHA
     'style-src': ["'self'", "'unsafe-inline'"], // Needed for Tailwind
     'img-src': ["'self'", 'data:', 'blob:', 'https:'],
     'font-src': ["'self'", 'data:'],
-    'connect-src': ["'self'", 'http://localhost:1337', 'https://*.strapi.io'],
+    'connect-src': ["'self'", 'http://localhost:1337', 'https://*.strapi.io', 'https://www.google.com'],
+    'frame-src': ["'self'", 'https://www.google.com'], // For reCAPTCHA iframe
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
     'form-action': ["'self'"],
