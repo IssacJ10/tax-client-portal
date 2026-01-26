@@ -70,7 +70,7 @@ export function DatePicker({
           disabled={disabled}
           className={cn(
             'w-full justify-start text-left font-normal h-9 px-3 !bg-white border-gray-300 text-gray-900 shadow-sm hover:!bg-gray-50',
-            'focus-visible:border-[#00754a] focus-visible:ring-[#00754a]/50 focus-visible:ring-[3px]',
+            'focus-visible:border-[#07477a] focus-visible:ring-[#07477a]/50 focus-visible:ring-[3px]',
             !displayValue && 'text-gray-400',
             className
           )}

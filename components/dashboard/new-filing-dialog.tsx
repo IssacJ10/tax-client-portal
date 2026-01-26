@@ -169,10 +169,10 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] bg-background border-white/10">
+            <DialogContent className="sm:max-w-[425px] bg-white border-[#07477a]/10 shadow-xl">
                 <DialogHeader>
-                    <DialogTitle>Start New Filing</DialogTitle>
-                    <DialogDescription>
+                    <DialogTitle className="text-gray-900">Start New Filing</DialogTitle>
+                    <DialogDescription className="text-gray-600">
                         Select the tax year and type of filing you wish to file.
                     </DialogDescription>
                 </DialogHeader>
@@ -185,16 +185,16 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
                 )}
 
                 {infoMessage && (
-                    <Alert className="border-blue-500/50 bg-blue-500/10">
-                        <Info className="h-4 w-4 text-blue-500" />
-                        <AlertDescription className="text-blue-200">{infoMessage}</AlertDescription>
+                    <Alert className="border-[#07477a]/50 bg-[#07477a]/10">
+                        <Info className="h-4 w-4 text-[#07477a]" />
+                        <AlertDescription className="text-[#07477a]">{infoMessage}</AlertDescription>
                     </Alert>
                 )}
 
                 <div className="grid gap-4 py-4">
                     {/* Year Selection */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="year" className="text-right">
+                        <Label htmlFor="year" className="text-right text-gray-700 font-medium">
                             Tax Year
                         </Label>
                         <Select value={year} onValueChange={setYear} disabled={loadingYears}>
@@ -216,7 +216,7 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
 
                     {/* Type Selection */}
                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="type" className="text-right">
+                        <Label htmlFor="type" className="text-right text-gray-700 font-medium">
                             Type
                         </Label>
                         <Select value={type} onValueChange={(v) => setType(v as FilingType)}>
@@ -233,13 +233,13 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
                 </div>
 
                 <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading} className="bg-white text-black border-white hover:bg-black hover:text-white hover:border-white/30">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading} className="border-gray-300 text-gray-700 hover:bg-gray-50 hover:text-gray-900">
                         Cancel
                     </Button>
                     <Button
                         onClick={handleCreate}
                         disabled={isLoading}
-                        className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                        className="bg-[#07477a] hover:bg-[#053560] text-white shadow-lg shadow-[#07477a]/20"
                     >
                         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Start Filing

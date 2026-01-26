@@ -85,8 +85,8 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
 
     return (
       <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 text-center shadow-sm">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#00754a]/10">
-          <FileCheck className="h-10 w-10 text-[#00754a]" />
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#07477a]/10">
+          <FileCheck className="h-10 w-10 text-[#07477a]" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900">Trust Filing Submitted!</h2>
         <p className="mt-2 text-gray-600">
@@ -94,9 +94,9 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
         </p>
         <div className="mt-6 rounded-lg bg-gray-100 p-4">
           <p className="text-sm text-gray-500">Reference Number</p>
-          <p className="mt-1 font-mono text-2xl font-bold text-[#00754a]">{displayRefNumber}</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-[#07477a]">{displayRefNumber}</p>
         </div>
-        <Button className="mt-8 bg-[#00754a] hover:bg-[#005c3b] text-white" onClick={() => router.push("/dashboard")}>
+        <Button className="mt-8 bg-[#07477a] hover:bg-[#053560] text-white" onClick={() => router.push("/dashboard")}>
           Return to Dashboard
         </Button>
       </div>
@@ -112,8 +112,8 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
       {/* Header */}
       <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00754a]/10">
-            <Landmark className="h-6 w-6 text-[#00754a]" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#07477a]/10">
+            <Landmark className="h-6 w-6 text-[#07477a]" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">
@@ -121,7 +121,7 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
             </h2>
             <p className="text-gray-600">
               {isAmendment
-                ? <>Amending filing <span className="font-mono text-[#00754a]">{filing.referenceNumber}</span> for <span className="font-medium text-gray-900">{trustName}</span>.</>
+                ? <>Amending filing <span className="font-mono text-[#07477a]">{filing.referenceNumber}</span> for <span className="font-medium text-gray-900">{trustName}</span>.</>
                 : <>Please verify all information for <span className="font-medium text-gray-900">{trustName}</span> is correct.</>
               }
             </p>
@@ -150,7 +150,7 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
 
       {/* Submit Button */}
       <div className="flex justify-end">
-        <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px] bg-[#00754a] hover:bg-[#005c3b] text-white">
+        <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px] bg-[#07477a] hover:bg-[#053560] text-white">
           {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
           Submit for Review
         </Button>
@@ -201,7 +201,7 @@ function SectionCard({ section, formData, onEdit }: SectionCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs text-[#00754a] hover:text-[#005c3b] hover:bg-[#00754a]/10"
+            className="h-7 text-xs text-[#07477a] hover:text-[#053560] hover:bg-[#07477a]/10"
             onClick={(e) => {
               e.stopPropagation()
               onEdit()

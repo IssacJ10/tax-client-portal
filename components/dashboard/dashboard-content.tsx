@@ -28,7 +28,6 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
-  Menu,
   User,
   LogOut,
   Building2,
@@ -52,14 +51,14 @@ const ITEMS_PER_PAGE = 6
 
 // Status configuration (matches admin dashboard options)
 const statusConfig: Record<string, { label: string; icon: any; color: string }> = {
-  NOT_STARTED: { label: "Not Started", icon: FileText, color: "text-emerald-700/60" },
-  DRAFT: { label: "Draft", icon: FileText, color: "text-emerald-700/60" },
+  NOT_STARTED: { label: "Not Started", icon: FileText, color: "text-[#07477a]/60" },
+  DRAFT: { label: "Draft", icon: FileText, color: "text-[#07477a]/60" },
   IN_PROGRESS: { label: "In Progress", icon: Clock, color: "text-amber-600" },
   UNDER_REVIEW: { label: "Under Review", icon: Clock, color: "text-blue-600" },
   SUBMITTED: { label: "Submitted", icon: CheckCircle, color: "text-blue-600" },
-  APPROVED: { label: "Approved", icon: CheckCircle, color: "text-emerald-600" },
+  APPROVED: { label: "Approved", icon: CheckCircle, color: "text-green-600" },
   REJECTED: { label: "Needs Attention", icon: AlertCircle, color: "text-rose-600" },
-  DEFAULT: { label: "Unknown", icon: FileText, color: "text-emerald-700/60" }
+  DEFAULT: { label: "Unknown", icon: FileText, color: "text-[#07477a]/60" }
 }
 
 // Statuses that prevent editing (filing is locked)
@@ -139,23 +138,29 @@ export default function DashboardContent() {
   const greeting = hours < 12 ? "Good morning" : hours < 18 ? "Good afternoon" : "Good evening"
 
   return (
-    <div className="relative overflow-x-hidden bg-[#f8faf9]">
+    <div className="relative overflow-x-hidden min-h-screen bg-gradient-to-b from-[#07477a] via-[#f0f7ff] to-[#f8fbff]">
 
-      {/* Header - H&R Block-style solid green */}
-      <header className="sticky top-0 z-50 bg-[#00754a] shadow-lg">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
-              <FileText className="h-5 w-5 text-white" />
+      {/* Header - Seamlessly blends with gradient background */}
+      <header className="sticky top-0 z-50 bg-gradient-to-b from-[#07477a] to-[#07477a]/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
+          {/* Logo and Brand - Large and prominent */}
+          <div className="flex items-center gap-4">
+            <div className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-2xl bg-white shadow-lg shadow-white/20">
+              <img src="/images/logo.png" alt="JJ Elevate" className="h-12 w-12 sm:h-14 sm:w-14 rounded-xl object-contain" />
             </div>
-            <span className="text-lg font-semibold text-white">TaxPortal</span>
+            <div>
+              <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-white leading-tight">JJ Elevate</h1>
+              <p className="text-[10px] sm:text-xs md:text-sm text-white/80 font-medium">Accounting Solutions Inc.</p>
+            </div>
           </div>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20">
-                <Menu className="h-5 w-5 text-white" />
-              </Button>
+              <button className="flex flex-col items-center justify-center gap-2.5 p-3 hover:bg-white/10 rounded-xl transition-colors">
+                <span className="w-10 h-0.5 bg-white rounded-full" />
+                <span className="w-10 h-0.5 bg-white rounded-full" />
+                <span className="w-10 h-0.5 bg-white rounded-full" />
+              </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56 rounded-xl bg-white border-gray-200 shadow-lg">
               <DropdownMenuLabel className="px-4 py-3">
@@ -177,13 +182,23 @@ export default function DashboardContent() {
         </div>
       </header>
 
-      <main className="relative mx-auto max-w-7xl px-4 sm:px-6 py-6 sm:py-8">
-        {/* Welcome Message */}
-        <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-4xl md:text-5xl font-bold text-gray-900">
-            {greeting}, <span className="text-[#00754a]">{firstName}</span>
-          </h1>
-          <p className="text-gray-500 mt-1 sm:mt-2 text-sm sm:text-base">Welcome to your tax dashboard</p>
+      {/* Gradient transition zone - blends header into content */}
+      <div className="h-12 sm:h-16 bg-gradient-to-b from-[#07477a]/95 to-transparent -mt-1" />
+
+      <main className="relative mx-auto max-w-7xl px-4 sm:px-6 pb-8">
+        {/* Welcome Message - iOS-style Glassmorphic Card */}
+        <div className="mb-6 sm:mb-8 -mt-8 sm:-mt-10">
+          <div className="relative rounded-3xl bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg shadow-black/5 p-5 sm:p-7 overflow-hidden">
+            {/* Subtle gradient shimmer - iOS style */}
+            <div className="absolute inset-0 bg-gradient-to-br from-white/80 via-transparent to-white/40 pointer-events-none" />
+
+            <div className="relative">
+              <h1 className="text-2xl sm:text-3xl md:text-4xl font-semibold text-gray-900 tracking-tight">
+                {greeting}, <span className="text-[#07477a] font-bold">{firstName}</span>
+              </h1>
+              <p className="text-gray-600 mt-1.5 sm:mt-2 text-sm sm:text-base">Welcome to your tax dashboard</p>
+            </div>
+          </div>
         </div>
 
         {/* Main Content with Sidebar Layout */}
@@ -196,14 +211,14 @@ export default function DashboardContent() {
               <div className="flex flex-col gap-4 mb-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-lg font-medium text-gray-900">Your Tax Filings</h2>
-                    <p className="text-gray-500 text-sm">
+                    <h2 className="text-lg font-semibold text-gray-900">Your Tax Filings</h2>
+                    <p className="text-gray-700 text-sm font-medium">
                       {filteredFilings.length} {filteredFilings.length === 1 ? 'filing' : 'filings'}
                     </p>
                   </div>
                   <Button
                     onClick={() => setDialogOpen(true)}
-                    className="bg-[#00754a] hover:bg-[#005c3b] text-white rounded-xl h-10 px-4 sm:px-5 font-medium shadow-md"
+                    className="bg-[#07477a] hover:bg-[#053560] text-white rounded-xl h-10 px-4 sm:px-5 font-medium shadow-md"
                   >
                     <Plus className="h-4 w-4 sm:mr-2" />
                     <span className="hidden sm:inline">New Filing</span>
@@ -222,7 +237,7 @@ export default function DashboardContent() {
                       }}
                     >
                       <SelectTrigger className="w-[120px] sm:w-[130px] rounded-xl bg-white border border-gray-200 text-gray-900 h-10 text-sm font-medium shadow-sm">
-                        <Calendar className="h-4 w-4 mr-2 text-[#00754a]" />
+                        <Calendar className="h-4 w-4 mr-2 text-[#07477a]" />
                         <SelectValue placeholder={activeYear.toString()} />
                       </SelectTrigger>
                       <SelectContent className="rounded-xl bg-white border-gray-200 shadow-lg">
@@ -242,7 +257,7 @@ export default function DashboardContent() {
                   {/* Type Filter */}
                   <Select value={typeFilter} onValueChange={handleFilterChange}>
                     <SelectTrigger className="w-[140px] sm:w-[160px] rounded-xl bg-white border border-gray-200 text-gray-900 h-10 text-sm font-medium shadow-sm">
-                      <Filter className="h-4 w-4 mr-2 text-[#00754a]" />
+                      <Filter className="h-4 w-4 mr-2 text-[#07477a]" />
                       <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent className="rounded-xl bg-white border-gray-200 shadow-lg">
@@ -259,7 +274,7 @@ export default function DashboardContent() {
               {isLoadingFilings ? (
                 <div className="rounded-2xl bg-white border border-gray-200 p-12 sm:p-16 shadow-sm">
                   <div className="flex flex-col items-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-[#00754a]" />
+                    <Loader2 className="h-8 w-8 animate-spin text-[#07477a]" />
                     <p className="text-sm text-gray-500">Loading filings...</p>
                   </div>
                 </div>
@@ -277,7 +292,7 @@ export default function DashboardContent() {
                       : "Start your first return to get organized."}
                   </p>
                   <Button
-                    className="mt-6 bg-[#00754a] hover:bg-[#005c3b] text-white rounded-xl h-10 px-6 shadow-md"
+                    className="mt-6 bg-[#07477a] hover:bg-[#053560] text-white rounded-xl h-10 px-6 shadow-md"
                     onClick={() => typeFilter !== "ALL" ? setTypeFilter("ALL") : setDialogOpen(true)}
                   >
                     {typeFilter !== "ALL" ? "Clear Filter" : "Start First Filing"}
@@ -313,7 +328,7 @@ export default function DashboardContent() {
                             onClick={() => setCurrentPage(page)}
                             className={`w-8 h-8 sm:w-9 sm:h-9 rounded-xl text-sm ${
                               currentPage === page
-                                ? 'bg-[#00754a] text-white shadow-md'
+                                ? 'bg-[#07477a] text-white shadow-md'
                                 : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900'
                             }`}
                           >
@@ -359,12 +374,12 @@ export default function DashboardContent() {
                       className="flex items-start gap-3 p-3 rounded-xl bg-gray-50 border border-gray-100"
                     >
                       <div className={`mt-0.5 p-1.5 rounded-lg ${
-                        deadline.type === 'urgent' ? 'bg-amber-100' : 'bg-[#00754a]/10'
+                        deadline.type === 'urgent' ? 'bg-amber-100' : 'bg-[#07477a]/10'
                       }`}>
                         {deadline.type === 'urgent' ? (
                           <AlertTriangle className="h-3.5 w-3.5 text-amber-600" />
                         ) : (
-                          <Calendar className="h-3.5 w-3.5 text-[#00754a]" />
+                          <Calendar className="h-3.5 w-3.5 text-[#07477a]" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
@@ -384,7 +399,7 @@ export default function DashboardContent() {
               <div className="relative rounded-2xl bg-white border border-gray-200 p-5 transition-all duration-300 shadow-sm hover:shadow-md">
                 {/* Floating icon */}
                 <div className="absolute -top-3 -left-2">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#00754a] shadow-lg">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#07477a] shadow-lg">
                     <FileText className="h-5 w-5 text-white" />
                   </div>
                 </div>
@@ -402,11 +417,11 @@ export default function DashboardContent() {
                     </p>
                     <p className="text-[10px] text-amber-600 mt-1 uppercase tracking-wide">Pending</p>
                   </div>
-                  <div className="text-center p-3 rounded-xl bg-[#00754a]/10 border border-[#00754a]/20">
-                    <p className="text-2xl font-bold text-[#00754a]">
+                  <div className="text-center p-3 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20">
+                    <p className="text-2xl font-bold text-[#07477a]">
                       {filings.filter(f => f.status === 'APPROVED').length}
                     </p>
-                    <p className="text-[10px] text-[#00754a] mt-1 uppercase tracking-wide">Done</p>
+                    <p className="text-[10px] text-[#07477a] mt-1 uppercase tracking-wide">Done</p>
                   </div>
                 </div>
               </div>
@@ -416,11 +431,11 @@ export default function DashboardContent() {
 
         {/* Quick Tips Section - Full Width at Bottom - H&R Block green banner */}
         <section className="mt-10">
-          <div className="relative rounded-2xl bg-[#00754a] p-6 transition-all duration-300 shadow-lg">
+          <div className="relative rounded-2xl bg-[#07477a] p-6 transition-all duration-300 shadow-lg">
             {/* Floating icon */}
             <div className="absolute -top-4 left-6">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg shadow-[#00754a]/30">
-                <Lightbulb className="h-6 w-6 text-[#00754a]" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg shadow-[#07477a]/30">
+                <Lightbulb className="h-6 w-6 text-[#07477a]" />
               </div>
             </div>
             <div className="pl-14 mb-5">
@@ -492,10 +507,10 @@ function FilingCard({ filing }: { filing: Filing }) {
   const getCardTheme = () => {
     return {
       icon: 'bg-white/80',
-      iconColor: 'text-[#00754a]',
-      accent: 'text-[#00754a]',
-      arrow: 'bg-white/60 group-hover:bg-[#00754a]',
-      arrowIcon: 'text-[#00754a] group-hover:text-white',
+      iconColor: 'text-[#07477a]',
+      accent: 'text-[#07477a]',
+      arrow: 'bg-white/60 group-hover:bg-[#07477a]',
+      arrowIcon: 'text-[#07477a] group-hover:text-white',
     }
   }
 
@@ -508,7 +523,7 @@ function FilingCard({ filing }: { filing: Filing }) {
   const getStatusBadgeStyle = () => {
     switch (statusKey) {
       case 'APPROVED':
-        return 'bg-[#00754a] text-white shadow-md shadow-[#00754a]/30'
+        return 'bg-[#07477a] text-white shadow-md shadow-[#07477a]/30'
       case 'SUBMITTED':
       case 'UNDER_REVIEW':
         return 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
@@ -524,10 +539,10 @@ function FilingCard({ filing }: { filing: Filing }) {
   return (
     <div
       onClick={isLocked ? undefined : handleClick}
-      className={`group relative rounded-2xl bg-gradient-to-br from-[#e9ffe4] to-[#d4f5cd] backdrop-blur-sm border border-[#00754a]/10 p-5 transition-all duration-300 ${
+      className={`group relative rounded-2xl bg-gradient-to-br from-[#e8f4fc] to-[#d0e8f8] backdrop-blur-sm border border-[#07477a]/10 p-5 transition-all duration-300 ${
         isLocked
           ? 'cursor-default opacity-80'
-          : 'cursor-pointer hover:shadow-lg hover:shadow-[#00754a]/10 hover:-translate-y-0.5'
+          : 'cursor-pointer hover:shadow-lg hover:shadow-[#07477a]/10 hover:-translate-y-0.5'
       }`}
     >
       {/* Floating Status Badge - positioned outside card boundary */}
@@ -554,10 +569,10 @@ function FilingCard({ filing }: { filing: Filing }) {
         {/* Reference Number - shown for submitted/approved filings */}
         {filing.referenceNumber && (
           <div className="flex items-center gap-2 mb-3 p-2 rounded-lg bg-white/50 border border-white/60">
-            <Hash className="h-3.5 w-3.5 text-[#00754a]" />
+            <Hash className="h-3.5 w-3.5 text-[#07477a]" />
             <div className="min-w-0 flex-1">
               <p className="text-[10px] text-gray-500 uppercase tracking-wide">Reference</p>
-              <p className="text-sm font-semibold text-[#00754a] truncate">{filing.referenceNumber}</p>
+              <p className="text-sm font-semibold text-[#07477a] truncate">{filing.referenceNumber}</p>
             </div>
           </div>
         )}
@@ -622,7 +637,7 @@ function FamilyMember({
     <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/50 backdrop-blur-sm border border-white/60">
       <div className="flex items-center gap-2.5">
         <div className="p-1.5 rounded-lg bg-white/70">
-          <Icon className="h-3.5 w-3.5 text-[#00754a]" />
+          <Icon className="h-3.5 w-3.5 text-[#07477a]" />
         </div>
         <div>
           <p className="text-xs font-medium text-gray-900">{name}</p>
@@ -631,7 +646,7 @@ function FamilyMember({
       </div>
       <span className={`text-[10px] font-medium px-2.5 py-1 rounded-full ${
         isComplete
-          ? 'bg-[#00754a] text-white'
+          ? 'bg-[#07477a] text-white'
           : 'bg-amber-500 text-white'
       }`}>
         {isComplete ? 'Complete' : 'In Progress'}

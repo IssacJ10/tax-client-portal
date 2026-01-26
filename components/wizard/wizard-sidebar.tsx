@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import { cn } from "@/lib/utils"
 import { Sheet, SheetContent } from "@/components/ui/sheet"
 import { Button } from "@/components/ui/button"
-import { Menu, Check, Circle, User, Users, Heart, FileCheck, Leaf, Building2, Scale } from "lucide-react"
+import { Menu, Check, Circle, User, Users, Heart, FileCheck, Building2, Scale } from "lucide-react"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import type { WizardPhase, QuestionSection, Filing } from "@/lib/domain/types"
@@ -119,14 +119,14 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
 
   return (
     <div className="flex h-full flex-col bg-white">
-      {/* Logo - H&R Block green header */}
-      <div className="flex items-center gap-3 bg-[#00754a] p-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/20">
-          <Leaf className="h-5 w-5 text-white" />
+      {/* Logo and Branding Header */}
+      <div className="flex items-center gap-3 bg-gradient-to-br from-[#07477a] via-[#053560] to-[#032b4a] p-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white shadow-lg shadow-white/10">
+          <img src="/images/logo.png" alt="JJ Elevate" className="h-10 w-10 rounded-lg object-contain" />
         </div>
         <div>
-          <h1 className="font-semibold text-white">TaxPortal</h1>
-          <p className="text-xs text-white/70">Tax Year 2025</p>
+          <h1 className="font-bold text-white leading-tight">JJ Elevate</h1>
+          <p className="text-[10px] text-white/70 font-medium">Accounting Solutions Inc.</p>
         </div>
       </div>
 
@@ -144,8 +144,8 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
                   disabled={status === "pending" || !canNavigateToPhase(step.id)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-xl px-3 py-3 transition-colors text-left",
-                    status === "current" && "bg-[#00754a]/10 text-gray-900",
-                    status === "complete" && "text-[#00754a] hover:bg-[#00754a]/5 cursor-pointer",
+                    status === "current" && "bg-[#07477a]/10 text-gray-900",
+                    status === "complete" && "text-[#07477a] hover:bg-[#07477a]/5 cursor-pointer",
                     status === "pending" && "text-gray-400 cursor-not-allowed",
                     status !== "pending" && canNavigateToPhase(step.id) && status !== "current" && "hover:bg-gray-50",
                   )}
@@ -153,8 +153,8 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
                   <div
                     className={cn(
                       "flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all",
-                      status === "current" && "border-[#00754a] bg-[#00754a] text-white shadow-lg shadow-[#00754a]/30",
-                      status === "complete" && "border-[#00754a] bg-[#00754a]/10 text-[#00754a]",
+                      status === "current" && "border-[#07477a] bg-[#07477a] text-white shadow-lg shadow-[#07477a]/30",
+                      status === "complete" && "border-[#07477a] bg-[#07477a]/10 text-[#07477a]",
                       status === "pending" && "border-gray-200 text-gray-400",
                     )}
                   >
@@ -173,14 +173,14 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
                           className={cn(
                             "flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm transition-colors",
                             originalIndex === currentSectionIndex
-                              ? "bg-[#00754a]/10 text-[#00754a] font-medium"
+                              ? "bg-[#07477a]/10 text-[#07477a] font-medium"
                               : "text-gray-500 hover:text-gray-900 hover:bg-gray-50",
                           )}
                         >
                           <Circle
                             className={cn(
                               "h-2 w-2",
-                              originalIndex === currentSectionIndex ? "fill-[#00754a] text-[#00754a]" : "fill-gray-300 text-gray-300",
+                              originalIndex === currentSectionIndex ? "fill-[#07477a] text-[#07477a]" : "fill-gray-300 text-gray-300",
                             )}
                           />
                           {section.title}
@@ -200,7 +200,7 @@ function SidebarContent({ currentPhase, sections, currentSectionIndex, filing, f
         <div className="border-t border-gray-100 p-4">
           <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
             <p className="text-xs text-gray-500">Filing Reference</p>
-            <p className="font-mono text-sm text-[#00754a] font-medium">
+            <p className="font-mono text-sm text-[#07477a] font-medium">
               {filing.referenceNumber || `JJ-${String(filing.id).slice(-6).toUpperCase()}`}
             </p>
           </div>
@@ -217,7 +217,7 @@ export function WizardSidebar(props: WizardSidebarProps) {
   if (isMobile) {
     return (
       <>
-        <Button variant="ghost" size="icon" className="fixed left-4 top-4 z-50 rounded-xl bg-[#00754a] text-white hover:bg-[#005c3b] shadow-lg" onClick={() => setOpen(true)}>
+        <Button variant="ghost" size="icon" className="fixed left-4 top-4 z-50 rounded-xl bg-[#07477a] text-white hover:bg-[#053560] shadow-lg" onClick={() => setOpen(true)}>
           <Menu className="h-5 w-5" />
         </Button>
 

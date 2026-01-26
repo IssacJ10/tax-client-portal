@@ -660,9 +660,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   // Render loading state
   if (isLoading && !filing) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#f8faf9]">
+      <div className="flex min-h-screen items-center justify-center bg-[#f8fbff]">
         <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
-          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+          <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#07477a]" />
           <p className="mt-4 text-gray-500">Loading your filing...</p>
         </div>
       </div>
@@ -696,7 +696,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         if (shouldAutoSkipSpouse) {
           return (
             <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#07477a]" />
               <p className="mt-4 text-gray-500">Continuing to dependents...</p>
             </div>
           )
@@ -725,7 +725,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         if (shouldAutoSkipDependents) {
           return (
             <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
-              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+              <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#07477a]" />
               <p className="mt-4 text-gray-500">Continuing to review...</p>
             </div>
           )
@@ -810,7 +810,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             }, 0)
             return (
               <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
-                <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+                <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#07477a]" />
                 <p className="mt-4 text-gray-500">Continuing with your dependents...</p>
               </div>
             )
@@ -914,8 +914,8 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         return (
           <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 shadow-sm">
             {/* Icon */}
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#00754a]/10">
-              <Users className="h-8 w-8 text-[#00754a]" />
+            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#07477a]/10">
+              <Users className="h-8 w-8 text-[#07477a]" />
             </div>
 
             {/* Title & Description */}
@@ -931,7 +931,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
               <Button
                 onClick={handleAddDependents}
                 disabled={isCreatingDependents || isLoading}
-                className="min-w-[180px] bg-[#00754a] hover:bg-[#005c3b] text-white"
+                className="min-w-[180px] bg-[#07477a] hover:bg-[#053560] text-white"
                 size="lg"
               >
                 {isCreatingDependents ? (
@@ -1031,7 +1031,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         // Show loading state while initializing or creating primary filing
         return (
           <div className="rounded-xl bg-white border border-gray-200 p-8 text-center shadow-sm">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#00754a]" />
+            <Loader2 className="mx-auto h-8 w-8 animate-spin text-[#07477a]" />
             <p className="mt-4 text-gray-500">
               {isCreatingPrimaryRef.current ? "Setting up your tax filing..." : "Initializing wizard..."}
             </p>
@@ -1050,7 +1050,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   return (
     <div className="flex min-h-screen relative overflow-hidden">
       {/* Clean White Background - matching dashboard theme */}
-      <div className="fixed inset-0 bg-[#f8faf9]" />
+      <div className="fixed inset-0 bg-[#f8fbff]" />
 
       {/* Sidebar / Drawer */}
       <WizardSidebar

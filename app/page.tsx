@@ -55,14 +55,14 @@ export default function HomePage() {
 
             {/* Left: Text Content */}
             <motion.div style={{ y: yText, opacity: opacityHero }} className="z-10">
-              <div className="inline-flex items-center rounded-full border border-[#00754a]/20 bg-[#00754a]/10 backdrop-blur-sm px-4 py-1.5 text-sm font-semibold text-[#00754a] mb-8">
-                <span className="flex h-2 w-2 rounded-full bg-[#00754a] mr-2 animate-pulse"></span>
+              <div className="inline-flex items-center rounded-full border border-[#07477a]/20 bg-[#07477a]/10 backdrop-blur-sm px-4 py-1.5 text-sm font-semibold text-[#07477a] mb-8">
+                <span className="flex h-2 w-2 rounded-full bg-[#07477a] mr-2 animate-pulse"></span>
                 Accepting New Clients for 2025
               </div>
 
               <h1 className="text-5xl font-bold tracking-tight sm:text-7xl mb-6 text-gray-900 leading-[1.1]">
                 Tax filing, <br />
-                <span className="inline-block pb-2 text-[#00754a]">
+                <span className="inline-block pb-2 text-[#07477a]">
                   reimagined.
                 </span>
               </h1>
@@ -75,12 +75,12 @@ export default function HomePage() {
                 <button
                   onClick={handleStartFiling}
                   data-testid="hero-cta"
-                  className="inline-flex h-14 items-center justify-center rounded-full bg-[#00754a] px-8 text-lg font-semibold text-white shadow-lg shadow-[#00754a]/25 transition-all hover:bg-[#006640] hover:scale-105 active:scale-95"
+                  className="inline-flex h-14 items-center justify-center rounded-full bg-[#07477a] px-8 text-lg font-semibold text-white shadow-lg shadow-[#07477a]/25 transition-all hover:bg-[#053560] hover:scale-105 active:scale-95"
                 >
                   Start Your Filing <ArrowRight className="ml-2 h-5 w-5" />
                 </button>
 
-                <Button variant="outline" size="lg" className="h-14 rounded-full px-8 text-lg border-[#00754a]/30 bg-white/50 backdrop-blur-sm hover:bg-white/80 text-gray-900" asChild>
+                <Button variant="outline" size="lg" className="h-14 rounded-full px-8 text-lg border-[#07477a]/30 bg-white/50 backdrop-blur-sm hover:bg-white/80 text-gray-900" asChild>
                   <Link href="/auth/login">Client Login</Link>
                 </Button>
               </div>
@@ -90,30 +90,30 @@ export default function HomePage() {
             <motion.div style={{ y: yGraphic, opacity: opacityHero }} className="relative h-[600px] w-full hidden lg:block perspective-1000">
               {/* Main Dashboard Card - Green Glassmorphic */}
               <motion.div
-                className="absolute top-10 left-10 w-[400px] h-[500px] bg-gradient-to-br from-[#00754a]/20 via-white/80 to-[#00754a]/10 backdrop-blur-xl border border-[#00754a]/20 rounded-3xl shadow-2xl z-20 overflow-hidden"
+                className="absolute top-10 left-10 w-[400px] h-[500px] bg-gradient-to-br from-[#07477a]/20 via-white/80 to-[#07477a]/10 backdrop-blur-xl border border-[#07477a]/20 rounded-3xl shadow-2xl z-20 overflow-hidden"
                 animate={{ y: [0, -20, 0] }}
                 transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
               >
-                <div className="h-14 border-b border-[#00754a]/20 flex items-center px-6 gap-2 bg-gradient-to-r from-[#00754a]/20 to-[#00754a]/5">
-                  <div className="w-3 h-3 rounded-full bg-[#00754a]/30" />
-                  <div className="w-3 h-3 rounded-full bg-[#00754a]/50" />
-                  <div className="w-3 h-3 rounded-full bg-[#00754a]" />
+                <div className="h-14 border-b border-[#07477a]/20 flex items-center px-6 gap-2 bg-gradient-to-r from-[#07477a]/20 to-[#07477a]/5">
+                  <div className="w-3 h-3 rounded-full bg-[#07477a]/30" />
+                  <div className="w-3 h-3 rounded-full bg-[#07477a]/50" />
+                  <div className="w-3 h-3 rounded-full bg-[#07477a]" />
                 </div>
                 <div className="p-8 space-y-6">
                   <div className="space-y-2">
-                    <div className="h-4 w-24 bg-[#00754a]/20 rounded-full" />
-                    <div className="h-12 w-full bg-gradient-to-r from-[#00754a]/15 to-[#00754a]/5 rounded-xl border border-[#00754a]/20 flex items-center px-4 text-[#00754a] font-mono text-xl font-bold">
+                    <div className="h-4 w-24 bg-[#07477a]/20 rounded-full" />
+                    <div className="h-12 w-full bg-gradient-to-r from-[#07477a]/15 to-[#07477a]/5 rounded-xl border border-[#07477a]/20 flex items-center px-4 text-[#07477a] font-mono text-xl font-bold">
                       $4,250.00
                     </div>
                   </div>
                   <div className="space-y-4 pt-4">
-                    <div className="h-2 w-full bg-[#00754a]/15 rounded-full" />
-                    <div className="h-2 w-3/4 bg-[#00754a]/25 rounded-full" />
-                    <div className="h-2 w-5/6 bg-[#00754a]/10 rounded-full" />
+                    <div className="h-2 w-full bg-[#07477a]/15 rounded-full" />
+                    <div className="h-2 w-3/4 bg-[#07477a]/25 rounded-full" />
+                    <div className="h-2 w-5/6 bg-[#07477a]/10 rounded-full" />
                   </div>
                   <div className="pt-8">
-                    <div className="h-32 w-full bg-gradient-to-tr from-[#00754a]/20 via-[#00754a]/5 to-[#00754a]/15 rounded-2xl border border-[#00754a]/15 flex items-center justify-center backdrop-blur-sm">
-                      <TrendingUp className="h-12 w-12 text-[#00754a]/60" />
+                    <div className="h-32 w-full bg-gradient-to-tr from-[#07477a]/20 via-[#07477a]/5 to-[#07477a]/15 rounded-2xl border border-[#07477a]/15 flex items-center justify-center backdrop-blur-sm">
+                      <TrendingUp className="h-12 w-12 text-[#07477a]/60" />
                     </div>
                   </div>
                 </div>
@@ -121,23 +121,23 @@ export default function HomePage() {
 
               {/* Background Floating Card - Green Gradient */}
               <motion.div
-                className="absolute top-32 right-10 w-[350px] h-[400px] bg-gradient-to-br from-[#00754a]/25 via-[#00754a]/10 to-[#00754a]/20 backdrop-blur-md border border-[#00754a]/20 rounded-3xl shadow-xl z-10"
+                className="absolute top-32 right-10 w-[350px] h-[400px] bg-gradient-to-br from-[#07477a]/25 via-[#07477a]/10 to-[#07477a]/20 backdrop-blur-md border border-[#07477a]/20 rounded-3xl shadow-xl z-10"
                 animate={{ y: [0, 20, 0] }}
                 transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
               />
 
               {/* Small Floating Badge - Green Glassmorphic */}
               <motion.div
-                className="absolute bottom-20 -left-10 bg-gradient-to-br from-white/90 via-[#00754a]/10 to-white/80 backdrop-blur-xl border border-[#00754a]/20 px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl z-30"
+                className="absolute bottom-20 -left-10 bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl z-30"
                 animate={{ x: [0, 10, 0] }}
                 transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
               >
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#00754a]/30 to-[#00754a]/10 flex items-center justify-center border border-[#00754a]/20">
-                  <Check className="h-6 w-6 text-[#00754a]" />
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#07477a]/30 to-[#07477a]/10 flex items-center justify-center border border-[#07477a]/20">
+                  <Check className="h-6 w-6 text-[#07477a]" />
                 </div>
                 <div>
                   <p className="text-gray-900 font-bold">Audit Shield</p>
-                  <p className="text-xs text-[#00754a]">Active Protection</p>
+                  <p className="text-xs text-[#07477a]">Active Protection</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -145,7 +145,7 @@ export default function HomePage() {
         </section>
 
         {/* --- STATS STRIP - Glassmorphic White with Green Text --- */}
-        <div className="border-y border-[#00754a]/10 bg-white/60 backdrop-blur-md">
+        <div className="border-y border-[#07477a]/10 bg-white/60 backdrop-blur-md">
           <div className="container mx-auto px-4 py-12">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
               {[
@@ -155,9 +155,9 @@ export default function HomePage() {
                 { label: "Security", val: "AES-256", icon: Shield },
               ].map((stat, i) => (
                 <div key={i} className="flex flex-col items-center justify-center gap-2 group">
-                  <stat.icon className="h-6 w-6 text-[#00754a]/60 group-hover:text-[#00754a] transition-colors duration-500" />
-                  <span className="text-3xl font-bold text-[#00754a] tracking-tight">{stat.val}</span>
-                  <span className="text-xs font-semibold text-[#00754a]/70 uppercase tracking-widest">{stat.label}</span>
+                  <stat.icon className="h-6 w-6 text-[#07477a]/60 group-hover:text-[#07477a] transition-colors duration-500" />
+                  <span className="text-3xl font-bold text-[#07477a] tracking-tight">{stat.val}</span>
+                  <span className="text-xs font-semibold text-[#07477a]/70 uppercase tracking-widest">{stat.label}</span>
                 </div>
               ))}
             </div>
@@ -176,98 +176,98 @@ export default function HomePage() {
 
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {/* 1. PERSONAL TAX - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#00754a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#00754a]/10 border border-[#00754a]/20 flex items-center justify-center mb-6 group-hover:bg-[#00754a]/15 transition-colors">
-                  <Users className="h-6 w-6 text-[#00754a]" />
+              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
+                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
+                  <Users className="h-6 w-6 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Personal Tax</h3>
                 <p className="text-sm text-gray-600 mb-6">Maximize refunds for individuals & families.</p>
                 <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> T1 General Filing</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> RRSP & Credits</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> T1 General Filing</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> RRSP & Credits</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#00754a]/30 bg-white/50 hover:bg-[#00754a] hover:text-white hover:border-[#00754a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
                   Get Started
                 </Button>
               </div>
 
               {/* 2. BUSINESS TAX - Featured Glassmorphic */}
-              <div className="bg-white/80 backdrop-blur-xl border-2 border-[#00754a]/40 rounded-2xl p-6 relative shadow-lg shadow-[#00754a]/10">
-                <div className="absolute top-0 right-0 bg-[#00754a] px-3 py-1 text-[10px] font-bold text-white rounded-bl-xl rounded-tr-xl">POPULAR</div>
-                <div className="h-12 w-12 rounded-xl bg-[#00754a]/15 border border-[#00754a]/30 flex items-center justify-center mb-6">
-                  <FileText className="h-6 w-6 text-[#00754a]" />
+              <div className="bg-white/80 backdrop-blur-xl border-2 border-[#07477a]/40 rounded-2xl p-6 relative shadow-lg shadow-[#07477a]/10">
+                <div className="absolute top-0 right-0 bg-[#07477a] px-3 py-1 text-[10px] font-bold text-white rounded-bl-xl rounded-tr-xl">POPULAR</div>
+                <div className="h-12 w-12 rounded-xl bg-[#07477a]/15 border border-[#07477a]/30 flex items-center justify-center mb-6">
+                  <FileText className="h-6 w-6 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Business Tax (T2)</h3>
                 <p className="text-sm text-gray-600 mb-6">Corporate filing & compliance.</p>
                 <ul className="space-y-3 text-sm text-gray-900 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> Corporate Returns</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> Financial Statements</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Corporate Returns</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Financial Statements</li>
                 </ul>
-                <Button className="w-full h-10 rounded-lg bg-[#00754a] text-white hover:bg-[#006640] font-semibold shadow-lg shadow-[#00754a]/25 text-sm" onClick={handleStartFiling}>
+                <Button className="w-full h-10 rounded-lg bg-[#07477a] text-white hover:bg-[#053560] font-semibold shadow-lg shadow-[#07477a]/25 text-sm" onClick={handleStartFiling}>
                   File Corporate
                 </Button>
               </div>
 
               {/* 3. BOOKKEEPING - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#00754a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#00754a]/10 border border-[#00754a]/20 flex items-center justify-center mb-6 group-hover:bg-[#00754a]/15 transition-colors">
-                  <BookOpen className="h-6 w-6 text-[#00754a]" />
+              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
+                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
+                  <BookOpen className="h-6 w-6 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Bookkeeping</h3>
                 <p className="text-sm text-gray-600 mb-6">Monthly tracking & organization.</p>
                 <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> Monthly/Quarterly</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> Expense Tracking</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Monthly/Quarterly</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Expense Tracking</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#00754a]/30 bg-white/50 hover:bg-[#00754a] hover:text-white hover:border-[#00754a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
                   Book Service
                 </Button>
               </div>
 
               {/* 4. PAYROLL - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#00754a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#00754a]/10 border border-[#00754a]/20 flex items-center justify-center mb-6 group-hover:bg-[#00754a]/15 transition-colors">
-                  <Banknote className="h-6 w-6 text-[#00754a]" />
+              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
+                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
+                  <Banknote className="h-6 w-6 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Payroll Services</h3>
                 <p className="text-sm text-gray-600 mb-6">Employee payments & T4s.</p>
                 <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> Deductions Mgmt</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> T4/T4A Filing</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Deductions Mgmt</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> T4/T4A Filing</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#00754a]/30 bg-white/50 hover:bg-[#00754a] hover:text-white hover:border-[#00754a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
                   Learn More
                 </Button>
               </div>
 
               {/* 5. GST/HST FILING - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#00754a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#00754a]/10 border border-[#00754a]/20 flex items-center justify-center mb-6 group-hover:bg-[#00754a]/15 transition-colors">
-                  <Percent className="h-6 w-6 text-[#00754a]" />
+              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
+                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
+                  <Percent className="h-6 w-6 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">GST/HST Filing</h3>
                 <p className="text-sm text-gray-600 mb-6">Remittance & compliance checks.</p>
                 <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> CRA Compliance</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> Input Tax Credits</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> CRA Compliance</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Input Tax Credits</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#00754a]/30 bg-white/50 hover:bg-[#00754a] hover:text-white hover:border-[#00754a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
                   Start Filing
                 </Button>
               </div>
 
               {/* 6. BUSINESS REGISTRATION - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#00754a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#00754a]/10 border border-[#00754a]/20 flex items-center justify-center mb-6 group-hover:bg-[#00754a]/15 transition-colors">
-                  <Building2 className="h-6 w-6 text-[#00754a]" />
+              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
+                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
+                  <Building2 className="h-6 w-6 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Business Reg</h3>
                 <p className="text-sm text-gray-600 mb-6">Incorporation & startup setup.</p>
                 <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> Incorporation</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#00754a]" /> CRA Account Setup</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Incorporation</li>
+                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> CRA Account Setup</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#00754a]/30 bg-white/50 hover:bg-[#00754a] hover:text-white hover:border-[#00754a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
                   Register Now
                 </Button>
               </div>
@@ -280,14 +280,14 @@ export default function HomePage() {
           <div className="grid lg:grid-cols-2 w-full min-h-[700px]">
 
             {/* Left Column: Text & Graphics - GREEN BACKGROUND */}
-            <div className="flex flex-col justify-center px-6 py-20 md:px-16 lg:px-24 xl:px-32 order-2 lg:order-1 bg-[#00754a]">
+            <div className="flex flex-col justify-center px-6 py-20 md:px-16 lg:px-24 xl:px-32 order-2 lg:order-1 bg-[#07477a]">
               <div className="max-w-xl">
                 <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight text-white">
                   Focus on your work. <br />
                   <span className="text-white/80">We handle the rest.</span>
                 </h2>
                 <p className="text-xl text-white/90 mb-10 font-medium leading-relaxed">
-                  TaxPortal bridges the gap between complex tax laws and modern technology. We use AI to find every deduction, and human experts to verify every cent.
+                  JJ Elevate bridges the gap between complex tax laws and modern technology. We use AI to find every deduction, and human experts to verify every cent.
                 </p>
 
                 <div className="flex items-center gap-4 mb-16">
@@ -317,12 +317,12 @@ export default function HomePage() {
                     whileHover={{ scale: 1.05 }}
                     transition={{ type: "spring", stiffness: 300 }}
                   >
-                    <div className="h-10 w-10 bg-[#00754a]/15 rounded-full flex items-center justify-center">
-                      <Check className="h-5 w-5 text-[#00754a]" />
+                    <div className="h-10 w-10 bg-[#07477a]/15 rounded-full flex items-center justify-center">
+                      <Check className="h-5 w-5 text-[#07477a]" />
                     </div>
                     <div>
                       <p className="text-gray-900 font-bold text-sm">Tax Document Preview</p>
-                      <p className="text-[#00754a] text-xs">Ready for review</p>
+                      <p className="text-[#07477a] text-xs">Ready for review</p>
                     </div>
                   </motion.div>
 
@@ -331,12 +331,12 @@ export default function HomePage() {
                     animate={{ y: [0, -5, 0] }}
                     transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
                   >
-                    <div className="h-12 w-12 bg-[#00754a]/20 rounded-full flex items-center justify-center">
-                      <Check className="h-6 w-6 text-[#00754a]" />
+                    <div className="h-12 w-12 bg-[#07477a]/20 rounded-full flex items-center justify-center">
+                      <Check className="h-6 w-6 text-[#07477a]" />
                     </div>
                     <div>
                       <p className="text-gray-900 font-bold text-lg">Filed Successfully</p>
-                      <p className="text-[#00754a] text-xs">Just now</p>
+                      <p className="text-[#07477a] text-xs">Just now</p>
                     </div>
                   </motion.div>
                 </div>
@@ -354,7 +354,7 @@ export default function HomePage() {
                 priority
               />
               {/* Gradient for smooth transition on mobile */}
-              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#00754a] to-transparent lg:hidden" />
+              <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#07477a] to-transparent lg:hidden" />
             </div>
           </div>
         </section>
@@ -367,7 +367,7 @@ export default function HomePage() {
             <div className="relative h-[400px] lg:h-auto w-full order-1">
               <Image
                 src="/images/focused-accountant.png"
-                alt="Focused TaxPortal Accountant"
+                alt="Focused JJ Elevate Accountant"
                 fill
                 className="object-cover"
                 quality={90}
@@ -379,12 +379,12 @@ export default function HomePage() {
               <div className="absolute bottom-6 left-6 right-6 hidden sm:block">
                 <div className="bg-white/90 backdrop-blur-xl rounded-xl p-4 border border-white/50 shadow-lg max-w-xs mx-auto lg:mx-0">
                   <div className="flex items-center gap-4">
-                    <div className="h-12 w-12 rounded-full bg-[#00754a]/15 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-[#00754a]" />
+                    <div className="h-12 w-12 rounded-full bg-[#07477a]/15 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-[#07477a]" />
                     </div>
                     <div>
                       <p className="font-bold text-gray-900">Dedicated Team</p>
-                      <p className="text-xs text-[#00754a]">Certified Professionals</p>
+                      <p className="text-xs text-[#07477a]">Certified Professionals</p>
                     </div>
                   </div>
                 </div>
@@ -392,10 +392,10 @@ export default function HomePage() {
             </div>
 
             {/* Right Column: Text Content - GREEN BACKGROUND */}
-            <div className="flex flex-col justify-center px-6 py-20 md:px-16 lg:px-24 xl:px-32 order-2 bg-[#00754a]">
+            <div className="flex flex-col justify-center px-6 py-20 md:px-16 lg:px-24 xl:px-32 order-2 bg-[#07477a]">
               <div className="max-w-xl">
                 <div className="inline-flex items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-3 py-1 text-sm font-medium text-white mb-6">
-                  About TaxPortal
+                  About JJ Elevate
                 </div>
                 <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
                   Your Partners in <span className="text-white/80">Growth</span>.
@@ -423,7 +423,7 @@ export default function HomePage() {
                 </ul>
 
                 <div className="pt-2">
-                  <Button size="lg" className="rounded-full px-8 font-semibold bg-white hover:bg-white/90 text-[#00754a] shadow-lg" asChild>
+                  <Button size="lg" className="rounded-full px-8 font-semibold bg-white hover:bg-white/90 text-[#07477a] shadow-lg" asChild>
                     <Link href="#contact">Contact Support</Link>
                   </Button>
                 </div>
@@ -449,15 +449,15 @@ export default function HomePage() {
             {/* Phone - Click to Call - Glassmorphic */}
             <a
               href="tel:+17057703951"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#00754a]/20 shadow-lg rounded-3xl hover:border-[#00754a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#00754a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#00754a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#00754a]/15 transition-all relative z-10">
-                <Phone className="h-6 w-6 text-[#00754a]" />
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+                <Phone className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Call Us</h3>
               <p className="text-gray-600 font-medium mb-4 relative z-10">(705) 770-3951</p>
-              <span className="text-xs font-bold text-[#00754a] uppercase tracking-wider bg-[#00754a]/10 px-3 py-1 rounded-full group-hover:bg-[#00754a] group-hover:text-white transition-colors relative z-10">
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-colors relative z-10">
                 Click to Call
               </span>
             </a>
@@ -465,15 +465,15 @@ export default function HomePage() {
             {/* Email - Click to Mail - Glassmorphic */}
             <a
               href="mailto:jjelevateservices@gmail.com"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#00754a]/20 shadow-lg rounded-3xl hover:border-[#00754a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#00754a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#00754a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#00754a]/15 transition-all relative z-10">
-                <Mail className="h-6 w-6 text-[#00754a]" />
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+                <Mail className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Email Us</h3>
               <p className="text-gray-600 font-medium break-all mb-4 relative z-10 text-sm">jjelevateservices@gmail.com</p>
-              <span className="text-xs font-bold text-[#00754a] uppercase tracking-wider bg-[#00754a]/10 px-3 py-1 rounded-full group-hover:bg-[#00754a] group-hover:text-white transition-colors relative z-10">
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-colors relative z-10">
                 Click to Email
               </span>
             </a>
@@ -483,28 +483,28 @@ export default function HomePage() {
               href="https://www.google.com/maps/dir/?api=1&destination=Charlottetown,+PE"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#00754a]/20 shadow-lg rounded-3xl hover:border-[#00754a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#00754a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#00754a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#00754a]/15 transition-all relative z-10">
-                <MapPin className="h-6 w-6 text-[#00754a]" />
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+                <MapPin className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Visit Us</h3>
               <p className="text-gray-600 font-medium mb-4 relative z-10 text-sm">37-64 Belvedere Ave<br />Charlottetown, PE</p>
-              <span className="text-xs font-bold text-[#00754a] uppercase tracking-wider bg-[#00754a]/10 px-3 py-1 rounded-full group-hover:bg-[#00754a] group-hover:text-white transition-colors relative z-10">
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-colors relative z-10">
                 Click for Directions
               </span>
             </a>
 
             {/* Hours - Static Info - Glassmorphic */}
-            <div className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#00754a]/20 shadow-lg rounded-3xl hover:border-[#00754a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-[#00754a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#00754a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#00754a]/15 transition-all relative z-10">
-                <Clock className="h-6 w-6 text-[#00754a]" />
+            <div className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center relative overflow-hidden">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+                <Clock className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Office Hours</h3>
-              <p className="text-gray-600 font-medium mb-4 relative z-10 text-sm">Mon - Fri: 9:00 AM - 5:00 PM<br /><span className="text-xs text-[#00754a]/70">(Weekends by Appointment)</span></p>
-              <span className="text-xs font-bold text-[#00754a] uppercase tracking-wider bg-[#00754a]/10 px-3 py-1 rounded-full relative z-10">
+              <p className="text-gray-600 font-medium mb-4 relative z-10 text-sm">Mon - Fri: 9:00 AM - 5:00 PM<br /><span className="text-xs text-[#07477a]/70">(Weekends by Appointment)</span></p>
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full relative z-10">
                 Open Weekdays
               </span>
             </div>

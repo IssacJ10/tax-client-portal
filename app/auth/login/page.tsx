@@ -53,8 +53,8 @@ type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 export default function LoginPage() {
     return (
-        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-emerald-50/50 to-background dark:from-emerald-950/10 p-4">
-            <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin" />}>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#07477a]/10 via-[#f0f7ff] to-white p-4">
+            <Suspense fallback={<Loader2 className="h-8 w-8 animate-spin text-[#07477a]" />}>
                 <AuthContent />
             </Suspense>
         </div>
@@ -193,15 +193,25 @@ function AuthContent() {
 
     return (
         <div className="w-full max-w-md">
-            <div className="mb-8">
-                <Link href="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-emerald-600 transition-colors">
+            {/* Logo Header */}
+            <div className="mb-8 flex flex-col items-center">
+                <div className="flex items-center gap-3 mb-6">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-lg shadow-black/20">
+                        <img src="/images/logo.png" alt="JJ Elevate" className="h-12 w-12 rounded-xl object-contain" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl font-bold text-white leading-tight drop-shadow-sm">JJ Elevate</h1>
+                        <p className="text-xs text-white/80 font-medium">Accounting Solutions Inc.</p>
+                    </div>
+                </div>
+                <Link href="/" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors">
                     <ArrowLeft className="h-4 w-4" />
                     Back to home
                 </Link>
             </div>
 
             {isRegistered && activeTab === "login" && (
-                <div className="mb-6 rounded-lg bg-green-500/15 p-4 text-green-600 dark:text-green-400 flex items-center gap-3 border border-green-500/20">
+                <div className="mb-6 rounded-lg bg-[#07477a]/10 p-4 text-[#07477a] flex items-center gap-3 border border-[#07477a]/20">
                     <CheckCircle2 className="h-5 w-5" />
                     <p className="text-sm font-medium">Account created successfully! Please sign in.</p>
                 </div>
@@ -214,14 +224,14 @@ function AuthContent() {
                 </TabsList>
 
                 <TabsContent value="login">
-                    <Card>
+                    <Card className="border-[#07477a]/10 shadow-lg shadow-[#07477a]/5">
                         <CardHeader className="space-y-1">
                             <div className="flex items-center justify-center mb-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-600 shadow-sm">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#07477a] to-[#053560] shadow-lg shadow-[#07477a]/30">
                                     <ShieldCheck className="h-7 w-7 text-white" />
                                 </div>
                             </div>
-                            <CardTitle className="text-2xl text-center">Welcome back</CardTitle>
+                            <CardTitle className="text-2xl text-center text-gray-900">Welcome back</CardTitle>
                             <CardDescription className="text-center">Sign in to your account to continue</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -238,15 +248,15 @@ function AuthContent() {
 
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
-                                    <span className="w-full border-t" />
+                                    <span className="w-full border-t border-gray-200" />
                                 </div>
                                 <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                                    <span className="bg-white px-3 text-gray-500 font-medium">Or continue with</span>
                                 </div>
                             </div>
 
                             {error && activeTab === "login" && (
-                                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive font-medium text-center">
+                                <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-600 font-medium text-center">
                                     {error}
                                 </div>
                             )}
@@ -267,7 +277,7 @@ function AuthContent() {
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
                                         <Label htmlFor="password">Password</Label>
-                                        <Link href="/forgot-password" className="text-sm text-emerald-600 hover:underline">
+                                        <Link href="/forgot-password" className="text-sm text-[#07477a] hover:underline">
                                             Forgot password?
                                         </Link>
                                     </div>
@@ -280,7 +290,7 @@ function AuthContent() {
                                     />
                                     {signInErrors.password && <p className="text-xs text-red-500">{signInErrors.password.message}</p>}
                                 </div>
-                                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" size="lg" disabled={isLoading}>
+                                <Button type="submit" className="w-full bg-[#07477a] hover:bg-[#053560] shadow-lg shadow-[#07477a]/20" size="lg" disabled={isLoading}>
                                     {isLoading ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -293,11 +303,11 @@ function AuthContent() {
                             </form>
                         </CardContent>
                         <CardFooter className="flex flex-col space-y-4">
-                            <div className="text-sm text-center text-muted-foreground">
+                            <div className="text-sm text-center text-gray-500">
                                 Don't have an account?{" "}
                                 <button
                                     onClick={() => setActiveTab("register")}
-                                    className="text-emerald-600 hover:underline font-medium"
+                                    className="text-[#07477a] hover:underline font-medium"
                                 >
                                     Create account
                                 </button>
@@ -307,14 +317,14 @@ function AuthContent() {
                 </TabsContent>
 
                 <TabsContent value="register">
-                    <Card>
+                    <Card className="border-[#07477a]/10 shadow-lg shadow-[#07477a]/5">
                         <CardHeader className="space-y-1">
                             <div className="flex items-center justify-center mb-4">
-                                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-600 shadow-sm">
+                                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-[#07477a] to-[#053560] shadow-lg shadow-[#07477a]/30">
                                     <ShieldCheck className="h-7 w-7 text-white" />
                                 </div>
                             </div>
-                            <CardTitle className="text-2xl text-center">Create an account</CardTitle>
+                            <CardTitle className="text-2xl text-center text-gray-900">Create an account</CardTitle>
                             <CardDescription className="text-center">Get started with your tax filing journey</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
@@ -331,15 +341,15 @@ function AuthContent() {
 
                             <div className="relative">
                                 <div className="absolute inset-0 flex items-center">
-                                    <span className="w-full border-t" />
+                                    <span className="w-full border-t border-gray-200" />
                                 </div>
                                 <div className="relative flex justify-center text-xs uppercase">
-                                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                                    <span className="bg-white px-3 text-gray-500 font-medium">Or continue with</span>
                                 </div>
                             </div>
 
                             {error && activeTab === "register" && (
-                                <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive font-medium text-center">
+                                <div className="rounded-md bg-red-50 border border-red-200 p-3 text-sm text-red-600 font-medium text-center">
                                     {error}
                                 </div>
                             )}
@@ -405,7 +415,7 @@ function AuthContent() {
                                     />
                                     {signUpErrors.confirmPassword && <p className="text-xs text-red-500">{signUpErrors.confirmPassword.message}</p>}
                                 </div>
-                                <Button type="submit" className="w-full bg-emerald-600 hover:bg-emerald-700" size="lg" disabled={isLoading}>
+                                <Button type="submit" className="w-full bg-[#07477a] hover:bg-[#053560] shadow-lg shadow-[#07477a]/20" size="lg" disabled={isLoading}>
                                     {isLoading ? (
                                         <>
                                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -418,11 +428,11 @@ function AuthContent() {
                             </form>
                         </CardContent>
                         <CardFooter className="flex flex-col space-y-4">
-                            <div className="text-sm text-center text-muted-foreground">
+                            <div className="text-sm text-center text-gray-500">
                                 Already have an account?{" "}
                                 <button
                                     onClick={() => setActiveTab("login")}
-                                    className="text-emerald-600 hover:underline font-medium"
+                                    className="text-[#07477a] hover:underline font-medium"
                                 >
                                     Sign in
                                 </button>
@@ -432,13 +442,13 @@ function AuthContent() {
                 </TabsContent>
             </Tabs>
 
-            <p className="mt-8 text-center text-xs text-muted-foreground">
+            <p className="mt-8 text-center text-xs text-gray-500">
                 By {activeTab === "login" ? "signing in" : "creating an account"}, you agree to our{" "}
-                <Link href="/terms" className="underline hover:text-emerald-600">
+                <Link href="/terms" className="underline hover:text-[#07477a]">
                     Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link href="/privacy" className="underline hover:text-emerald-600">
+                <Link href="/privacy" className="underline hover:text-[#07477a]">
                     Privacy Policy
                 </Link>
             </p>

@@ -149,7 +149,7 @@ export default function ProfilePage() {
     }
 
     if (loading) {
-        return <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-primary" /></div>
+        return <div className="flex justify-center p-12"><Loader2 className="animate-spin h-8 w-8 text-[#07477a]" /></div>
     }
 
     return (
@@ -157,7 +157,7 @@ export default function ProfilePage() {
             <div className="flex items-center gap-4">
                 <Link
                     href="/dashboard"
-                    className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-emerald-600 transition-colors"
+                    className="inline-flex items-center gap-2 text-sm text-gray-500 hover:text-[#07477a] transition-colors"
                 >
                     <ArrowLeft className="h-4 w-4" />
                     Return to Dashboard
@@ -201,7 +201,7 @@ export default function ProfilePage() {
                                 )}
                             </div>
                         </div>
-                        <Button type="submit" disabled={updatingProfile} className="bg-emerald-600 hover:bg-emerald-700">
+                        <Button type="submit" disabled={updatingProfile} className="bg-[#07477a] hover:bg-[#053560] shadow-lg shadow-[#07477a]/20">
                             {updatingProfile && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             Save Changes
                         </Button>

@@ -82,8 +82,8 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
 
     return (
       <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 text-center shadow-sm">
-        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#00754a]/10">
-          <FileCheck className="h-10 w-10 text-[#00754a]" />
+        <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-[#07477a]/10">
+          <FileCheck className="h-10 w-10 text-[#07477a]" />
         </div>
         <h2 className="text-2xl font-bold text-gray-900">Filing Submitted!</h2>
         <p className="mt-2 text-gray-500">
@@ -91,9 +91,9 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
         </p>
         <div className="mt-6 rounded-lg bg-gray-100 p-4">
           <p className="text-sm text-gray-500">Reference Number</p>
-          <p className="mt-1 font-mono text-2xl font-bold text-[#00754a]">{displayRefNumber}</p>
+          <p className="mt-1 font-mono text-2xl font-bold text-[#07477a]">{displayRefNumber}</p>
         </div>
-        <Button className="mt-8 bg-[#00754a] hover:bg-[#005c3b] text-white" onClick={() => router.push("/dashboard")}>
+        <Button className="mt-8 bg-[#07477a] hover:bg-[#053560] text-white" onClick={() => router.push("/dashboard")}>
           Return to Dashboard
         </Button>
       </div>
@@ -107,8 +107,8 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
         {/* Header */}
         <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
           <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00754a]/10">
-              <CreditCard className="h-6 w-6 text-[#00754a]" />
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#07477a]/10">
+              <CreditCard className="h-6 w-6 text-[#07477a]" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">
@@ -187,7 +187,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
                   <div className="border-t border-gray-200 mt-3 pt-3">
                     <div className="flex justify-between items-center">
                       <span className="text-lg font-semibold text-gray-900">Amount You Owe</span>
-                      <span className={`text-xl font-bold ${amountDue > 0 ? 'text-[#00754a]' : 'text-green-600'}`}>
+                      <span className={`text-xl font-bold ${amountDue > 0 ? 'text-[#07477a]' : 'text-green-600'}`}>
                         {amountDue > 0 ? formatPrice(amountDue) : "$0.00"}
                       </span>
                     </div>
@@ -207,7 +207,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
                 /* New Filing: Just show Total */
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-semibold text-gray-900">Total</span>
-                  <span className="text-xl font-bold text-[#00754a]">{formatPrice(pricing.total)}</span>
+                  <span className="text-xl font-bold text-[#07477a]">{formatPrice(pricing.total)}</span>
                 </div>
               )}
             </div>
@@ -220,7 +220,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Review
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px] bg-[#00754a] hover:bg-[#005c3b] text-white">
+          <Button onClick={handleSubmit} disabled={isLoading} size="lg" className="min-w-[200px] bg-[#07477a] hover:bg-[#053560] text-white">
             {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
             Submit for Review
           </Button>
@@ -235,8 +235,8 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
       {/* Header */}
       <div className="rounded-xl bg-white border border-gray-200 p-6 shadow-sm">
         <div className="flex items-center gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#00754a]/10">
-            <FileCheck className="h-6 w-6 text-[#00754a]" />
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#07477a]/10">
+            <FileCheck className="h-6 w-6 text-[#07477a]" />
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900">Review Your Information</h2>
@@ -290,7 +290,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
                 variant="outline"
                 onClick={onAddSpouse}
                 disabled={isLoading}
-                className="gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-[#00754a] hover:border-[#00754a]"
+                className="gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-[#07477a] hover:border-[#07477a]"
               >
                 <Heart className="h-4 w-4" />
                 Add Spouse
@@ -301,7 +301,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
                 variant="outline"
                 onClick={onAddDependent}
                 disabled={isLoading}
-                className="gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-[#00754a] hover:border-[#00754a]"
+                className="gap-2 border-gray-200 text-gray-700 hover:bg-gray-50 hover:text-[#07477a] hover:border-[#07477a]"
               >
                 <UserPlus className="h-4 w-4" />
                 Add Dependent
@@ -318,7 +318,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
 
       {/* Continue Button */}
       <div className="flex justify-end">
-        <Button onClick={() => setCurrentStep("payment")} size="lg" className="min-w-[200px] bg-[#00754a] hover:bg-[#005c3b] text-white">
+        <Button onClick={() => setCurrentStep("payment")} size="lg" className="min-w-[200px] bg-[#07477a] hover:bg-[#053560] text-white">
           Continue to Payment
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
@@ -363,8 +363,8 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
         onClick={() => setIsExpanded(!isExpanded)}
       >
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#00754a]/10">
-            <Icon className="h-5 w-5 text-[#00754a]" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-[#07477a]/10">
+            <Icon className="h-5 w-5 text-[#07477a]" />
           </div>
           <div>
             <h3 className="font-semibold text-gray-900">{displayName}</h3>
@@ -373,7 +373,7 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
         </div>
         <div className="flex items-center gap-3">
           {person.isComplete && (
-            <span className="flex items-center gap-1 rounded-full bg-[#00754a]/10 px-2 py-1 text-xs font-medium text-[#00754a]">
+            <span className="flex items-center gap-1 rounded-full bg-[#07477a]/10 px-2 py-1 text-xs font-medium text-[#07477a]">
               <Check className="h-3 w-3" />
               Complete
             </span>
@@ -404,7 +404,7 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-gray-500 hover:text-[#00754a] hover:bg-gray-100"
+                        className="h-7 text-xs text-gray-500 hover:text-[#07477a] hover:bg-gray-100"
                         onClick={(e) => {
                           e.stopPropagation()
                           onEdit(person.id, sectionIndex)
@@ -436,7 +436,7 @@ function PersonCard({ person, icon: Icon, title, schema, onEdit }: PersonCardPro
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="h-7 text-xs text-gray-500 hover:text-[#00754a] hover:bg-gray-100"
+                    className="h-7 text-xs text-gray-500 hover:text-[#07477a] hover:bg-gray-100"
                     onClick={(e) => {
                       e.stopPropagation()
                       onEdit(person.id, 0)

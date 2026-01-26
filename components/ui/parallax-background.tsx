@@ -25,7 +25,7 @@ export function ParallaxBackground() {
                 <div className="absolute inset-0 bg-white/80" />
 
                 {/* Subtle green tint */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#00754a]/5 via-transparent to-[#00754a]/5" />
+                <div className="absolute inset-0 bg-gradient-to-br from-[#07477a]/5 via-transparent to-[#07477a]/5" />
             </motion.div>
         </div>
     )

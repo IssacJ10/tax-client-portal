@@ -41,8 +41,8 @@ export function IntermissionCard({
   return (
     <div className="mx-auto max-w-xl rounded-2xl bg-white border border-gray-200 p-8 shadow-sm">
       {/* Icon */}
-      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#00754a]/10">
-        <Icon className="h-8 w-8 text-[#00754a]" />
+      <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-[#07477a]/10">
+        <Icon className="h-8 w-8 text-[#07477a]" />
       </div>
 
       {/* Title & Description */}
@@ -63,7 +63,7 @@ export function IntermissionCard({
                   {item.sublabel && <p className="text-sm text-gray-500">{item.sublabel}</p>}
                 </div>
                 {item.isComplete && (
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#00754a]">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[#07477a]">
                     <Check className="h-4 w-4 text-white" />
                   </div>
                 )}
@@ -78,7 +78,7 @@ export function IntermissionCard({
         <Button
           onClick={primaryAction.onClick}
           disabled={primaryAction.isLoading}
-          className="min-w-[180px] bg-[#00754a] hover:bg-[#005c3b] text-white"
+          className="min-w-[180px] bg-[#07477a] hover:bg-[#053560] text-white"
           size="lg"
         >
           {primaryAction.isLoading ? (

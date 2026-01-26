@@ -25,12 +25,12 @@ export function WizardProgress({ step, totalSteps, label, isSyncing }: WizardPro
         <div className="flex items-center gap-2">
           {isSyncing ? (
             <>
-              <Cloud className="h-4 w-4 animate-pulse text-[#00754a]" />
+              <Cloud className="h-4 w-4 animate-pulse text-[#07477a]" />
               <span className="text-xs text-gray-500">Saving...</span>
             </>
           ) : (
             <>
-              <Check className="h-4 w-4 text-[#00754a]" />
+              <Check className="h-4 w-4 text-[#07477a]" />
               <span className="text-xs text-gray-500">Saved</span>
             </>
           )}
@@ -40,7 +40,7 @@ export function WizardProgress({ step, totalSteps, label, isSyncing }: WizardPro
       {/* Progress bar */}
       <div className="mt-4 h-2 overflow-hidden rounded-full bg-gray-100">
         <div
-          className="h-full rounded-full bg-[#00754a] transition-all duration-500"
+          className="h-full rounded-full bg-[#07477a] transition-all duration-500"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -52,8 +52,8 @@ export function WizardProgress({ step, totalSteps, label, isSyncing }: WizardPro
             key={i}
             className={cn(
               "flex h-6 w-6 items-center justify-center rounded-full text-xs font-medium transition-all",
-              i + 1 < step && "bg-[#00754a] text-white",
-              i + 1 === step && "bg-[#00754a]/20 text-[#00754a] ring-2 ring-[#00754a]",
+              i + 1 < step && "bg-[#07477a] text-white",
+              i + 1 === step && "bg-[#07477a]/20 text-[#07477a] ring-2 ring-[#07477a]",
               i + 1 > step && "bg-gray-100 text-gray-400",
             )}
           >

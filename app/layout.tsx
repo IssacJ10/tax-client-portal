@@ -13,7 +13,7 @@ const _geist = Geist({ subsets: ["latin"] })
 const _geistMono = Geist_Mono({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "TaxPortal | Secure Tax Filing",
+  title: "JJ Elevate | Secure Tax Filing",
   description: "Enterprise-grade tax filing portal with secure document management and professional preparation.",
   generator: "v0.app",
   icons: {

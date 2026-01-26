@@ -28,8 +28,8 @@ function Input({ className, type, onWheel, ...props }: React.ComponentProps<'inp
       data-slot="input"
       onWheel={handleWheel}
       className={cn(
-        'file:text-gray-900 placeholder:text-gray-400 selection:bg-[#00754a] selection:text-white border-gray-300 h-9 w-full min-w-0 rounded-md border bg-white px-3 py-1 text-base text-gray-900 shadow-sm transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
-        'focus-visible:border-[#00754a] focus-visible:ring-[#00754a]/50 focus-visible:ring-[3px]',
+        'file:text-gray-900 placeholder:text-gray-400 selection:bg-[#07477a] selection:text-white border-gray-300 h-9 w-full min-w-0 rounded-md border bg-white px-3 py-1 text-base text-gray-900 shadow-sm transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm',
+        'focus-visible:border-[#07477a] focus-visible:ring-[#07477a]/50 focus-visible:ring-[3px]',
         'aria-invalid:ring-red-500/20 aria-invalid:border-red-500',
         className,
       )}

@@ -93,7 +93,7 @@ export function QuestionRenderer({
     <div className="rounded-2xl bg-white border border-gray-200 p-6 md:p-8 shadow-sm">
       {/* Section Header */}
       <div className="mb-8">
-        <p className="text-sm font-medium text-[#00754a]">{getRoleLabel()} Information</p>
+        <p className="text-sm font-medium text-[#07477a]">{getRoleLabel()} Information</p>
         <h2 className="mt-1 text-2xl font-bold text-gray-900">{section.title}</h2>
         {section.description && <p className="mt-2 text-gray-500">{section.description}</p>}
       </div>
@@ -140,7 +140,7 @@ export function QuestionRenderer({
         <Button
           onClick={onNext}
           disabled={isSyncing}
-          className="bg-[#00754a] hover:bg-[#005c3b] text-white"
+          className="bg-[#07477a] hover:bg-[#053560] text-white"
         >
           {isSyncing ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -169,7 +169,7 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
   // Clean white theme input styling
   const inputClassName = cn(
     "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400",
-    "focus:border-[#00754a] focus:ring-[#00754a]/20",
+    "focus:border-[#07477a] focus:ring-[#07477a]/20",
     error && "border-rose-400 ring-rose-400/20"
   )
 
@@ -265,7 +265,7 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                 <RadioGroupItem
                   value={opt.value || ""}
                   id={`${question.id}-${opt.value || idx}`}
-                  className="border-gray-300 text-[#00754a] data-[state=checked]:border-[#00754a] data-[state=checked]:bg-[#00754a]"
+                  className="border-gray-300 text-[#07477a] data-[state=checked]:border-[#07477a] data-[state=checked]:bg-[#07477a]"
                 />
                 <Label
                   htmlFor={`${question.id}-${opt.value || idx}`}
@@ -324,7 +324,7 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                         }
                       }}
                       className={cn(
-                        "border-gray-300 data-[state=checked]:bg-[#00754a] data-[state=checked]:border-[#00754a]",
+                        "border-gray-300 data-[state=checked]:bg-[#07477a] data-[state=checked]:border-[#07477a]",
                         error && "border-rose-400",
                         isDisabled && "cursor-not-allowed"
                       )}
@@ -352,7 +352,7 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
               checked={Boolean(value)}
               onCheckedChange={onChange}
               className={cn(
-                "border-gray-300 data-[state=checked]:bg-[#00754a] data-[state=checked]:border-[#00754a]",
+                "border-gray-300 data-[state=checked]:bg-[#07477a] data-[state=checked]:border-[#07477a]",
                 error && "border-rose-400"
               )}
             />
@@ -580,7 +580,7 @@ function FileUploadField({ question, value, onChange, error, filingId, personalF
           hasError
             ? "border-rose-300 bg-rose-50"
             : fileInfo?.documentId
-              ? "border-[#00754a]/30 bg-[#00754a]/5"
+              ? "border-[#07477a]/30 bg-[#07477a]/5"
               : "border-gray-200 bg-gray-50"
         )}
       >
@@ -589,7 +589,7 @@ function FileUploadField({ question, value, onChange, error, filingId, personalF
           <div className="min-w-0">
             <p className="text-sm font-medium text-gray-900 truncate">{fileName}</p>
             {fileInfo?.documentId && (
-              <p className="text-xs text-[#00754a]">Uploaded securely</p>
+              <p className="text-xs text-[#07477a]">Uploaded securely</p>
             )}
             {hasError && (
               <p className="text-xs text-rose-600">Upload failed</p>
@@ -630,12 +630,12 @@ function FileUploadField({ question, value, onChange, error, filingId, personalF
             onChange={handleFileChange}
             disabled={isUploading}
             multiple={allowMultiple}
-            className={cn(inputClassName, "file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#00754a]/10 file:text-[#00754a] hover:file:bg-[#00754a]/20")}
+            className={cn(inputClassName, "file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-[#07477a]/10 file:text-[#07477a] hover:file:bg-[#07477a]/20")}
             accept={acceptTypes}
           />
           {isUploading && (
             <div className="absolute inset-0 flex items-center justify-center bg-white/90 backdrop-blur-sm rounded-md">
-              <Loader2 className="h-5 w-5 animate-spin text-[#00754a]" />
+              <Loader2 className="h-5 w-5 animate-spin text-[#07477a]" />
               <span className="ml-2 text-sm text-gray-600">
                 {totalUploads > 1
                   ? `Uploading ${currentUploadIndex}/${totalUploads} (${uploadProgress}%)...`
@@ -775,7 +775,7 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
         type="button"
         size="sm"
         onClick={handleAddItem}
-        className="w-full bg-[#00754a] hover:bg-[#005c3b] text-white"
+        className="w-full bg-[#07477a] hover:bg-[#053560] text-white"
       >
         <Plus className="mr-2 h-4 w-4" />
         {addButtonLabel}
@@ -790,7 +790,7 @@ function renderRepeaterSubField(
   value: unknown,
   onChange: (value: unknown) => void
 ) {
-  const inputClassName = "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#00754a] focus:ring-[#00754a]/20"
+  const inputClassName = "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#07477a] focus:ring-[#07477a]/20"
 
   switch (field.type) {
     case "text":

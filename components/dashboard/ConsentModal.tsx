@@ -64,7 +64,7 @@ export const ConsentModal = () => {
             login(token, { ...user, hasConsentedToTerms: true });
 
             toast({
-                title: "Welcome to TaxPortal",
+                title: "Welcome to JJ Elevate",
                 description: "You may now proceed with your tax filing.",
             });
 
@@ -95,7 +95,7 @@ export const ConsentModal = () => {
             <div className="bg-white w-full max-w-3xl max-h-[90vh] rounded-xl shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-300 border border-white/20">
 
                 {/* --- HEADER --- */}
-                <div className="relative px-6 py-6 bg-gradient-to-br from-[#00754a] via-[#006640] to-[#004d30] shrink-0">
+                <div className="relative px-6 py-6 bg-gradient-to-br from-[#07477a] via-[#053560] to-[#032b4a] shrink-0">
                     <div className="absolute inset-0 bg-[url('/grid.svg')] bg-center opacity-10"></div>
                     <div className="relative flex items-center gap-3">
                         <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center shrink-0">
@@ -103,7 +103,7 @@ export const ConsentModal = () => {
                         </div>
                         <div>
                             <h2 className="text-2xl font-bold text-white leading-none mb-1">Service Agreement</h2>
-                            <p className="text-green-100 text-sm">Please review and accept to continue.</p>
+                            <p className="text-blue-100 text-sm">Please review and accept to continue.</p>
                         </div>
                     </div>
                 </div>
@@ -125,20 +125,20 @@ export const ConsentModal = () => {
                         {/* Section 2 */}
                         <section>
                             <div className="flex items-center gap-3 mb-2">
-                                <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold text-sm">2</div>
+                                <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center font-bold text-sm">2</div>
                                 <h3 className="font-bold text-slate-900">Your Responsibilities</h3>
                             </div>
                             <ul className="space-y-2 pl-11 text-sm">
                                 <li className="flex items-start gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400 mt-2" />
                                     <span>Provide accurate and complete information about income and expenses.</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400 mt-2" />
                                     <span>Retain supporting documents (receipts, forms) for CRA verification.</span>
                                 </li>
                                 <li className="flex items-start gap-2">
-                                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 mt-2" />
+                                    <div className="w-1.5 h-1.5 rounded-full bg-teal-400 mt-2" />
                                     <span>Review all information before submission to ensure accuracy.</span>
                                 </li>
                             </ul>
@@ -186,7 +186,7 @@ export const ConsentModal = () => {
                                 id="custom-consent"
                                 checked={hasRead}
                                 onCheckedChange={(c) => setHasRead(c as boolean)}
-                                className="border-slate-300 data-[state=checked]:bg-[#00754a] data-[state=checked]:border-[#00754a]"
+                                className="border-slate-300 data-[state=checked]:bg-[#07477a] data-[state=checked]:border-[#07477a]"
                             />
                             <Label htmlFor="custom-consent" className="cursor-pointer font-medium text-slate-700">
                                 I have read and agree to the terms
@@ -197,7 +197,7 @@ export const ConsentModal = () => {
                             size="lg"
                             onClick={handleAgree}
                             disabled={!hasRead || isSubmitting}
-                            className="w-full sm:w-auto bg-[#00754a] hover:bg-[#006640] text-white shadow-lg shadow-green-200 transition-all hover:scale-[1.02]"
+                            className="w-full sm:w-auto bg-[#07477a] hover:bg-[#053560] text-white shadow-lg shadow-blue-200 transition-all hover:scale-[1.02]"
                         >
                             {isSubmitting ? 'Saving...' : (
                                 <span className="flex items-center gap-2">
