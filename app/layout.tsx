@@ -15,23 +15,9 @@ const _geistMono = Geist_Mono({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "JJ Elevate | Secure Tax Filing",
   description: "Enterprise-grade tax filing portal with secure document management and professional preparation.",
-  generator: "v0.app",
   icons: {
-    // icon: [
-    //   {
-    //     url: "",
-    //     media: "(prefers-color-scheme: light)",
-    //   },
-    //   {
-    //     url: "",
-    //     media: "(prefers-color-scheme: dark)",
-    //   },
-    //   {
-    //     url: "",
-    //     type: "image/svg+xml",
-    //   },
-    // ],
-    // apple: "/apple-icon.png",
+    icon: "/images/logo.png",
+    apple: "/images/logo.png",
   },
 }
 
