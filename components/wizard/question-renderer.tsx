@@ -142,11 +142,7 @@ export function QuestionRenderer({
           disabled={isSyncing}
           className="bg-[#07477a] hover:bg-[#053560] text-white"
         >
-          {isSyncing ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : isLastSection ? (
-            <Check className="mr-2 h-4 w-4" />
-          ) : null}
+          {isLastSection && <Check className="mr-2 h-4 w-4" />}
           {isLastSection ? "Complete" : "Continue"}
           {!isLastSection && <ArrowRight className="ml-2 h-4 w-4" />}
         </Button>

@@ -7,10 +7,19 @@ import { ReCaptchaProvider } from "@/components/recaptcha-provider"
 import { ConsentModal } from "@/components/dashboard/ConsentModal"
 import { SiteFooter } from "@/components/site-footer"
 import { ParallaxBackground } from "@/components/ui/parallax-background"
+import { LoadingSplash } from "@/components/ui/loading-splash"
 import "./globals.css"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const geistSans = Geist({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist-sans",
+})
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist-mono",
+})
 
 export const metadata: Metadata = {
   title: "JJ Elevate | Secure Tax Filing",
@@ -33,8 +42,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className={`dark ${geistSans.variable} ${geistMono.variable}`}>
+      <head>
+        {/* Preconnect to external resources for faster loading */}
+        <link rel="preconnect" href="https://www.google.com" />
+        <link rel="preconnect" href="https://www.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://secret-rope-485200-h6.nn.r.appspot.com" />
+      </head>
       <body className="font-sans antialiased">
+        <LoadingSplash />
         <SessionProvider>
           <ReCaptchaProvider>
             <ParallaxBackground />

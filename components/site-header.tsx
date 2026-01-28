@@ -17,7 +17,6 @@ export function SiteHeader() {
     const { logout } = useSession()
 
     const isAppMode = pathname?.startsWith("/filing") || pathname?.startsWith("/dashboard")
-    const isHome = pathname === "/"
 
     // Prevent hydration mismatch by only rendering theme-dependent UI after mount
     useEffect(() => {
@@ -25,10 +24,17 @@ export function SiteHeader() {
     }, [])
 
     useEffect(() => {
+        let ticking = false
         const handleScroll = () => {
-            setScrolled(window.scrollY > 20)
+            if (!ticking) {
+                requestAnimationFrame(() => {
+                    setScrolled(window.scrollY > 20)
+                    ticking = false
+                })
+                ticking = true
+            }
         }
-        window.addEventListener("scroll", handleScroll)
+        window.addEventListener("scroll", handleScroll, { passive: true })
         return () => window.removeEventListener("scroll", handleScroll)
     }, [])
 
@@ -43,7 +49,7 @@ export function SiteHeader() {
         <>
             <header
                 className={cn(
-                    "fixed top-0 left-0 right-0 z-50 transition-all duration-500",
+                    "fixed top-0 left-0 right-0 z-50 transition-[height,background-color,border-color,box-shadow] duration-200",
                     isAppMode
                         ? "h-[80px] bg-gradient-to-r from-[#07477a] to-[#053560] backdrop-blur-xl border-b border-white/10 shadow-lg"
                         : scrolled
@@ -59,7 +65,7 @@ export function SiteHeader() {
                             src="/images/logo.png"
                             alt="JJ Elevate"
                             className={cn(
-                                "object-contain group-hover:scale-105 transition-transform duration-300",
+                                "object-contain group-hover:scale-105 transition-transform duration-150",
                                 isAppMode ? "h-10 w-10" : "h-14 w-14 sm:h-16 sm:w-16"
                             )}
                         />
@@ -80,24 +86,6 @@ export function SiteHeader() {
                             </span>
                         </div>
                     </Link>
-
-                    {/* CENTER: Marketing Nav (Only on Home) */}
-                    {isHome && (
-                        <nav className="hidden md:flex items-center gap-10">
-                            {menuItems.map((item) => (
-                                <Link
-                                    key={item}
-                                    href={`/#${item.toLowerCase()}`}
-                                    className={cn(
-                                        "text-base font-medium transition-colors",
-                                        scrolled ? "text-gray-600 hover:text-[#07477a]" : "text-gray-700 hover:text-[#07477a]"
-                                    )}
-                                >
-                                    {item}
-                                </Link>
-                            ))}
-                        </nav>
-                    )}
 
                     {/* RIGHT: Actions */}
                     <div className="flex items-center gap-2 md:gap-3">
@@ -126,7 +114,7 @@ export function SiteHeader() {
                         <button
                             onClick={() => setMobileMenuOpen(true)}
                             className={cn(
-                                "relative flex flex-col items-center justify-center rounded-xl transition-all duration-300 group",
+                                "relative flex flex-col items-center justify-center rounded-xl transition-colors duration-150 touch-manipulation active:scale-95 active:transition-none group",
                                 isAppMode
                                     ? "h-14 w-14 gap-[6px] bg-white/10 hover:bg-white/20 border border-white/20"
                                     : scrolled
@@ -135,15 +123,15 @@ export function SiteHeader() {
                             )}
                         >
                             <span className={cn(
-                                "rounded-full transition-all duration-300",
+                                "rounded-full transition-all duration-150",
                                 isAppMode ? "w-6 h-[2.5px] bg-white/80 group-hover:bg-white group-hover:w-7" : "w-5 h-[2px] bg-[#07477a]/70 group-hover:bg-[#07477a] group-hover:w-6"
                             )} />
                             <span className={cn(
-                                "rounded-full transition-all duration-300",
+                                "rounded-full transition-all duration-150",
                                 isAppMode ? "w-7 h-[2.5px] bg-white" : "w-6 h-[2px] bg-[#07477a]"
                             )} />
                             <span className={cn(
-                                "rounded-full transition-all duration-300",
+                                "rounded-full transition-all duration-150",
                                 isAppMode ? "w-5 h-[2.5px] bg-white/80 group-hover:bg-white group-hover:w-7" : "w-4 h-[2px] bg-[#07477a]/70 group-hover:bg-[#07477a] group-hover:w-6"
                             )} />
                         </button>
@@ -160,6 +148,7 @@ export function SiteHeader() {
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
+                            transition={{ duration: 0.15 }}
                             onClick={() => setMobileMenuOpen(false)}
                             className="fixed inset-0 bg-black/30 backdrop-blur-sm z-[60]"
                         />
@@ -167,7 +156,7 @@ export function SiteHeader() {
                             initial={{ x: "100%" }}
                             animate={{ x: 0 }}
                             exit={{ x: "100%" }}
-                            transition={{ type: "spring", damping: 30, stiffness: 300 }}
+                            transition={{ type: "spring", damping: 35, stiffness: 400 }}
                             className="fixed top-0 right-0 h-full w-80 bg-white border-l border-gray-200 z-[70] shadow-2xl overflow-hidden"
                         >
                             {/* Header with brand gradient */}
@@ -182,7 +171,7 @@ export function SiteHeader() {
                                     </div>
                                     <button
                                         onClick={() => setMobileMenuOpen(false)}
-                                        className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                                        className="h-10 w-10 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors duration-150 touch-manipulation active:scale-95 active:transition-none"
                                     >
                                         <X className="h-5 w-5 text-white" />
                                     </button>

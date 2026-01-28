@@ -112,12 +112,12 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">
-                {isAmendment ? "Amendment Payment" : "Confirm & Pay"}
+                {isAmendment ? "Amendment Summary" : "Payment Instructions"}
               </h2>
               <p className="text-gray-500">
                 {isAmendment
                   ? `Review the changes to your filing (Ref: ${filing.referenceNumber}).`
-                  : "Review your pricing and submit your tax filing."}
+                  : "Review your pricing and payment instructions below."}
               </p>
             </div>
           </div>
@@ -210,6 +210,29 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
                   <span className="text-xl font-bold text-[#07477a]">{formatPrice(pricing.total)}</span>
                 </div>
               )}
+            </div>
+          </div>
+        </div>
+
+        {/* Payment Instructions */}
+        <div className="rounded-xl bg-[#07477a]/5 border border-[#07477a]/20 p-6 shadow-sm">
+          <h3 className="mb-4 text-lg font-semibold text-gray-900">How to Pay</h3>
+          <div className="space-y-4 text-sm text-gray-700">
+            <p>
+              After you submit your filing, you will receive a <strong>Reference Number</strong>. Please use this reference number when sending your payment via <strong>Interac e-Transfer</strong>.
+            </p>
+            <div className="rounded-lg bg-white border border-gray-200 p-4">
+              <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Send Interac e-Transfer to:</p>
+              <p className="font-semibold text-[#07477a]">payments@jjelevate.ca</p>
+            </div>
+            <div className="space-y-2">
+              <p className="font-medium text-gray-900">Instructions:</p>
+              <ol className="list-decimal list-inside space-y-1 text-gray-600">
+                <li>Click "Submit for Review" below to receive your Reference Number</li>
+                <li>Send an Interac e-Transfer for the total amount shown above</li>
+                <li>Include your <strong>Reference Number</strong> in the message field</li>
+                <li>We'll confirm receipt and begin processing your filing</li>
+              </ol>
             </div>
           </div>
         </div>
@@ -319,7 +342,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
       {/* Continue Button */}
       <div className="flex justify-end">
         <Button onClick={() => setCurrentStep("payment")} size="lg" className="min-w-[200px] bg-[#07477a] hover:bg-[#053560] text-white">
-          Continue to Payment
+          Next
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
       </div>

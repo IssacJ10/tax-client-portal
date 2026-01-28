@@ -9,25 +9,25 @@ import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { motion, useScroll, useTransform } from "framer-motion"
 
-// --- Animation Variants ---
+// --- Animation Variants (optimized for speed) ---
 const fadeUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" as const } },
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.35, ease: "easeOut" as const } },
 }
 
 const fadeUpSlow = {
-  hidden: { opacity: 0, y: 40 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } },
+  hidden: { opacity: 0, y: 25 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: "easeOut" as const } },
 }
 
 const staggerContainer = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.1 } },
+  visible: { transition: { staggerChildren: 0.06 } },
 }
 
 const staggerContainerSlow = {
   hidden: {},
-  visible: { transition: { staggerChildren: 0.15 } },
+  visible: { transition: { staggerChildren: 0.08 } },
 }
 
 export default function HomePage() {
@@ -125,7 +125,7 @@ export default function HomePage() {
                   <button
                     onClick={handleStartFiling}
                     data-testid="hero-cta"
-                    className="inline-flex h-14 items-center justify-center rounded-full bg-[#07477a] px-8 text-lg font-semibold text-white shadow-lg shadow-[#07477a]/25 transition-all hover:bg-[#053560] hover:scale-105 active:scale-95"
+                    className="inline-flex h-14 items-center justify-center rounded-full bg-[#07477a] px-8 text-lg font-semibold text-white shadow-lg shadow-[#07477a]/25 transition-colors duration-150 hover:bg-[#053560] active:scale-[0.97] active:transition-none touch-manipulation"
                   >
                     Start Your Filing <ArrowRight className="ml-2 h-5 w-5" />
                   </button>
@@ -148,10 +148,10 @@ export default function HomePage() {
 
             {/* Hero image — lady with paper/pen (place accountant-hero.png in /public/images/) */}
             <motion.div
-              initial={{ opacity: 0, scale: 0.9 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" as const }}
-              className="absolute right-0 sm:right-[2%] lg:right-[5%] top-[32%] -translate-y-1/2 sm:translate-y-0 sm:top-auto sm:bottom-0 z-5 pointer-events-none"
+              transition={{ duration: 0.4, delay: 0.15, ease: "easeOut" as const }}
+              className="absolute right-0 sm:right-[2%] lg:right-[5%] top-[32%] -translate-y-1/2 sm:translate-y-0 sm:top-auto sm:bottom-0 z-5 pointer-events-none transform-gpu"
             >
               <Image
                 src="/images/accountant-hero.png"
@@ -179,12 +179,12 @@ export default function HomePage() {
                 {/* Spinning ring — all 4 cards placed on this single rotating disc */}
                 <div
                   className="absolute top-1/2 left-1/2 w-0 h-0"
-                  style={{ animation: "orbitSpin 40s linear infinite" }}
+                  style={{ animation: "orbitSpin 30s linear infinite" }}
                 >
                   {/* Card 1: top — responsive positions via separate elements */}
                   {/* Mobile */}
                   <div className="absolute sm:hidden" style={{ top: "-240px", left: "-60px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[120px]">
                         <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-3 w-3 text-[#07477a]" /></div>
                         <div><p className="text-[8px] text-gray-500 font-medium">Deadline</p><p className="text-[10px] font-bold text-[#07477a]">Apr 30</p></div>
@@ -193,7 +193,7 @@ export default function HomePage() {
                   </div>
                   {/* sm+ */}
                   <div className="absolute hidden sm:block md:hidden" style={{ top: "-220px", left: "-95px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
@@ -202,7 +202,7 @@ export default function HomePage() {
                   </div>
                   {/* md+ */}
                   <div className="absolute hidden md:block lg:hidden" style={{ top: "-280px", left: "-95px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
@@ -211,7 +211,7 @@ export default function HomePage() {
                   </div>
                   {/* lg+ */}
                   <div className="absolute hidden lg:block" style={{ top: "-350px", left: "-95px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[200px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
@@ -221,7 +221,7 @@ export default function HomePage() {
 
                   {/* Card 2: right (90°) */}
                   <div className="absolute sm:hidden" style={{ top: "-16px", left: "165px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[115px]">
                         <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-3 w-3 text-[#07477a]" /></div>
                         <div><p className="text-[8px] text-gray-500 font-medium">Turnaround</p><p className="text-[10px] font-bold text-[#07477a]">24 Hours</p></div>
@@ -229,7 +229,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden sm:block md:hidden" style={{ top: "-20px", left: "125px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Turnaround</p><p className="text-sm font-bold text-[#07477a]">24 Hours</p></div>
@@ -237,7 +237,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden md:block lg:hidden" style={{ top: "-20px", left: "185px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Turnaround</p><p className="text-sm font-bold text-[#07477a]">24 Hours</p></div>
@@ -245,7 +245,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden lg:block" style={{ top: "-20px", left: "255px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Turnaround</p><p className="text-sm font-bold text-[#07477a]">24 Hours</p></div>
@@ -255,7 +255,7 @@ export default function HomePage() {
 
                   {/* Card 3: bottom (180°) */}
                   <div className="absolute sm:hidden" style={{ top: "200px", left: "-60px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[120px]">
                         <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-3 w-3 text-[#07477a]" /></div>
                         <div><p className="text-[8px] text-gray-500 font-medium">Pricing</p><p className="text-[10px] font-bold text-[#07477a]">Transparent</p></div>
@@ -263,7 +263,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden sm:block md:hidden" style={{ top: "180px", left: "-95px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Pricing</p><p className="text-sm font-bold text-[#07477a]">Guaranteed Rates</p></div>
@@ -271,7 +271,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden md:block lg:hidden" style={{ top: "240px", left: "-95px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Pricing</p><p className="text-sm font-bold text-[#07477a]">Guaranteed Rates</p></div>
@@ -279,7 +279,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden lg:block" style={{ top: "310px", left: "-95px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Pricing</p><p className="text-sm font-bold text-[#07477a]">Guaranteed Rates</p></div>
@@ -289,7 +289,7 @@ export default function HomePage() {
 
                   {/* Card 4: left (270°) */}
                   <div className="absolute sm:hidden" style={{ top: "-16px", left: "-280px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[115px]">
                         <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-3 w-3 text-[#07477a]" /></div>
                         <div><p className="text-[8px] text-gray-500 font-medium">Services</p><p className="text-[10px] font-bold text-[#07477a]">6 Types</p></div>
@@ -297,7 +297,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden sm:block md:hidden" style={{ top: "-20px", left: "-310px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[185px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Services</p><p className="text-sm font-bold text-[#07477a]">6 Offerings</p></div>
@@ -305,7 +305,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden md:block lg:hidden" style={{ top: "-20px", left: "-370px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[185px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Services</p><p className="text-sm font-bold text-[#07477a]">6 Offerings</p></div>
@@ -313,7 +313,7 @@ export default function HomePage() {
                     </div>
                   </div>
                   <div className="absolute hidden lg:block" style={{ top: "-20px", left: "-440px" }}>
-                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                    <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[185px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-[#07477a]" /></div>
                         <div><p className="text-[10px] text-gray-500 font-medium">Services</p><p className="text-sm font-bold text-[#07477a]">6 Offerings</p></div>
@@ -352,8 +352,8 @@ export default function HomePage() {
                   className="flex flex-col items-center justify-center gap-3 group"
                 >
                   <div className="relative">
-                    <stat.icon className="h-6 w-6 text-[#07477a]/60 group-hover:text-[#07477a] transition-colors duration-500 relative z-10" />
-                    <div className="absolute inset-0 bg-[#07477a]/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-[3]" />
+                    <stat.icon className="h-6 w-6 text-[#07477a]/60 group-hover:text-[#07477a] transition-colors duration-150 relative z-10" />
+                    <div className="absolute inset-0 bg-[#07477a]/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-150 scale-[3]" />
                   </div>
                   <span className="text-4xl sm:text-5xl font-bold text-[#07477a] tracking-tight">{stat.val}</span>
                   <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.2em]">{stat.label}</span>
@@ -391,8 +391,8 @@ export default function HomePage() {
               className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
             >
               {/* 1. PERSONAL TAX */}
-              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-200 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-200">
                   <Users className="h-7 w-7 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Personal Tax</h3>
@@ -401,15 +401,15 @@ export default function HomePage() {
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> T1 General Filing</li>
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> RRSP & Credits</li>
                 </ul>
-                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-150 font-semibold text-sm" onClick={handleStartFiling}>
                   Get Started
                 </Button>
               </motion.div>
 
               {/* 2. BUSINESS TAX — Featured */}
-              <motion.div variants={fadeUp} className="bg-gradient-to-br from-[#07477a]/[0.08] via-white/80 to-[#3b9cc2]/[0.08] backdrop-blur-xl border-2 border-[#07477a]/30 rounded-3xl p-8 relative shadow-2xl shadow-[#07477a]/15 ring-1 ring-[#07477a]/10 hover:shadow-[0_25px_60px_rgba(7,71,122,0.2)] hover:-translate-y-3 transition-all duration-500 group cursor-pointer">
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-[#07477a]/[0.08] via-white/80 to-[#3b9cc2]/[0.08] backdrop-blur-xl border-2 border-[#07477a]/30 rounded-3xl p-8 relative shadow-2xl shadow-[#07477a]/15 ring-1 ring-[#07477a]/10 hover:shadow-[0_25px_60px_rgba(7,71,122,0.2)] hover:-translate-y-3 transition-all duration-200 group cursor-pointer">
                 <div className="absolute top-0 right-0 bg-gradient-to-r from-[#07477a] to-[#053560] px-4 py-1.5 text-[10px] font-bold text-white rounded-bl-xl rounded-tr-3xl tracking-wider uppercase">Popular</div>
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/25 to-[#3b9cc2]/15 border border-[#07477a]/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/25 transition-all duration-500">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/25 to-[#3b9cc2]/15 border border-[#07477a]/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/25 transition-all duration-200">
                   <FileText className="h-7 w-7 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Business Tax (T2)</h3>
@@ -418,14 +418,14 @@ export default function HomePage() {
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Corporate Returns</li>
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Financial Statements</li>
                 </ul>
-                <Button className="w-full h-11 rounded-xl bg-gradient-to-r from-[#07477a] to-[#053560] text-white hover:opacity-90 font-semibold shadow-lg shadow-[#07477a]/25 text-sm transition-all duration-300" onClick={handleStartFiling}>
+                <Button className="w-full h-11 rounded-xl bg-gradient-to-r from-[#07477a] to-[#053560] text-white hover:opacity-90 font-semibold shadow-lg shadow-[#07477a]/25 text-sm transition-all duration-150" onClick={handleStartFiling}>
                   File Corporate
                 </Button>
               </motion.div>
 
               {/* 3. BOOKKEEPING */}
-              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-200 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-200">
                   <BookOpen className="h-7 w-7 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Bookkeeping</h3>
@@ -434,14 +434,14 @@ export default function HomePage() {
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Monthly/Quarterly</li>
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Expense Tracking</li>
                 </ul>
-                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-150 font-semibold text-sm" onClick={handleStartFiling}>
                   Book Service
                 </Button>
               </motion.div>
 
               {/* 4. PAYROLL */}
-              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-200 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-200">
                   <Banknote className="h-7 w-7 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Payroll Services</h3>
@@ -450,14 +450,14 @@ export default function HomePage() {
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Deductions Mgmt</li>
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> T4/T4A Filing</li>
                 </ul>
-                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-150 font-semibold text-sm" onClick={handleStartFiling}>
                   Learn More
                 </Button>
               </motion.div>
 
               {/* 5. GST/HST FILING */}
-              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-200 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-200">
                   <Percent className="h-7 w-7 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">GST/HST Filing</h3>
@@ -466,14 +466,14 @@ export default function HomePage() {
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> CRA Compliance</li>
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Input Tax Credits</li>
                 </ul>
-                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-150 font-semibold text-sm" onClick={handleStartFiling}>
                   Start Filing
                 </Button>
               </motion.div>
 
               {/* 6. BUSINESS REGISTRATION */}
-              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
-                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-200 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-200">
                   <Building2 className="h-7 w-7 text-[#07477a]" />
                 </div>
                 <h3 className="text-xl font-bold text-gray-900 mb-3">Business Reg</h3>
@@ -482,7 +482,7 @@ export default function HomePage() {
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Incorporation</li>
                   <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> CRA Account Setup</li>
                 </ul>
-                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-150 font-semibold text-sm" onClick={handleStartFiling}>
                   Register Now
                 </Button>
               </motion.div>
@@ -658,7 +658,7 @@ export default function HomePage() {
                 </motion.ul>
 
                 <motion.div variants={fadeUp} className="pt-2">
-                  <Button size="lg" className="rounded-full px-8 font-semibold bg-white hover:bg-white/90 text-[#07477a] shadow-lg transition-all duration-300 hover:shadow-xl" asChild>
+                  <Button size="lg" className="rounded-full px-8 font-semibold bg-white hover:bg-white/90 text-[#07477a] shadow-lg transition-all duration-150 hover:shadow-xl" asChild>
                     <Link href="#contact">Contact Support</Link>
                   </Button>
                 </motion.div>
@@ -700,15 +700,15 @@ export default function HomePage() {
             <motion.a
               variants={fadeUp}
               href="tel:+17057703951"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-200 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-200 relative z-10">
                 <Phone className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Call Us</h3>
               <p className="text-gray-500 font-medium mb-4 relative z-10">(705) 770-3951</p>
-              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-300 relative z-10">
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-150 relative z-10">
                 Click to Call
               </span>
             </motion.a>
@@ -717,15 +717,15 @@ export default function HomePage() {
             <motion.a
               variants={fadeUp}
               href="mailto:jjelevateservices@gmail.com"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-200 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-200 relative z-10">
                 <Mail className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Email Us</h3>
               <p className="text-gray-500 font-medium break-all mb-4 relative z-10 text-sm">jjelevateservices@gmail.com</p>
-              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-300 relative z-10">
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-150 relative z-10">
                 Click to Email
               </span>
             </motion.a>
@@ -736,15 +736,15 @@ export default function HomePage() {
               href="https://www.google.com/maps/dir/?api=1&destination=Charlottetown,+PE"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-200 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-200 relative z-10">
                 <MapPin className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Visit Us</h3>
               <p className="text-gray-500 font-medium mb-4 relative z-10 text-sm">37-64 Belvedere Ave<br />Charlottetown, PE</p>
-              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-300 relative z-10">
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-150 relative z-10">
                 Click for Directions
               </span>
             </motion.a>
@@ -752,10 +752,10 @@ export default function HomePage() {
             {/* Hours */}
             <motion.div
               variants={fadeUp}
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-200 group text-center relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-200 relative z-10">
                 <Clock className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Office Hours</h3>

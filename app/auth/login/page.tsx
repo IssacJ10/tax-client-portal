@@ -204,7 +204,7 @@ function AuthContent() {
                         <p className="text-xs text-white/80 font-medium">Accounting Solutions Inc.</p>
                     </div>
                 </div>
-                <Link href="/" className="inline-flex items-center gap-2 text-sm text-white/70 hover:text-white transition-colors">
+                <Link href="/" className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-[#07477a] transition-colors py-3 px-4 -mx-4 touch-manipulation">
                     <ArrowLeft className="h-4 w-4" />
                     Back to home
                 </Link>
