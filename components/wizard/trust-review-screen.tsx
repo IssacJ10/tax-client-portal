@@ -15,7 +15,8 @@ import {
   ChevronDown,
   ChevronUp,
   Pencil,
-  Landmark
+  Landmark,
+  AlertCircle
 } from "lucide-react"
 import type { Filing, TaxFilingSchema } from "@/lib/domain/types"
 
@@ -43,6 +44,34 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
   const isAmendment = !!(filing.referenceNumber && filing.paidAmount && filing.paidAmount > 0)
 
   const handleSubmit = async () => {
+    // SECURITY: Validate all sections before submission
+    // This prevents users from bypassing required fields by jumping to review
+    if (schema) {
+      const validation = QuestionRegistry.validateAllSectionsForRole(schema, "primary", formData)
+
+      if (!validation.isValid) {
+        const sectionList = validation.missingSections
+          .slice(0, 3)
+          .map(s => s.sectionTitle)
+          .join(", ")
+        const moreCount = validation.missingSections.length > 3
+          ? ` and ${validation.missingSections.length - 3} more`
+          : ""
+
+        const errorMessage = `Please fill in all required fields in: ${sectionList}${moreCount}. (${validation.totalMissingFields} fields total)`
+        setError(errorMessage)
+
+        toast({
+          variant: "destructive",
+          title: "Cannot submit - incomplete information",
+          description: "Please complete all required fields before submitting.",
+        })
+
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return
+      }
+    }
+
     setIsLoading(true)
     setError(null)
     try {
@@ -131,8 +160,17 @@ export function TrustReviewScreen({ filing, schema, formData, onSubmitted }: Tru
 
       {/* Error Alert */}
       {error && (
-        <div className="rounded-xl p-4 border border-red-300 bg-red-50">
-          <p className="text-red-600 text-sm">{error}</p>
+        <div className="rounded-xl bg-red-50 border border-red-200 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-red-800">Cannot Submit</h4>
+              <p className="text-sm text-red-700 mt-1">{error}</p>
+              <p className="text-sm text-red-600 mt-2">
+                Please click "Edit" on the sections above to complete the missing information.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 

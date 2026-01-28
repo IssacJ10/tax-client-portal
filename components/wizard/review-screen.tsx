@@ -23,8 +23,10 @@ import {
   ArrowRight,
   ArrowLeft,
   CreditCard,
-  UserPlus
+  UserPlus,
+  AlertCircle
 } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import type { Filing, PersonalFiling, FilingRole, TaxFilingSchema } from "@/lib/domain/types"
 
 type ReviewStep = "review" | "payment" | "submitted"
@@ -41,13 +43,71 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
   const router = useRouter()
   const { submitForReview, isLoading, schema } = useFilingContext()
   const { executeRecaptcha } = useReCaptcha()
+  const { toast } = useToast()
   const [currentStep, setCurrentStep] = useState<ReviewStep>("review")
   const [submittedRefNumber, setSubmittedRefNumber] = useState<string | null>(null)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   const pricing = calculatePricingFromSchema(filing, schema)
   const primary = filing.personalFilings.find((pf) => pf.type === "primary")
   const spouse = filing.personalFilings.find((pf) => pf.type === "spouse")
   const dependents = filing.personalFilings.filter((pf) => pf.type === "dependent")
+
+  // Validate all personal filings - returns issues or empty array if valid
+  const validateAllFilings = (): { person: string; missingCount: number; sections: string[] }[] => {
+    if (!schema) return []
+
+    const issues: { person: string; missingCount: number; sections: string[] }[] = []
+
+    for (const personalFiling of filing.personalFilings) {
+      const role = personalFiling.type as FilingRole
+      const formData = personalFiling.formData || {}
+
+      const validation = QuestionRegistry.validateAllSectionsForRole(schema, role, formData)
+
+      if (!validation.isValid) {
+        const personLabel = personalFiling.type === 'primary' ? 'Primary Filer' :
+          personalFiling.type === 'spouse' ? 'Spouse' :
+          `Dependent (${formData.firstName || 'unnamed'})`
+
+        issues.push({
+          person: personLabel,
+          missingCount: validation.totalMissingFields,
+          sections: validation.missingSections.map(s => s.sectionTitle)
+        })
+      }
+    }
+
+    return issues
+  }
+
+  // Handler for "Next" button to go to payment step
+  const handleGoToPayment = () => {
+    const issues = validateAllFilings()
+
+    if (issues.length > 0) {
+      const firstIssue = issues[0]
+      const otherCount = issues.length - 1
+
+      const errorMessage = otherCount > 0
+        ? `${firstIssue.person} is missing ${firstIssue.missingCount} required fields, and ${otherCount} other person(s) have incomplete information.`
+        : `${firstIssue.person} is missing ${firstIssue.missingCount} required fields in: ${firstIssue.sections.slice(0, 2).join(', ')}${firstIssue.sections.length > 2 ? '...' : ''}`
+
+      setValidationError(errorMessage)
+
+      toast({
+        variant: "destructive",
+        title: "Cannot proceed - incomplete information",
+        description: "Please complete all required fields before continuing.",
+      })
+
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    setValidationError(null)
+    setCurrentStep("payment")
+  }
 
   // Amendment detection: has a reference number AND has a previous paid amount
   const isAmendment = !!(filing.referenceNumber && filing.paidAmount && filing.paidAmount > 0)
@@ -61,6 +121,34 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
   const canAddFamilyMembers = onAddSpouse || onAddDependent
 
   const handleSubmit = async () => {
+    // SECURITY: Final validation check before submission
+    // This is a second line of defense in case phase completion validation was bypassed
+    const issues = validateAllFilings()
+
+    if (issues.length > 0) {
+      const firstIssue = issues[0]
+      const otherCount = issues.length - 1
+
+      const errorMessage = otherCount > 0
+        ? `${firstIssue.person} is missing ${firstIssue.missingCount} required fields, and ${otherCount} other person(s) have incomplete information.`
+        : `${firstIssue.person} is missing ${firstIssue.missingCount} required fields in: ${firstIssue.sections.slice(0, 2).join(', ')}${firstIssue.sections.length > 2 ? '...' : ''}`
+
+      setValidationError(errorMessage)
+
+      toast({
+        variant: "destructive",
+        title: "Cannot submit - incomplete information",
+        description: errorMessage,
+      })
+
+      // Go back to review step to show the error banner
+      setCurrentStep("review")
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      return
+    }
+
+    setValidationError(null)
+
     // Execute reCAPTCHA before submission
     const recaptchaToken = await executeRecaptcha("filing_submit")
 
@@ -339,9 +427,25 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
         </div>
       )}
 
+      {/* Validation Error Banner */}
+      {validationError && (
+        <div className="rounded-xl bg-red-50 border border-red-200 p-4 shadow-sm">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 flex-shrink-0" />
+            <div>
+              <h4 className="font-medium text-red-800">Incomplete Information</h4>
+              <p className="text-sm text-red-700 mt-1">{validationError}</p>
+              <p className="text-sm text-red-600 mt-2">
+                Please click "Edit" on the person cards above to complete the missing information.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Continue Button */}
       <div className="flex justify-end">
-        <Button onClick={() => setCurrentStep("payment")} size="lg" className="min-w-[200px] bg-[#07477a] hover:bg-[#053560] text-white">
+        <Button onClick={handleGoToPayment} size="lg" className="min-w-[200px] bg-[#07477a] hover:bg-[#053560] text-white">
           Next
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>

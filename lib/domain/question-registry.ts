@@ -380,4 +380,66 @@ export class QuestionRegistry {
 
     return { isValid, errors };
   }
+
+  /**
+   * Validates ALL sections for a specific role (primary/spouse/dependent).
+   * Used when completing a phase to ensure all required fields are filled.
+   * @param schema - The tax filing schema
+   * @param role - The filing role (primary, spouse, dependent)
+   * @param formData - The form data to validate against
+   * @returns Validation result with all errors and missing sections info
+   */
+  static validateAllSectionsForRole(
+    schema: TaxFilingSchema,
+    role: FilingRole,
+    formData: Record<string, unknown>
+  ): {
+    isValid: boolean;
+    errors: Record<string, string>;
+    missingSections: { sectionId: string; sectionTitle: string; missingFields: string[] }[];
+    totalMissingFields: number;
+  } {
+    const allErrors: Record<string, string> = {};
+    const missingSections: { sectionId: string; sectionTitle: string; missingFields: string[] }[] = [];
+    let totalMissingFields = 0;
+
+    // Get all sections for this role
+    const sections = this.getSectionsForRole(schema, role, formData);
+
+    // Validate each section
+    for (const section of sections) {
+      const { isValid, errors } = this.validateSection(section, formData, schema?.questions);
+
+      if (!isValid) {
+        // Collect errors
+        Object.assign(allErrors, errors);
+
+        // Track which fields are missing in this section
+        const missingFields: string[] = [];
+        for (const questionId of Object.keys(errors)) {
+          // Find the question to get its label
+          const question = section.questions?.find((q: any) => q.id === questionId);
+          if (question) {
+            missingFields.push(question.label || question.name);
+          }
+          totalMissingFields++;
+        }
+
+        if (missingFields.length > 0) {
+          missingSections.push({
+            sectionId: section.id,
+            sectionTitle: section.title,
+            missingFields,
+          });
+        }
+      }
+    }
+
+    return {
+      isValid: totalMissingFields === 0,
+      errors: allErrors,
+      missingSections,
+      totalMissingFields,
+    };
+  }
 }

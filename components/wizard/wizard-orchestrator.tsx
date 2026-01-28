@@ -407,6 +407,47 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       return // STOP
     }
 
+    // CRITICAL: When completing a phase (last section), validate ALL sections for this person
+    // This prevents users from jumping to last section and bypassing required fields
+    if (isLastSection && activeSchema) {
+      const fullValidation = QuestionRegistry.validateAllSectionsForRole(activeSchema, currentRole, formData)
+
+      if (!fullValidation.isValid) {
+        // Find the first section with errors and navigate to it
+        const firstErrorSection = fullValidation.missingSections[0]
+        if (firstErrorSection) {
+          // Find the index of this section
+          const sectionIndex = sections.findIndex(s => s.id === firstErrorSection.sectionId)
+          if (sectionIndex >= 0 && sectionIndex !== state.currentSectionIndex) {
+            // Navigate to the section with errors
+            dispatch({ type: "GO_TO_SECTION", payload: sectionIndex })
+          }
+        }
+
+        // Set errors for display
+        setErrors(fullValidation.errors)
+
+        // Build detailed error message
+        const sectionList = fullValidation.missingSections
+          .slice(0, 3) // Show max 3 sections
+          .map(s => s.sectionTitle)
+          .join(", ")
+        const moreCount = fullValidation.missingSections.length > 3
+          ? ` and ${fullValidation.missingSections.length - 3} more`
+          : ""
+
+        toast({
+          variant: "destructive",
+          title: "Cannot complete - missing required information",
+          description: `Please fill in all required fields in: ${sectionList}${moreCount}. (${fullValidation.totalMissingFields} fields total)`,
+        })
+
+        // Scroll to top to show the section with errors
+        window.scrollTo({ top: 0, behavior: 'smooth' })
+        return // STOP - don't complete phase
+      }
+    }
+
     setErrors({}) // Clear errors if valid
 
     // Flush save immediately before navigation to ensure data is persisted
@@ -458,7 +499,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       // This ensures we save the correct position for resume
       saveWizardProgress({ sectionIndex: newSectionIndex })
     }
-  }, [currentSection, formData, isLastSection, completeCurrentPhase, nextSection, filingId, markFilingInProgress, flushSave, state.currentPersonalFilingId, state.phase, state.totalDependents, state.currentDependentIndex, state.currentSectionIndex, isBusinessFiling, toast, saveWizardProgress, schema])
+  }, [currentSection, formData, isLastSection, completeCurrentPhase, nextSection, filingId, markFilingInProgress, flushSave, state.currentPersonalFilingId, state.phase, state.totalDependents, state.currentDependentIndex, state.currentSectionIndex, isBusinessFiling, toast, saveWizardProgress, schema, activeSchema, currentRole, sections, dispatch])
 
   // Handle previous button - flush save before navigating back
   const handlePrev = useCallback(async () => {
