@@ -1,40 +1,77 @@
 "use client"
 
-import { useEffect } from "react"
+import { useEffect, useRef } from "react"
 import { SiteHeader } from "@/components/site-header"
 import { Button } from "@/components/ui/button"
-import { Check, Shield, Zap, Users, FileText, TrendingUp, ArrowRight, Star, BookOpen, Banknote, Percent, Building2, Phone, Mail, MapPin, Clock } from "lucide-react"
+import { Check, Shield, Zap, Users, FileText, TrendingUp, ArrowRight, Star, BookOpen, Banknote, Percent, Building2, Phone, Mail, MapPin, Clock, CalendarCheck } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { motion, useScroll, useTransform } from "framer-motion"
-import { useRef } from "react"
-import { ParallaxBackground } from "@/components/ui/parallax-background"
+
+// --- Animation Variants ---
+const fadeUp = {
+  hidden: { opacity: 0, y: 30 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" as const } },
+}
+
+const fadeUpSlow = {
+  hidden: { opacity: 0, y: 40 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } },
+}
+
+const staggerContainer = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+}
+
+const staggerContainerSlow = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.15 } },
+}
 
 export default function HomePage() {
   const router = useRouter()
-  const targetRef = useRef<HTMLDivElement>(null)
+  const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress } = useScroll({
-    target: targetRef,
+    target: heroRef,
     offset: ["start start", "end start"],
   })
 
-  // Redirect to dashboard if logged in
+  // Redirect to dashboard if logged in with a valid (non-expired) token
   useEffect(() => {
     const token = localStorage.getItem("tax-auth-token")
     if (token) {
-      router.push("/dashboard")
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        if (Date.now() < payload.exp * 1000) {
+          router.push("/dashboard")
+        } else {
+          localStorage.removeItem("tax-auth-token")
+          localStorage.removeItem("tax-auth-user")
+          localStorage.removeItem("tax-refresh-token")
+        }
+      } catch {
+        localStorage.removeItem("tax-auth-token")
+        localStorage.removeItem("tax-auth-user")
+        localStorage.removeItem("tax-refresh-token")
+      }
     }
   }, [router])
 
-  // Hero Parallax Values
-  const yText = useTransform(scrollYProgress, [0, 1], ["0%", "50%"])
-  const yGraphic = useTransform(scrollYProgress, [0, 1], ["0%", "-20%"])
+  const yText = useTransform(scrollYProgress, [0, 1], ["0%", "40%"])
   const opacityHero = useTransform(scrollYProgress, [0, 0.5], [1, 0])
 
   const handleStartFiling = () => {
-    const isAuthenticated = localStorage.getItem("tax-auth-token")
-    if (isAuthenticated) {
+    const token = localStorage.getItem("tax-auth-token")
+    let isValid = false
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        isValid = Date.now() < payload.exp * 1000
+      } catch { /* invalid token */ }
+    }
+    if (isValid) {
       router.push("/filing/new")
     } else {
       router.push("/auth/login?tab=register")
@@ -43,254 +80,440 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-transparent overflow-x-hidden">
-      {/* Parallax Background */}
-      <ParallaxBackground />
-
       <SiteHeader />
 
       <main className="flex-1 relative">
-        {/* HERO SECTION */}
-        <section ref={targetRef} className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden">
-          <div className="container mx-auto px-4 grid lg:grid-cols-2 gap-12 items-center">
 
-            {/* Left: Text Content */}
-            <motion.div style={{ y: yText, opacity: opacityHero }} className="z-10">
-              <div className="inline-flex items-center rounded-full border border-[#07477a]/20 bg-[#07477a]/10 backdrop-blur-sm px-4 py-1.5 text-sm font-semibold text-[#07477a] mb-8">
-                <span className="flex h-2 w-2 rounded-full bg-[#07477a] mr-2 animate-pulse"></span>
-                Accepting New Clients for 2025
-              </div>
+        {/* ═══════════════════════════════════════════════
+            HERO — Full Viewport, Centered, Cinematic
+        ═══════════════════════════════════════════════ */}
+        <section ref={heroRef} className="relative min-h-[90vh] flex items-center pt-32 pb-20 overflow-hidden">
+          <div className="container mx-auto px-4">
 
-              <h1 className="text-5xl font-bold tracking-tight sm:text-7xl mb-6 text-gray-900 leading-[1.1]">
-                Tax filing, <br />
-                <span className="inline-block pb-2 text-[#07477a]">
-                  reimagined.
-                </span>
-              </h1>
+            {/* Center text content */}
+            <motion.div
+              style={{ y: yText, opacity: opacityHero }}
+              className="relative z-10 text-center max-w-4xl mx-auto"
+            >
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                variants={staggerContainerSlow}
+                className="flex flex-col items-center"
+              >
+                {/* Badge */}
+                <motion.div variants={fadeUp} className="mb-8">
+                  <div className="inline-flex items-center rounded-full border border-[#07477a]/20 bg-[#07477a]/10 backdrop-blur-sm px-4 py-1.5 text-sm font-semibold text-[#07477a]">
+                    <span className="flex h-2 w-2 rounded-full bg-[#07477a] mr-2 animate-pulse" />
+                    Accepting New Clients for 2025
+                  </div>
+                </motion.div>
 
-              <p className="text-xl text-gray-600 font-medium leading-relaxed mb-10 max-w-lg">
-                Reliable, affordable, and expert tax services tailored to individuals and small businesses.
-              </p>
+                {/* H1 */}
+                <motion.h1 variants={fadeUpSlow} className="text-5xl font-bold tracking-tight sm:text-7xl mb-6 text-gray-900 leading-[1.1]">
+                  Tax filing, <br />
+                  <span className="text-[#07477a]">reimagined.</span>
+                </motion.h1>
 
-              <div className="flex flex-col sm:flex-row gap-4">
-                <button
-                  onClick={handleStartFiling}
-                  data-testid="hero-cta"
-                  className="inline-flex h-14 items-center justify-center rounded-full bg-[#07477a] px-8 text-lg font-semibold text-white shadow-lg shadow-[#07477a]/25 transition-all hover:bg-[#053560] hover:scale-105 active:scale-95"
-                >
-                  Start Your Filing <ArrowRight className="ml-2 h-5 w-5" />
-                </button>
+                {/* Description */}
+                <motion.p variants={fadeUp} className="text-xl text-gray-600 font-medium leading-relaxed mb-10 max-w-lg">
+                  Reliable, affordable, and expert tax services tailored to individuals and small businesses.
+                </motion.p>
 
-                <Button variant="outline" size="lg" className="h-14 rounded-full px-8 text-lg border-[#07477a]/30 bg-white/50 backdrop-blur-sm hover:bg-white/80 text-gray-900" asChild>
-                  <Link href="/auth/login">Client Login</Link>
-                </Button>
-              </div>
+                {/* Buttons */}
+                <motion.div variants={fadeUp} className="flex flex-col sm:flex-row gap-4 mb-8">
+                  <button
+                    onClick={handleStartFiling}
+                    data-testid="hero-cta"
+                    className="inline-flex h-14 items-center justify-center rounded-full bg-[#07477a] px-8 text-lg font-semibold text-white shadow-lg shadow-[#07477a]/25 transition-all hover:bg-[#053560] hover:scale-105 active:scale-95"
+                  >
+                    Start Your Filing <ArrowRight className="ml-2 h-5 w-5" />
+                  </button>
+
+                  <Button variant="outline" size="lg" className="h-14 rounded-full px-8 text-lg border-[#07477a]/30 bg-white/50 backdrop-blur-sm hover:bg-white/80 text-gray-900" asChild>
+                    <Link href="/auth/login">Client Login</Link>
+                  </Button>
+                </motion.div>
+
+                {/* Trust indicators */}
+                <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500 font-medium">
+                  <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-[#07477a]/50" /> 500+ Clients</span>
+                  <span className="text-gray-300">|</span>
+                  <span className="flex items-center gap-1.5"><Shield className="h-4 w-4 text-[#07477a]/50" /> CPA Certified</span>
+                  <span className="text-gray-300">|</span>
+                  <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-[#07477a]/50" /> AES-256 Encrypted</span>
+                </motion.div>
+              </motion.div>
             </motion.div>
 
-            {/* Right: Floating UI Visualization - Green Gradient Glassmorphic */}
-            <motion.div style={{ y: yGraphic, opacity: opacityHero }} className="relative h-[600px] w-full hidden lg:block perspective-1000">
-              {/* Main Dashboard Card - Green Glassmorphic */}
-              <motion.div
-                className="absolute top-10 left-10 w-[400px] h-[500px] bg-gradient-to-br from-[#07477a]/20 via-white/80 to-[#07477a]/10 backdrop-blur-xl border border-[#07477a]/20 rounded-3xl shadow-2xl z-20 overflow-hidden"
-                animate={{ y: [0, -20, 0] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <div className="h-14 border-b border-[#07477a]/20 flex items-center px-6 gap-2 bg-gradient-to-r from-[#07477a]/20 to-[#07477a]/5">
-                  <div className="w-3 h-3 rounded-full bg-[#07477a]/30" />
-                  <div className="w-3 h-3 rounded-full bg-[#07477a]/50" />
-                  <div className="w-3 h-3 rounded-full bg-[#07477a]" />
-                </div>
-                <div className="p-8 space-y-6">
-                  <div className="space-y-2">
-                    <div className="h-4 w-24 bg-[#07477a]/20 rounded-full" />
-                    <div className="h-12 w-full bg-gradient-to-r from-[#07477a]/15 to-[#07477a]/5 rounded-xl border border-[#07477a]/20 flex items-center px-4 text-[#07477a] font-mono text-xl font-bold">
-                      $4,250.00
-                    </div>
-                  </div>
-                  <div className="space-y-4 pt-4">
-                    <div className="h-2 w-full bg-[#07477a]/15 rounded-full" />
-                    <div className="h-2 w-3/4 bg-[#07477a]/25 rounded-full" />
-                    <div className="h-2 w-5/6 bg-[#07477a]/10 rounded-full" />
-                  </div>
-                  <div className="pt-8">
-                    <div className="h-32 w-full bg-gradient-to-tr from-[#07477a]/20 via-[#07477a]/5 to-[#07477a]/15 rounded-2xl border border-[#07477a]/15 flex items-center justify-center backdrop-blur-sm">
-                      <TrendingUp className="h-12 w-12 text-[#07477a]/60" />
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-
-              {/* Background Floating Card - Green Gradient */}
-              <motion.div
-                className="absolute top-32 right-10 w-[350px] h-[400px] bg-gradient-to-br from-[#07477a]/25 via-[#07477a]/10 to-[#07477a]/20 backdrop-blur-md border border-[#07477a]/20 rounded-3xl shadow-xl z-10"
-                animate={{ y: [0, 20, 0] }}
-                transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+            {/* Hero image — lady with paper/pen (place accountant-hero.png in /public/images/) */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" as const }}
+              className="absolute right-0 sm:right-[2%] lg:right-[5%] top-[32%] -translate-y-1/2 sm:translate-y-0 sm:top-auto sm:bottom-0 z-5 pointer-events-none"
+            >
+              <Image
+                src="/images/accountant-hero.png"
+                alt="Professional accountant"
+                width={380}
+                height={500}
+                className="object-contain drop-shadow-2xl w-[150px] sm:w-[220px] md:w-[300px] lg:w-[380px]"
+                priority
               />
-
-              {/* Small Floating Badge - Green Glassmorphic */}
-              <motion.div
-                className="absolute bottom-20 -left-10 bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 px-6 py-4 rounded-2xl flex items-center gap-4 shadow-2xl z-30"
-                animate={{ x: [0, 10, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-              >
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-[#07477a]/30 to-[#07477a]/10 flex items-center justify-center border border-[#07477a]/20">
-                  <Check className="h-6 w-6 text-[#07477a]" />
-                </div>
-                <div>
-                  <p className="text-gray-900 font-bold">Audit Shield</p>
-                  <p className="text-xs text-[#07477a]">Active Protection</p>
-                </div>
-              </motion.div>
             </motion.div>
+
+            {/* Orbiting glassmorphic cards — solar system style */}
+            <div className="absolute inset-0 pointer-events-none z-20 overflow-hidden">
+              <style dangerouslySetInnerHTML={{ __html: `
+                @keyframes orbitSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+                @keyframes counterSpin { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+              `}} />
+
+              {/* Orbit center */}
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+
+                {/* Visible orbit ring */}
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[480px] h-[480px] sm:w-[520px] sm:h-[520px] md:w-[600px] md:h-[600px] lg:w-[700px] lg:h-[700px] rounded-full border border-dashed border-[#07477a]/10" />
+
+                {/* Spinning ring — all 4 cards placed on this single rotating disc */}
+                <div
+                  className="absolute top-1/2 left-1/2 w-0 h-0"
+                  style={{ animation: "orbitSpin 40s linear infinite" }}
+                >
+                  {/* Card 1: top — responsive positions via separate elements */}
+                  {/* Mobile */}
+                  <div className="absolute sm:hidden" style={{ top: "-240px", left: "-60px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[120px]">
+                        <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-3 w-3 text-[#07477a]" /></div>
+                        <div><p className="text-[8px] text-gray-500 font-medium">Deadline</p><p className="text-[10px] font-bold text-[#07477a]">Apr 30</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* sm+ */}
+                  <div className="absolute hidden sm:block md:hidden" style={{ top: "-220px", left: "-95px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* md+ */}
+                  <div className="absolute hidden md:block lg:hidden" style={{ top: "-280px", left: "-95px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  {/* lg+ */}
+                  <div className="absolute hidden lg:block" style={{ top: "-350px", left: "-95px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[200px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 2: right (90°) */}
+                  <div className="absolute sm:hidden" style={{ top: "-16px", left: "165px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[115px]">
+                        <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-3 w-3 text-[#07477a]" /></div>
+                        <div><p className="text-[8px] text-gray-500 font-medium">Turnaround</p><p className="text-[10px] font-bold text-[#07477a]">24 Hours</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden sm:block md:hidden" style={{ top: "-20px", left: "125px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Turnaround</p><p className="text-sm font-bold text-[#07477a]">24 Hours</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden md:block lg:hidden" style={{ top: "-20px", left: "185px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Turnaround</p><p className="text-sm font-bold text-[#07477a]">24 Hours</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden lg:block" style={{ top: "-20px", left: "255px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><Zap className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Turnaround</p><p className="text-sm font-bold text-[#07477a]">24 Hours</p></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 3: bottom (180°) */}
+                  <div className="absolute sm:hidden" style={{ top: "200px", left: "-60px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[120px]">
+                        <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-3 w-3 text-[#07477a]" /></div>
+                        <div><p className="text-[8px] text-gray-500 font-medium">Pricing</p><p className="text-[10px] font-bold text-[#07477a]">Transparent</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden sm:block md:hidden" style={{ top: "180px", left: "-95px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Pricing</p><p className="text-sm font-bold text-[#07477a]">Guaranteed Rates</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden md:block lg:hidden" style={{ top: "240px", left: "-95px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Pricing</p><p className="text-sm font-bold text-[#07477a]">Guaranteed Rates</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden lg:block" style={{ top: "310px", left: "-95px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Pricing</p><p className="text-sm font-bold text-[#07477a]">Guaranteed Rates</p></div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card 4: left (270°) */}
+                  <div className="absolute sm:hidden" style={{ top: "-16px", left: "-280px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-xl px-2.5 py-1.5 shadow-xl flex items-center gap-1.5 w-[115px]">
+                        <div className="h-6 w-6 rounded-lg bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-3 w-3 text-[#07477a]" /></div>
+                        <div><p className="text-[8px] text-gray-500 font-medium">Services</p><p className="text-[10px] font-bold text-[#07477a]">6 Types</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden sm:block md:hidden" style={{ top: "-20px", left: "-310px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[185px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Services</p><p className="text-sm font-bold text-[#07477a]">6 Offerings</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden md:block lg:hidden" style={{ top: "-20px", left: "-370px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[185px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Services</p><p className="text-sm font-bold text-[#07477a]">6 Offerings</p></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="absolute hidden lg:block" style={{ top: "-20px", left: "-440px" }}>
+                    <div style={{ animation: "counterSpin 40s linear infinite" }}>
+                      <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[185px]">
+                        <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><FileText className="h-4 w-4 text-[#07477a]" /></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Services</p><p className="text-sm font-bold text-[#07477a]">6 Offerings</p></div>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+
           </div>
         </section>
 
-        {/* --- STATS STRIP - Glassmorphic White with Green Text --- */}
-        <div className="border-y border-[#07477a]/10 bg-white/60 backdrop-blur-md">
-          <div className="container mx-auto px-4 py-12">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        {/* ═══════════════════════════════════════════════
+            STATS STRIP
+        ═══════════════════════════════════════════════ */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-80px" }}
+          variants={staggerContainer}
+          className="border-y border-[#07477a]/10 bg-white/60 backdrop-blur-2xl"
+        >
+          <div className="container mx-auto px-4 py-16">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-10">
               {[
                 { label: "Active Clients", val: "500+", icon: Users },
                 { label: "Tax Saved", val: "$2M+", icon: TrendingUp },
                 { label: "Turnaround", val: "24h", icon: Zap },
                 { label: "Security", val: "AES-256", icon: Shield },
               ].map((stat, i) => (
-                <div key={i} className="flex flex-col items-center justify-center gap-2 group">
-                  <stat.icon className="h-6 w-6 text-[#07477a]/60 group-hover:text-[#07477a] transition-colors duration-500" />
-                  <span className="text-3xl font-bold text-[#07477a] tracking-tight">{stat.val}</span>
-                  <span className="text-xs font-semibold text-[#07477a]/70 uppercase tracking-widest">{stat.label}</span>
-                </div>
+                <motion.div
+                  key={i}
+                  variants={fadeUp}
+                  className="flex flex-col items-center justify-center gap-3 group"
+                >
+                  <div className="relative">
+                    <stat.icon className="h-6 w-6 text-[#07477a]/60 group-hover:text-[#07477a] transition-colors duration-500 relative z-10" />
+                    <div className="absolute inset-0 bg-[#07477a]/10 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500 scale-[3]" />
+                  </div>
+                  <span className="text-4xl sm:text-5xl font-bold text-[#07477a] tracking-tight">{stat.val}</span>
+                  <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-[0.2em]">{stat.label}</span>
+                </motion.div>
               ))}
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* --- SERVICES - Clean Glassmorphic Cards (No Lime) --- */}
-        <section id="features" className="py-32 relative bg-transparent">
+        {/* ═══════════════════════════════════════════════
+            SERVICES
+        ═══════════════════════════════════════════════ */}
+        <section id="features" className="py-36 relative bg-transparent">
           <div className="container mx-auto px-4">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold sm:text-5xl mb-6 text-gray-900">Expert services tailored to you.</h2>
-              <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-80px" }}
+              variants={staggerContainer}
+              className="text-center mb-20"
+            >
+              <motion.h2 variants={fadeUpSlow} className="text-4xl font-bold sm:text-6xl mb-6 text-gray-900 tracking-tight">
+                Expert services tailored to you.
+              </motion.h2>
+              <motion.p variants={fadeUp} className="text-xl text-gray-500 max-w-2xl mx-auto font-medium">
                 From personal filing to corporate accounting, we handle it all.
-              </p>
-            </div>
+              </motion.p>
+            </motion.div>
 
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {/* 1. PERSONAL TAX - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
-                  <Users className="h-6 w-6 text-[#07477a]" />
+            <motion.div
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-60px" }}
+              variants={staggerContainer}
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            >
+              {/* 1. PERSONAL TAX */}
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+                  <Users className="h-7 w-7 text-[#07477a]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Personal Tax</h3>
-                <p className="text-sm text-gray-600 mb-6">Maximize refunds for individuals & families.</p>
-                <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> T1 General Filing</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> RRSP & Credits</li>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Personal Tax</h3>
+                <p className="text-sm text-gray-500 mb-6">Maximize refunds for individuals & families.</p>
+                <ul className="space-y-3 text-sm text-gray-600 mb-8 font-medium">
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> T1 General Filing</li>
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> RRSP & Credits</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
                   Get Started
                 </Button>
-              </div>
+              </motion.div>
 
-              {/* 2. BUSINESS TAX - Featured Glassmorphic */}
-              <div className="bg-white/80 backdrop-blur-xl border-2 border-[#07477a]/40 rounded-2xl p-6 relative shadow-lg shadow-[#07477a]/10">
-                <div className="absolute top-0 right-0 bg-[#07477a] px-3 py-1 text-[10px] font-bold text-white rounded-bl-xl rounded-tr-xl">POPULAR</div>
-                <div className="h-12 w-12 rounded-xl bg-[#07477a]/15 border border-[#07477a]/30 flex items-center justify-center mb-6">
-                  <FileText className="h-6 w-6 text-[#07477a]" />
+              {/* 2. BUSINESS TAX — Featured */}
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-[#07477a]/[0.08] via-white/80 to-[#3b9cc2]/[0.08] backdrop-blur-xl border-2 border-[#07477a]/30 rounded-3xl p-8 relative shadow-2xl shadow-[#07477a]/15 ring-1 ring-[#07477a]/10 hover:shadow-[0_25px_60px_rgba(7,71,122,0.2)] hover:-translate-y-3 transition-all duration-500 group cursor-pointer">
+                <div className="absolute top-0 right-0 bg-gradient-to-r from-[#07477a] to-[#053560] px-4 py-1.5 text-[10px] font-bold text-white rounded-bl-xl rounded-tr-3xl tracking-wider uppercase">Popular</div>
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/25 to-[#3b9cc2]/15 border border-[#07477a]/30 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/25 transition-all duration-500">
+                  <FileText className="h-7 w-7 text-[#07477a]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Business Tax (T2)</h3>
-                <p className="text-sm text-gray-600 mb-6">Corporate filing & compliance.</p>
-                <ul className="space-y-3 text-sm text-gray-900 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Corporate Returns</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Financial Statements</li>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Business Tax (T2)</h3>
+                <p className="text-sm text-gray-500 mb-6">Corporate filing & compliance.</p>
+                <ul className="space-y-3 text-sm text-gray-900 mb-8 font-medium">
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Corporate Returns</li>
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Financial Statements</li>
                 </ul>
-                <Button className="w-full h-10 rounded-lg bg-[#07477a] text-white hover:bg-[#053560] font-semibold shadow-lg shadow-[#07477a]/25 text-sm" onClick={handleStartFiling}>
+                <Button className="w-full h-11 rounded-xl bg-gradient-to-r from-[#07477a] to-[#053560] text-white hover:opacity-90 font-semibold shadow-lg shadow-[#07477a]/25 text-sm transition-all duration-300" onClick={handleStartFiling}>
                   File Corporate
                 </Button>
-              </div>
+              </motion.div>
 
-              {/* 3. BOOKKEEPING - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
-                  <BookOpen className="h-6 w-6 text-[#07477a]" />
+              {/* 3. BOOKKEEPING */}
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+                  <BookOpen className="h-7 w-7 text-[#07477a]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Bookkeeping</h3>
-                <p className="text-sm text-gray-600 mb-6">Monthly tracking & organization.</p>
-                <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Monthly/Quarterly</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Expense Tracking</li>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Bookkeeping</h3>
+                <p className="text-sm text-gray-500 mb-6">Monthly tracking & organization.</p>
+                <ul className="space-y-3 text-sm text-gray-600 mb-8 font-medium">
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Monthly/Quarterly</li>
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Expense Tracking</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
                   Book Service
                 </Button>
-              </div>
+              </motion.div>
 
-              {/* 4. PAYROLL - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
-                  <Banknote className="h-6 w-6 text-[#07477a]" />
+              {/* 4. PAYROLL */}
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+                  <Banknote className="h-7 w-7 text-[#07477a]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Payroll Services</h3>
-                <p className="text-sm text-gray-600 mb-6">Employee payments & T4s.</p>
-                <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Deductions Mgmt</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> T4/T4A Filing</li>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Payroll Services</h3>
+                <p className="text-sm text-gray-500 mb-6">Employee payments & T4s.</p>
+                <ul className="space-y-3 text-sm text-gray-600 mb-8 font-medium">
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Deductions Mgmt</li>
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> T4/T4A Filing</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
                   Learn More
                 </Button>
-              </div>
+              </motion.div>
 
-              {/* 5. GST/HST FILING - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
-                  <Percent className="h-6 w-6 text-[#07477a]" />
+              {/* 5. GST/HST FILING */}
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+                  <Percent className="h-7 w-7 text-[#07477a]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">GST/HST Filing</h3>
-                <p className="text-sm text-gray-600 mb-6">Remittance & compliance checks.</p>
-                <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> CRA Compliance</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Input Tax Credits</li>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">GST/HST Filing</h3>
+                <p className="text-sm text-gray-500 mb-6">Remittance & compliance checks.</p>
+                <ul className="space-y-3 text-sm text-gray-600 mb-8 font-medium">
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> CRA Compliance</li>
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Input Tax Credits</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
                   Start Filing
                 </Button>
-              </div>
+              </motion.div>
 
-              {/* 6. BUSINESS REGISTRATION - Glassmorphic */}
-              <div className="bg-white/70 backdrop-blur-xl border border-white/60 rounded-2xl p-6 hover:shadow-lg hover:border-[#07477a]/30 hover:bg-white/80 transition-all duration-300 group">
-                <div className="h-12 w-12 rounded-xl bg-[#07477a]/10 border border-[#07477a]/20 flex items-center justify-center mb-6 group-hover:bg-[#07477a]/15 transition-colors">
-                  <Building2 className="h-6 w-6 text-[#07477a]" />
+              {/* 6. BUSINESS REGISTRATION */}
+              <motion.div variants={fadeUp} className="bg-gradient-to-br from-white/80 via-white/70 to-[#07477a]/5 backdrop-blur-xl border border-[#07477a]/15 rounded-3xl p-8 shadow-xl shadow-[#07477a]/[0.05] hover:shadow-2xl hover:shadow-[#07477a]/[0.12] hover:-translate-y-3 hover:border-[#07477a]/30 transition-all duration-500 group cursor-pointer">
+                <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-[#07477a]/20 to-[#3b9cc2]/10 border border-[#07477a]/25 flex items-center justify-center mb-6 group-hover:scale-110 group-hover:shadow-lg group-hover:shadow-[#07477a]/20 transition-all duration-500">
+                  <Building2 className="h-7 w-7 text-[#07477a]" />
                 </div>
-                <h3 className="text-xl font-bold text-gray-900 mb-2">Business Reg</h3>
-                <p className="text-sm text-gray-600 mb-6">Incorporation & startup setup.</p>
-                <ul className="space-y-3 text-sm text-gray-600 mb-6 font-medium">
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> Incorporation</li>
-                  <li className="flex gap-2"><Check className="h-4 w-4 text-[#07477a]" /> CRA Account Setup</li>
+                <h3 className="text-xl font-bold text-gray-900 mb-3">Business Reg</h3>
+                <p className="text-sm text-gray-500 mb-6">Incorporation & startup setup.</p>
+                <ul className="space-y-3 text-sm text-gray-600 mb-8 font-medium">
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> Incorporation</li>
+                  <li className="flex gap-2.5"><Check className="h-4 w-4 text-[#07477a] shrink-0 mt-0.5" /> CRA Account Setup</li>
                 </ul>
-                <Button variant="outline" className="w-full h-10 rounded-lg border-[#07477a]/30 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all font-semibold text-sm" onClick={handleStartFiling}>
+                <Button variant="outline" className="w-full h-11 rounded-xl border-[#07477a]/20 bg-white/50 hover:bg-[#07477a] hover:text-white hover:border-[#07477a] transition-all duration-300 font-semibold text-sm" onClick={handleStartFiling}>
                   Register Now
                 </Button>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </div>
         </section>
 
-        {/* --- LIFESTYLE SECTION (Edge-to-Edge 50/50) --- */}
+        {/* ═══════════════════════════════════════════════
+            LIFESTYLE SECTION (Edge-to-Edge 50/50)
+        ═══════════════════════════════════════════════ */}
         <section className="relative w-full overflow-hidden">
           <div className="grid lg:grid-cols-2 w-full min-h-[700px]">
 
-            {/* Left Column: Text & Graphics - GREEN BACKGROUND */}
+            {/* Left Column: Text — Green Background */}
             <div className="flex flex-col justify-center px-6 py-20 md:px-16 lg:px-24 xl:px-32 order-2 lg:order-1 bg-[#07477a]">
-              <div className="max-w-xl">
-                <h2 className="text-4xl md:text-5xl font-bold mb-6 leading-tight text-white">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-80px" }}
+                variants={staggerContainerSlow}
+                className="max-w-xl"
+              >
+                <motion.h2 variants={fadeUpSlow} className="text-4xl md:text-5xl font-bold mb-6 leading-tight text-white">
                   Focus on your work. <br />
                   <span className="text-white/80">We handle the rest.</span>
-                </h2>
-                <p className="text-xl text-white/90 mb-10 font-medium leading-relaxed">
+                </motion.h2>
+                <motion.p variants={fadeUp} className="text-xl text-white/90 mb-10 font-medium leading-relaxed">
                   JJ Elevate bridges the gap between complex tax laws and modern technology. We use AI to find every deduction, and human experts to verify every cent.
-                </p>
+                </motion.p>
 
-                <div className="flex items-center gap-4 mb-16">
+                <motion.div variants={fadeUp} className="flex items-center gap-4 mb-16">
                   <div className="flex -space-x-4">
                     {[1, 2, 3, 4].map((i) => (
                       <div key={i} className="h-12 w-12 rounded-full border-2 border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center overflow-hidden">
@@ -308,10 +531,10 @@ export default function HomePage() {
                     </div>
                     <p className="text-sm font-medium text-white">Rated 5.0 by 500+ locals</p>
                   </div>
-                </div>
+                </motion.div>
 
-                {/* Floating Cards Graphic - Glassmorphic */}
-                <div className="relative h-[150px] w-full max-w-md hidden sm:block">
+                {/* Floating Cards */}
+                <motion.div variants={fadeUp} className="relative h-[150px] w-full max-w-md hidden sm:block">
                   <motion.div
                     className="absolute top-0 right-0 w-[240px] h-[80px] bg-white/90 backdrop-blur-xl rounded-2xl p-4 shadow-xl z-20 flex items-center gap-4 border border-white/50"
                     whileHover={{ scale: 1.05 }}
@@ -339,11 +562,11 @@ export default function HomePage() {
                       <p className="text-[#07477a] text-xs">Just now</p>
                     </div>
                   </motion.div>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             </div>
 
-            {/* Right Column: Image Content */}
+            {/* Right Column: Image */}
             <div className="relative h-[400px] lg:h-auto w-full order-1 lg:order-2">
               <Image
                 src="/images/client-relationship.png"
@@ -353,17 +576,18 @@ export default function HomePage() {
                 quality={90}
                 priority
               />
-              {/* Gradient for smooth transition on mobile */}
               <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#07477a] to-transparent lg:hidden" />
             </div>
           </div>
         </section>
 
-        {/* --- ABOUT (Edge-to-Edge 50/50 Flipped) --- */}
+        {/* ═══════════════════════════════════════════════
+            ABOUT (Edge-to-Edge 50/50 Flipped)
+        ═══════════════════════════════════════════════ */}
         <section id="about" className="relative w-full overflow-hidden">
           <div className="grid lg:grid-cols-2 w-full min-h-[700px]">
 
-            {/* Left Column: Image (Flipped to Left) */}
+            {/* Left Column: Image */}
             <div className="relative h-[400px] lg:h-auto w-full order-1">
               <Image
                 src="/images/focused-accountant.png"
@@ -372,11 +596,16 @@ export default function HomePage() {
                 className="object-cover"
                 quality={90}
               />
-              {/* Overlay Gradient */}
               <div className="absolute inset-0 bg-gradient-to-r from-black/20 via-transparent to-transparent" />
 
-              {/* Floating Badge - Glassmorphic */}
-              <div className="absolute bottom-6 left-6 right-6 hidden sm:block">
+              {/* Floating Badge */}
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+                className="absolute bottom-6 left-6 right-6 hidden sm:block"
+              >
                 <div className="bg-white/90 backdrop-blur-xl rounded-xl p-4 border border-white/50 shadow-lg max-w-xs mx-auto lg:mx-0">
                   <div className="flex items-center gap-4">
                     <div className="h-12 w-12 rounded-full bg-[#07477a]/15 flex items-center justify-center">
@@ -388,127 +617,154 @@ export default function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
-            {/* Right Column: Text Content - GREEN BACKGROUND */}
+            {/* Right Column: Text — Green Background */}
             <div className="flex flex-col justify-center px-6 py-20 md:px-16 lg:px-24 xl:px-32 order-2 bg-[#07477a]">
-              <div className="max-w-xl">
-                <div className="inline-flex items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-3 py-1 text-sm font-medium text-white mb-6">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: "-80px" }}
+                variants={staggerContainerSlow}
+                className="max-w-xl"
+              >
+                <motion.div variants={fadeUp} className="inline-flex items-center rounded-full border border-white/30 bg-white/10 backdrop-blur-sm px-4 py-1.5 text-sm font-medium text-white mb-6">
                   About JJ Elevate
-                </div>
-                <h2 className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
+                </motion.div>
+                <motion.h2 variants={fadeUpSlow} className="text-3xl md:text-5xl font-bold tracking-tight text-white mb-6">
                   Your Partners in <span className="text-white/80">Growth</span>.
-                </h2>
-                <p className="text-lg text-white/90 leading-relaxed mb-6">
+                </motion.h2>
+                <motion.p variants={fadeUp} className="text-lg text-white/90 leading-relaxed mb-6">
                   We provide reliable, affordable, and expert tax services tailored to individuals and small businesses across Canada.
-                </p>
-                <p className="text-lg text-white/90 leading-relaxed mb-8">
+                </motion.p>
+                <motion.p variants={fadeUp} className="text-lg text-white/90 leading-relaxed mb-8">
                   Our mission is simple: to simplify accounting so you can focus on what matters—growing your business. Whether you need help with personal filing, corporate returns, or daily bookkeeping, we ensure accuracy, compliance, and maximum deductions.
-                </p>
+                </motion.p>
 
-                <ul className="space-y-4 pt-4 mb-8">
+                <motion.ul variants={staggerContainer} className="space-y-4 pt-4 mb-8">
                   {[
                     "Guaranteed Rates & Transparent Pricing",
                     "CPA-Certified Review on Every Return",
                     "Year-Round Support (We don't disappear after April!)"
                   ].map((item, i) => (
-                    <li key={i} className="flex items-center gap-3">
+                    <motion.li key={i} variants={fadeUp} className="flex items-center gap-3">
                       <div className="h-6 w-6 rounded-full bg-white/20 flex items-center justify-center shrink-0">
                         <Check className="h-3.5 w-3.5 text-white" />
                       </div>
                       <span className="font-medium text-white">{item}</span>
-                    </li>
+                    </motion.li>
                   ))}
-                </ul>
+                </motion.ul>
 
-                <div className="pt-2">
-                  <Button size="lg" className="rounded-full px-8 font-semibold bg-white hover:bg-white/90 text-[#07477a] shadow-lg" asChild>
+                <motion.div variants={fadeUp} className="pt-2">
+                  <Button size="lg" className="rounded-full px-8 font-semibold bg-white hover:bg-white/90 text-[#07477a] shadow-lg transition-all duration-300 hover:shadow-xl" asChild>
                     <Link href="#contact">Contact Support</Link>
                   </Button>
-                </div>
-              </div>
+                </motion.div>
+              </motion.div>
             </div>
-
           </div>
         </section>
 
       </main>
 
-      {/* --- CONTACT SECTION - Clean Glassmorphic Cards --- */}
-      <section id="contact" className="py-24 relative bg-transparent">
+      {/* ═══════════════════════════════════════════════
+          CONTACT SECTION
+      ═══════════════════════════════════════════════ */}
+      <section id="contact" className="py-32 relative bg-transparent">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold sm:text-5xl mb-6 text-gray-900">Get in Touch</h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-80px" }}
+            variants={staggerContainer}
+            className="text-center mb-20"
+          >
+            <motion.h2 variants={fadeUpSlow} className="text-4xl font-bold sm:text-6xl mb-6 text-gray-900 tracking-tight">
+              Get in Touch
+            </motion.h2>
+            <motion.p variants={fadeUp} className="text-xl text-gray-500 max-w-2xl mx-auto font-medium">
               We're here to help. Reach out to us for any questions or to schedule a consultation.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto">
-            {/* Phone - Click to Call - Glassmorphic */}
-            <a
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, margin: "-60px" }}
+            variants={staggerContainer}
+            className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 max-w-6xl mx-auto"
+          >
+            {/* Phone */}
+            <motion.a
+              variants={fadeUp}
               href="tel:+17057703951"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
                 <Phone className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Call Us</h3>
-              <p className="text-gray-600 font-medium mb-4 relative z-10">(705) 770-3951</p>
-              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-colors relative z-10">
+              <p className="text-gray-500 font-medium mb-4 relative z-10">(705) 770-3951</p>
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-300 relative z-10">
                 Click to Call
               </span>
-            </a>
+            </motion.a>
 
-            {/* Email - Click to Mail - Glassmorphic */}
-            <a
+            {/* Email */}
+            <motion.a
+              variants={fadeUp}
               href="mailto:jjelevateservices@gmail.com"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
                 <Mail className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Email Us</h3>
-              <p className="text-gray-600 font-medium break-all mb-4 relative z-10 text-sm">jjelevateservices@gmail.com</p>
-              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-colors relative z-10">
+              <p className="text-gray-500 font-medium break-all mb-4 relative z-10 text-sm">jjelevateservices@gmail.com</p>
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-300 relative z-10">
                 Click to Email
               </span>
-            </a>
+            </motion.a>
 
-            {/* Address - Click for Directions - Glassmorphic */}
-            <a
+            {/* Address */}
+            <motion.a
+              variants={fadeUp}
               href="https://www.google.com/maps/dir/?api=1&destination=Charlottetown,+PE"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center cursor-pointer relative overflow-hidden"
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center cursor-pointer relative overflow-hidden"
             >
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
                 <MapPin className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Visit Us</h3>
-              <p className="text-gray-600 font-medium mb-4 relative z-10 text-sm">37-64 Belvedere Ave<br />Charlottetown, PE</p>
-              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-colors relative z-10">
+              <p className="text-gray-500 font-medium mb-4 relative z-10 text-sm">37-64 Belvedere Ave<br />Charlottetown, PE</p>
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-300 relative z-10">
                 Click for Directions
               </span>
-            </a>
+            </motion.a>
 
-            {/* Hours - Static Info - Glassmorphic */}
-            <div className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-[#07477a]/20 shadow-lg rounded-3xl hover:border-[#07477a] hover:shadow-xl hover:-translate-y-1 hover:bg-white/80 transition-all duration-300 group text-center relative overflow-hidden">
-              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-              <div className="h-12 w-12 rounded-full bg-[#07477a]/10 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all relative z-10">
+            {/* Hours */}
+            <motion.div
+              variants={fadeUp}
+              className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-500 group text-center relative overflow-hidden"
+            >
+              <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="h-14 w-14 rounded-2xl bg-[#07477a]/10 flex items-center justify-center mb-5 group-hover:scale-110 group-hover:bg-[#07477a]/15 transition-all duration-500 relative z-10">
                 <Clock className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Office Hours</h3>
-              <p className="text-gray-600 font-medium mb-4 relative z-10 text-sm">Mon - Fri: 9:00 AM - 5:00 PM<br /><span className="text-xs text-[#07477a]/70">(Weekends by Appointment)</span></p>
-              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-3 py-1 rounded-full relative z-10">
+              <p className="text-gray-500 font-medium mb-4 relative z-10 text-sm">Mon - Fri: 9:00 AM - 5:00 PM<br /><span className="text-xs text-[#07477a]/70">(Weekends by Appointment)</span></p>
+              <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full relative z-10">
                 Open Weekdays
               </span>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
         </div>
       </section>
     </div>

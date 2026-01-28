@@ -16,7 +16,7 @@ const RATE_LIMIT_MAX_REQUESTS = 100 // 100 requests per minute for general endpo
 const AUTH_RATE_LIMIT_MAX_REQUESTS = 10 // 10 requests per minute for auth endpoints
 
 // Sensitive paths that need stricter rate limiting
-const AUTH_PATHS = ['/api/auth', '/auth/login', '/auth/register']
+const AUTH_PATHS = ['/api/auth']
 
 // Paths that should be protected (require authentication)
 const PROTECTED_PATHS = ['/dashboard', '/filing', '/profile', '/settings']
@@ -93,7 +93,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
     "style-src 'self' 'unsafe-inline'", // Needed for Tailwind
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' http://localhost:1337 https://*.strapi.io https://www.google.com", // API endpoints + reCAPTCHA
+    "connect-src 'self' http://localhost:1337 https://*.strapi.io https://www.google.com https://*.nn.r.appspot.com", // API endpoints + reCAPTCHA
     "frame-src 'self' https://www.google.com", // For reCAPTCHA iframe
     "frame-ancestors 'none'",
     "base-uri 'self'",
