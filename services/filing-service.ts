@@ -227,6 +227,7 @@ function transformSelfEmployment(
   const allowedFields = [
     'needsBookkeeping',
     'expenseCategories',
+    'expenseAmounts',
     'gstRegistered',
     'gstNumber',
     'hasCapitalAssets',
@@ -284,6 +285,7 @@ function transformRentalIncome(
     'totalRentReceived',
     'otherRentalIncome',
     'expenseCategories',
+    'expenseAmounts',
     'claimCCA',
     'purchasePrice',
     'purchaseDate',

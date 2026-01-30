@@ -265,27 +265,77 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
         return (
           <RadioGroup
             value={(value as string) || ""}
-            onValueChange={onChange}
+            onValueChange={(newValue) => {
+              // Clear linked uploads from previously selected option when changing selection
+              if (onFieldChange && value !== newValue) {
+                const prevOpt = question.options?.find(o => o.value === value)
+                const prevLinkedId = (prevOpt as any)?.linkedUploadQuestionId
+                if (prevLinkedId && allQuestions) {
+                  const linkedQ = allQuestions.find(q => q.id === prevLinkedId)
+                  if (linkedQ) {
+                    onFieldChange(linkedQ.name, null)
+                  }
+                }
+              }
+              onChange(newValue)
+            }}
             className="space-y-3"
           >
-            {question.options?.map((opt, idx) => (
-              <div
-                key={opt.value || `opt-${idx}`}
-                className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors"
-              >
-                <RadioGroupItem
-                  value={opt.value || ""}
-                  id={`${question.id}-${opt.value || idx}`}
-                  className="border-gray-300 text-[#07477a] data-[state=checked]:border-[#07477a] data-[state=checked]:bg-[#07477a]"
-                />
-                <Label
-                  htmlFor={`${question.id}-${opt.value || idx}`}
-                  className="cursor-pointer font-normal text-gray-700 flex-1"
-                >
-                  {opt.label}
-                </Label>
-              </div>
-            ))}
+            {question.options?.map((opt, idx) => {
+              const isSelected = value === opt.value
+              // Check for linked upload question (inline file upload)
+              const linkedUploadId = (opt as any).linkedUploadQuestionId
+              const linkedUploadQuestion = linkedUploadId && allQuestions
+                ? allQuestions.find(q => q.id === linkedUploadId)
+                : null
+
+              return (
+                <div key={opt.value || `opt-${idx}`} className="space-y-2">
+                  <div
+                    className={cn(
+                      "flex items-center space-x-3 p-3 rounded-lg border transition-colors",
+                      isSelected && linkedUploadQuestion
+                        ? "bg-[#07477a]/5 border-[#07477a]/30"
+                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
+                    )}
+                  >
+                    <RadioGroupItem
+                      value={opt.value || ""}
+                      id={`${question.id}-${opt.value || idx}`}
+                      className="border-gray-300 text-[#07477a] data-[state=checked]:border-[#07477a] data-[state=checked]:bg-[#07477a]"
+                    />
+                    <Label
+                      htmlFor={`${question.id}-${opt.value || idx}`}
+                      className="cursor-pointer font-normal text-gray-700 flex-1"
+                    >
+                      {opt.label}
+                    </Label>
+                  </div>
+
+                  {/* Inline file upload when radio option is selected and has linked upload */}
+                  {isSelected && linkedUploadQuestion && formData && onFieldChange && (
+                    <div className="ml-6 pl-4 border-l-2 border-[#07477a]/20">
+                      <div className="space-y-2">
+                        <Label className="text-sm text-gray-700 font-medium flex items-center gap-1">
+                          {linkedUploadQuestion.label}
+                          {linkedUploadQuestion.validation?.required && <span className="text-rose-500">*</span>}
+                        </Label>
+                        {linkedUploadQuestion.helpText && (
+                          <p className="text-xs text-gray-500">{linkedUploadQuestion.helpText}</p>
+                        )}
+                        <FileUploadField
+                          question={linkedUploadQuestion}
+                          value={formData[linkedUploadQuestion.name]}
+                          onChange={(val) => onFieldChange(linkedUploadQuestion.name, val)}
+                          filingId={filingId}
+                          personalFilingId={personalFilingId}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )
+            })}
           </RadioGroup>
         )
 
@@ -311,6 +361,19 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                   ? allQuestions.find(q => q.id === linkedUploadId)
                   : null
 
+                // Check for linked amount field (inline expense amount input)
+                const linkedAmountFieldName = (opt as any).linkedAmountFieldName as string | undefined
+                const hasLinkedAmount = !!linkedAmountFieldName
+
+                // Get current amount value from formData
+                const getAmountValue = (): string => {
+                  if (!linkedAmountFieldName || !formData) return ""
+                  const amountsObj = formData[linkedAmountFieldName] as Record<string, number> | undefined
+                  if (!amountsObj || typeof amountsObj !== 'object') return ""
+                  const amt = amountsObj[opt.value]
+                  return amt !== undefined ? String(amt) : ""
+                }
+
                 return (
                   <div key={opt.value || `opt-${idx}`} className="space-y-2">
                     <div
@@ -318,7 +381,7 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                         "flex items-start space-x-3 p-3 rounded-lg border transition-colors",
                         isDisabled
                           ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
-                          : isChecked && linkedUploadQuestion
+                          : isChecked && (linkedUploadQuestion || hasLinkedAmount)
                             ? "bg-[#07477a]/5 border-[#07477a]/30"
                             : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                       )}
@@ -331,9 +394,9 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                           if (isDisabled) return
 
                           if (checked) {
-                            // If selecting NA, clear all other selections and their linked uploads
+                            // If selecting NA, clear all other selections and their linked uploads/amounts
                             if (isNaOption) {
-                              // Clear any linked uploads from previously selected options
+                              // Clear any linked uploads and amounts from previously selected options
                               if (onFieldChange) {
                                 selectedValues.forEach((selectedVal: string) => {
                                   const selectedOpt = question.options?.find(o => o.value === selectedVal)
@@ -343,6 +406,14 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                                     if (linkedQ) {
                                       onFieldChange(linkedQ.name, null)
                                     }
+                                  }
+                                  // Clear linked amount
+                                  const selectedAmountField = (selectedOpt as any)?.linkedAmountFieldName
+                                  if (selectedAmountField && formData) {
+                                    const currentAmounts = (formData[selectedAmountField] as Record<string, number>) || {}
+                                    const updatedAmounts = { ...currentAmounts }
+                                    delete updatedAmounts[selectedVal]
+                                    onFieldChange(selectedAmountField, Object.keys(updatedAmounts).length > 0 ? updatedAmounts : null)
                                   }
                                 })
                               }
@@ -356,6 +427,13 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                             // Clear linked upload data when unchecking
                             if (linkedUploadQuestion && onFieldChange) {
                               onFieldChange(linkedUploadQuestion.name, null)
+                            }
+                            // Clear linked amount data when unchecking
+                            if (linkedAmountFieldName && onFieldChange && formData) {
+                              const currentAmounts = (formData[linkedAmountFieldName] as Record<string, number>) || {}
+                              const updatedAmounts = { ...currentAmounts }
+                              delete updatedAmounts[opt.value]
+                              onFieldChange(linkedAmountFieldName, Object.keys(updatedAmounts).length > 0 ? updatedAmounts : null)
                             }
                             onChange(selectedValues.filter((v: string) => v !== opt.value))
                           }
@@ -394,6 +472,36 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                             onChange={(val) => onFieldChange(linkedUploadQuestion.name, val)}
                             filingId={filingId}
                             personalFilingId={personalFilingId}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Inline amount input when option is checked and has linked amount field */}
+                    {isChecked && hasLinkedAmount && linkedAmountFieldName && formData && onFieldChange && (
+                      <div className="ml-6 pl-4 border-l-2 border-[#07477a]/20">
+                        <div className="flex items-center gap-3">
+                          <Label className="text-sm text-gray-700 font-medium whitespace-nowrap">
+                            Amount ($):
+                          </Label>
+                          <Input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            placeholder="0.00"
+                            value={getAmountValue()}
+                            onChange={(e) => {
+                              const newAmount = e.target.value === "" ? undefined : parseFloat(e.target.value)
+                              const currentAmounts = (formData[linkedAmountFieldName] as Record<string, number>) || {}
+                              const updatedAmounts = { ...currentAmounts }
+                              if (newAmount !== undefined && !isNaN(newAmount)) {
+                                updatedAmounts[opt.value] = newAmount
+                              } else {
+                                delete updatedAmounts[opt.value]
+                              }
+                              onFieldChange(linkedAmountFieldName, updatedAmounts)
+                            }}
+                            className="w-32 bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#07477a] focus:ring-[#07477a]/20"
                           />
                         </div>
                       </div>

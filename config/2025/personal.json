@@ -2476,7 +2476,8 @@
             "options": [
                 {
                     "value": "BOOKKEEPING",
-                    "label": "I need bookkeeping services"
+                    "label": "I need bookkeeping services (upload your documents and we'll handle the rest)",
+                    "linkedUploadQuestionId": "q_self_emp_business_docs"
                 },
                 {
                     "value": "MANUAL",
@@ -2494,6 +2495,7 @@
             },
             "step": "self_employment",
             "order": 10,
+            "helpText": "Choose bookkeeping if you want us to calculate your expenses from your documents",
             "conditional": {
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
@@ -2503,48 +2505,58 @@
         {
             "id": "q_self_emp_expenses",
             "type": "checkbox",
-            "label": "Select business expense categories (upload receipts or enter amounts)",
+            "label": "Select business expense categories and enter amounts",
             "name": "selfEmployment.expenseCategories",
             "options": [
                 {
                     "value": "ADVERTISING",
-                    "label": "Advertising & marketing"
+                    "label": "Advertising & marketing",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "OFFICE_SUPPLIES",
-                    "label": "Office supplies"
+                    "label": "Office supplies",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "INTERNET_PHONE",
-                    "label": "Internet & phone (business portion)"
+                    "label": "Internet & phone (business portion)",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "MEALS_ENTERTAINMENT",
-                    "label": "Meals & entertainment (business-related)"
+                    "label": "Meals & entertainment (business-related)",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "RENT",
-                    "label": "Rent (business space)"
+                    "label": "Rent (business space)",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "UTILITIES",
-                    "label": "Utilities (business portion)"
+                    "label": "Utilities (business portion)",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "INSURANCE",
-                    "label": "Insurance (business insurance)"
+                    "label": "Insurance (business insurance)",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "PROFESSIONAL_FEES",
-                    "label": "Professional fees (accountant, lawyer)"
+                    "label": "Professional fees (accountant, lawyer)",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "TRAVEL",
-                    "label": "Business travel expenses"
+                    "label": "Business travel expenses",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 },
                 {
                     "value": "OTHER",
-                    "label": "Other business expenses"
+                    "label": "Other business expenses",
+                    "linkedAmountFieldName": "selfEmployment.expenseAmounts"
                 }
             ],
             "validation": {
@@ -2552,26 +2564,51 @@
             },
             "step": "self_employment",
             "order": 20,
+            "helpText": "Select each expense category and enter the total amount for the year",
             "conditional": {
-                "parentQuestionId": "income.sources",
-                "operator": "contains",
-                "value": "SELF_EMPLOYMENT"
+                "and": [
+                    {
+                        "parentQuestionId": "income.sources",
+                        "operator": "contains",
+                        "value": "SELF_EMPLOYMENT"
+                    },
+                    {
+                        "parentQuestionId": "selfEmployment.needsBookkeeping",
+                        "operator": "equals",
+                        "value": "MANUAL"
+                    }
+                ]
             }
         },
         {
             "id": "q_self_emp_expense_docs",
             "type": "file",
-            "label": "Upload business expense receipts",
+            "label": "Upload business expense receipts (optional)",
             "name": "selfEmployment.expenseDocuments",
             "validation": {
                 "required": false
             },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
             "step": "self_employment",
             "order": 25,
+            "helpText": "Upload receipts to support your expense amounts entered above",
             "conditional": {
-                "parentQuestionId": "income.sources",
-                "operator": "contains",
-                "value": "SELF_EMPLOYMENT"
+                "and": [
+                    {
+                        "parentQuestionId": "income.sources",
+                        "operator": "contains",
+                        "value": "SELF_EMPLOYMENT"
+                    },
+                    {
+                        "parentQuestionId": "selfEmployment.needsBookkeeping",
+                        "operator": "equals",
+                        "value": "MANUAL"
+                    }
+                ]
             }
         },
         {
@@ -2720,13 +2757,15 @@
             "validation": {
                 "required": false
             },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
+            },
             "step": "self_employment",
             "order": 55,
-            "conditional": {
-                "parentQuestionId": "income.sources",
-                "operator": "contains",
-                "value": "SELF_EMPLOYMENT"
-            }
+            "renderInline": true,
+            "helpText": "Upload invoices, bank statements, receipts, and GST/HST returns"
         },
         {
             "id": "q_rental_address",
@@ -2940,52 +2979,63 @@
         {
             "id": "q_rental_expenses",
             "type": "checkbox",
-            "label": "Select Rental Expenses (tick what applies)",
+            "label": "Select Rental Expenses and enter amounts",
             "name": "rentalIncome.expenseCategories",
             "options": [
                 {
                     "value": "ADVERTISING",
-                    "label": "Advertising (listing fees)"
+                    "label": "Advertising (listing fees)",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "INSURANCE",
-                    "label": "Property insurance"
+                    "label": "Property insurance",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "PROPERTY_TAXES",
-                    "label": "Property taxes"
+                    "label": "Property taxes",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "MORTGAGE_INTEREST",
-                    "label": "Mortgage interest (not principal)"
+                    "label": "Mortgage interest (not principal)",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "UTILITIES",
-                    "label": "Utilities paid by owner"
+                    "label": "Utilities paid by owner",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "REPAIRS",
-                    "label": "Repairs & maintenance"
+                    "label": "Repairs & maintenance",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "MANAGEMENT_FEES",
-                    "label": "Management / condo fees"
+                    "label": "Management / condo fees",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "LEGAL_FEES",
-                    "label": "Accounting / legal fees"
+                    "label": "Accounting / legal fees",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "OFFICE",
-                    "label": "Office expenses (rental related)"
+                    "label": "Office expenses (rental related)",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "TRAVEL",
-                    "label": "Travel expenses related to rental"
+                    "label": "Travel expenses related to rental",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 },
                 {
                     "value": "OTHER",
-                    "label": "Other rental expenses"
+                    "label": "Other rental expenses",
+                    "linkedAmountFieldName": "rentalIncome.expenseAmounts"
                 }
             ],
             "validation": {
@@ -2993,6 +3043,7 @@
             },
             "step": "rental_income",
             "order": 50,
+            "helpText": "Select each expense category and enter the total amount for the year",
             "conditional": {
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
