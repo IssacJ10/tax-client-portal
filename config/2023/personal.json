@@ -1408,7 +1408,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 20,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
             },
             "step": "income_selection",
@@ -1431,7 +1431,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 20,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx"
             },
             "step": "income_selection",
@@ -1477,7 +1477,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 15,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx"
             },
             "step": "income_selection",
@@ -1500,7 +1500,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 15,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png"
             },
             "step": "income_selection",
@@ -1523,7 +1523,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 5,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png"
             },
             "step": "income_selection",
@@ -1546,7 +1546,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 5,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png"
             },
             "step": "income_selection",
@@ -1569,7 +1569,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 5,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png"
             },
             "step": "income_selection",
@@ -1684,7 +1684,7 @@
             },
             "config": {
                 "multiple": true,
-                "maxFiles": 15,
+                "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png"
             },
             "step": "income_selection",
