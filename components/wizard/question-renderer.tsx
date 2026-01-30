@@ -331,8 +331,21 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                           if (isDisabled) return
 
                           if (checked) {
-                            // If selecting NA, clear all other selections
+                            // If selecting NA, clear all other selections and their linked uploads
                             if (isNaOption) {
+                              // Clear any linked uploads from previously selected options
+                              if (onFieldChange) {
+                                selectedValues.forEach((selectedVal: string) => {
+                                  const selectedOpt = question.options?.find(o => o.value === selectedVal)
+                                  const selectedLinkedId = (selectedOpt as any)?.linkedUploadQuestionId
+                                  if (selectedLinkedId && allQuestions) {
+                                    const linkedQ = allQuestions.find(q => q.id === selectedLinkedId)
+                                    if (linkedQ) {
+                                      onFieldChange(linkedQ.name, null)
+                                    }
+                                  }
+                                })
+                              }
                               onChange(["NA"])
                             } else {
                               // If selecting a non-NA option, remove NA if it was selected
@@ -340,6 +353,10 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                               onChange([...newValues, opt.value])
                             }
                           } else {
+                            // Clear linked upload data when unchecking
+                            if (linkedUploadQuestion && onFieldChange) {
+                              onFieldChange(linkedUploadQuestion.name, null)
+                            }
                             onChange(selectedValues.filter((v: string) => v !== opt.value))
                           }
                         }}
@@ -492,9 +509,9 @@ function FileUploadField({ question, value, onChange, error, filingId, personalF
   const maxFiles = question.config?.maxFiles || 10
   const acceptTypes = question.config?.accept || ".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png"
 
-  // File size limit: 10 MB
-  const MAX_FILE_SIZE_MB = 10
-  const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024
+  // File size limit: 10 MB TOTAL (combined across all files)
+  const MAX_TOTAL_SIZE_MB = 10
+  const MAX_TOTAL_SIZE_BYTES = MAX_TOTAL_SIZE_MB * 1024 * 1024
 
   // Normalize value to always work with arrays internally for multi-file mode
   const getFilesArray = (): SecureDocumentInfo[] => {
@@ -510,6 +527,11 @@ function FileUploadField({ question, value, onChange, error, filingId, personalF
   const hasFiles = files.length > 0
   const canAddMore = allowMultiple && files.length < maxFiles
 
+  // Calculate current total size of uploaded files
+  const getCurrentTotalSize = (): number => {
+    return files.reduce((total, file) => total + (file.fileSize || 0), 0)
+  }
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = e.target.files
     if (!selectedFiles || selectedFiles.length === 0) return
@@ -523,11 +545,17 @@ function FileUploadField({ question, value, onChange, error, filingId, personalF
     // Convert FileList to array
     const filesToUpload = Array.from(selectedFiles)
 
-    // Validate file sizes (10 MB max per file)
-    const oversizedFiles = filesToUpload.filter(f => f.size > MAX_FILE_SIZE_BYTES)
-    if (oversizedFiles.length > 0) {
-      const fileNames = oversizedFiles.map(f => f.name).join(', ')
-      setUploadError(`File${oversizedFiles.length > 1 ? 's' : ''} too large (max ${MAX_FILE_SIZE_MB}MB): ${fileNames}`)
+    // Calculate total size of new files to upload
+    const newFilesSize = filesToUpload.reduce((total, f) => total + f.size, 0)
+    const currentTotalSize = getCurrentTotalSize()
+    const projectedTotalSize = currentTotalSize + newFilesSize
+
+    // Validate total combined size (10 MB max total)
+    if (projectedTotalSize > MAX_TOTAL_SIZE_BYTES) {
+      const currentSizeMB = (currentTotalSize / (1024 * 1024)).toFixed(1)
+      const newSizeMB = (newFilesSize / (1024 * 1024)).toFixed(1)
+      const remainingMB = ((MAX_TOTAL_SIZE_BYTES - currentTotalSize) / (1024 * 1024)).toFixed(1)
+      setUploadError(`Total size exceeds ${MAX_TOTAL_SIZE_MB}MB limit. Current: ${currentSizeMB}MB, New files: ${newSizeMB}MB. You can add up to ${remainingMB}MB more.`)
       return
     }
 
@@ -692,11 +720,17 @@ function FileUploadField({ question, value, onChange, error, filingId, personalF
       {/* Helper text for file limits */}
       {!isUploading && (
         <p className="text-xs text-gray-500">
-          {allowMultiple
-            ? hasFiles
-              ? `${files.length} file${files.length !== 1 ? 's' : ''} uploaded. ${canAddMore ? `You can add ${maxFiles - files.length} more.` : 'Maximum reached.'} Max ${MAX_FILE_SIZE_MB}MB per file.`
-              : `You can upload up to ${maxFiles} files. Max ${MAX_FILE_SIZE_MB}MB per file.`
-            : `Max file size: ${MAX_FILE_SIZE_MB}MB`}
+          {(() => {
+            const currentSizeMB = (getCurrentTotalSize() / (1024 * 1024)).toFixed(1)
+            const remainingMB = ((MAX_TOTAL_SIZE_BYTES - getCurrentTotalSize()) / (1024 * 1024)).toFixed(1)
+            if (allowMultiple) {
+              if (hasFiles) {
+                return `${files.length} file${files.length !== 1 ? 's' : ''} (${currentSizeMB}MB). ${canAddMore ? `${maxFiles - files.length} more allowed, ${remainingMB}MB remaining.` : 'Maximum files reached.'}`
+              }
+              return `Up to ${maxFiles} files, ${MAX_TOTAL_SIZE_MB}MB total.`
+            }
+            return `Max total size: ${MAX_TOTAL_SIZE_MB}MB`
+          })()}
         </p>
       )}
 
