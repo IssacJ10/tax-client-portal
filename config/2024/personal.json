@@ -1347,15 +1347,312 @@
             "helpText": "If any of the below slips are already in CRA, it is not necessary to upload."
         },
         {
-            "id": "q_income_docs",
+            "id": "q_income_employment_docs",
             "type": "file",
-            "label": "Upload income slips and documents",
-            "name": "income.documents",
+            "label": "Upload T4 Slips (Employment Income)",
+            "name": "income.employmentDocuments",
+            "helpText": "Upload your T4 slips from employers",
             "validation": {
                 "required": false
             },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
             "step": "income_selection",
-            "order": 20
+            "order": 11,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "EMPLOYMENT_T4"
+            }
+        },
+        {
+            "id": "q_income_self_employment_docs",
+            "type": "file",
+            "label": "Upload Self-Employment / Business Documents",
+            "name": "income.selfEmploymentDocuments",
+            "helpText": "Upload invoices, expense receipts, and business records",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 20,
+                "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
+            },
+            "step": "income_selection",
+            "order": 12,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "SELF_EMPLOYMENT"
+            }
+        },
+        {
+            "id": "q_income_rental_docs",
+            "type": "file",
+            "label": "Upload Rental Income Documents",
+            "name": "income.rentalDocuments",
+            "helpText": "Upload rental agreements, expense receipts, and income statements",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 20,
+                "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx"
+            },
+            "step": "income_selection",
+            "order": 13,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "RENTAL_INCOME"
+            }
+        },
+        {
+            "id": "q_income_investment_docs",
+            "type": "file",
+            "label": "Upload T5/T3 Slips (Investment Income)",
+            "name": "income.investmentDocuments",
+            "helpText": "Upload T5 and T3 slips from banks and investment accounts",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 14,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "BANK_INTEREST_T5_T3"
+            }
+        },
+        {
+            "id": "q_income_capital_gains_docs",
+            "type": "file",
+            "label": "Upload Capital Gains Documents",
+            "name": "income.capitalGainsDocuments",
+            "helpText": "Upload sale statements, purchase records, and brokerage statements",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 15,
+                "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx"
+            },
+            "step": "income_selection",
+            "order": 15,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "CAPITAL_GAINS"
+            }
+        },
+        {
+            "id": "q_income_foreign_docs",
+            "type": "file",
+            "label": "Upload Foreign Income Documents",
+            "name": "income.foreignIncomeDocuments",
+            "helpText": "Upload foreign income statements and tax documents",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 15,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 16,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "FOREIGN_INCOME"
+            }
+        },
+        {
+            "id": "q_income_ei_docs",
+            "type": "file",
+            "label": "Upload T4E Slip (Employment Insurance)",
+            "name": "income.eiDocuments",
+            "helpText": "Upload your T4E slip from Service Canada",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 5,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 17,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "EI_T4E"
+            }
+        },
+        {
+            "id": "q_income_cpp_docs",
+            "type": "file",
+            "label": "Upload T4A(P) Slip (CPP)",
+            "name": "income.cppDocuments",
+            "helpText": "Upload your T4A(P) slip for Canada Pension Plan benefits",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 5,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 18,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "CPP_T4AP"
+            }
+        },
+        {
+            "id": "q_income_oas_docs",
+            "type": "file",
+            "label": "Upload T4A(OAS) Slip (Old Age Security)",
+            "name": "income.oasDocuments",
+            "helpText": "Upload your T4A(OAS) slip for Old Age Security benefits",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 5,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 19,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "OAS_T4AOAS"
+            }
+        },
+        {
+            "id": "q_income_gov_benefits_docs",
+            "type": "file",
+            "label": "Upload Government Benefits Documents",
+            "name": "income.govBenefitsDocuments",
+            "helpText": "Upload slips for other government benefits received",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 20,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "OTHER_GOV_BENEFITS"
+            }
+        },
+        {
+            "id": "q_income_scholarship_docs",
+            "type": "file",
+            "label": "Upload T4A Slip (Scholarships/Grants)",
+            "name": "income.scholarshipDocuments",
+            "helpText": "Upload T4A slips for scholarships, bursaries, or grants",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 21,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "SCHOLARSHIPS_T4A"
+            }
+        },
+        {
+            "id": "q_income_tuition_docs",
+            "type": "file",
+            "label": "Upload T2202 Slip (Tuition)",
+            "name": "income.tuitionDocuments",
+            "helpText": "Upload T2202 tuition and education amounts certificate",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 22,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "TUITION_T2202"
+            }
+        },
+        {
+            "id": "q_income_support_docs",
+            "type": "file",
+            "label": "Upload Support Payment Documents",
+            "name": "income.supportPaymentDocuments",
+            "helpText": "Upload court orders or agreements for support payments received",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 23,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "SUPPORT_PAYMENTS"
+            }
+        },
+        {
+            "id": "q_income_other_docs",
+            "type": "file",
+            "label": "Upload Other Income Documents",
+            "name": "income.otherIncomeDocuments",
+            "helpText": "Upload any other income-related documents",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 15,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "income_selection",
+            "order": 24,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "OTHER_INCOME"
+            }
         },
         {
             "id": "q_deduction_sources",
