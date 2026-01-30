@@ -268,7 +268,10 @@ export class QuestionRegistry {
 
       // 3. For file upload questions, determine if they should be required
       // Rule: File uploads are required when there's a triggering question answered affirmatively
-      if (question.type === 'file' && !isRequired) {
+      // EXCEPTION: If the question has renderInline: true, respect the explicit validation.required setting
+      const isInlineUpload = (question as any).renderInline === true;
+
+      if (question.type === 'file' && !isRequired && !isInlineUpload) {
         const fileNamespace = question.name.split('.')[0]; // e.g., "selfEmployment" from "selfEmployment.assetReceipts"
         const fileFieldName = question.name.split('.').slice(1).join('.'); // e.g., "assetReceipts"
 
