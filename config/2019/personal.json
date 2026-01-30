@@ -497,7 +497,9 @@
             "conditional": {
                 "parentQuestionId": "personalInfo.statusInCanada",
                 "operator": "notIn",
-                "values": ["CANADIAN_CITIZEN"]
+                "values": [
+                    "CANADIAN_CITIZEN"
+                ]
             }
         },
         {
@@ -827,12 +829,17 @@
                     {
                         "parentQuestionId": "maritalStatus.status",
                         "operator": "in",
-                        "values": ["MARRIED", "COMMON_LAW"]
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
                     },
                     {
                         "parentQuestionId": "spouse.statusInCanada",
                         "operator": "notIn",
-                        "values": ["CANADIAN_CITIZEN"]
+                        "values": [
+                            "CANADIAN_CITIZEN"
+                        ]
                     }
                 ]
             }
@@ -854,12 +861,17 @@
                     {
                         "parentQuestionId": "maritalStatus.status",
                         "operator": "in",
-                        "values": ["MARRIED", "COMMON_LAW"]
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
                     },
                     {
                         "parentQuestionId": "spouse.statusInCanada",
                         "operator": "notIn",
-                        "values": ["CANADIAN_CITIZEN"]
+                        "values": [
+                            "CANADIAN_CITIZEN"
+                        ]
                     }
                 ]
             }
@@ -968,7 +980,9 @@
                     "conditional": {
                         "field": "statusInCanada",
                         "operator": "notIn",
-                        "values": ["CANADIAN_CITIZEN"]
+                        "values": [
+                            "CANADIAN_CITIZEN"
+                        ]
                     }
                 },
                 {
@@ -1284,59 +1298,73 @@
             "options": [
                 {
                     "value": "EMPLOYMENT_T4",
-                    "label": "Employment Income (Job / Salary / Wages – T4)"
+                    "label": "Employment Income (Job / Salary / Wages \u2013 T4)",
+                    "linkedUploadQuestionId": "q_income_employment_docs"
                 },
                 {
                     "value": "SELF_EMPLOYMENT",
-                    "label": "Self-Employment / Business Income"
+                    "label": "Self-Employment / Business Income",
+                    "linkedUploadQuestionId": "q_income_self_employment_docs"
                 },
                 {
                     "value": "RENTAL_INCOME",
-                    "label": "Rental Income"
+                    "label": "Rental Income",
+                    "linkedUploadQuestionId": "q_income_rental_docs"
                 },
                 {
                     "value": "BANK_INTEREST_T5_T3",
-                    "label": "Bank Interest / Investment Income (T5, T3)"
+                    "label": "Bank Interest / Investment Income (T5, T3)",
+                    "linkedUploadQuestionId": "q_income_investment_docs"
                 },
                 {
                     "value": "CAPITAL_GAINS",
-                    "label": "Capital Gains (Sale of Investments)"
+                    "label": "Capital Gains (Sale of Investments)",
+                    "linkedUploadQuestionId": "q_income_capital_gains_docs"
                 },
                 {
                     "value": "FOREIGN_INCOME",
-                    "label": "Foreign Income"
+                    "label": "Foreign Income",
+                    "linkedUploadQuestionId": "q_income_foreign_docs"
                 },
                 {
                     "value": "EI_T4E",
-                    "label": "Employment Insurance (EI – T4E)"
+                    "label": "Employment Insurance (EI \u2013 T4E)",
+                    "linkedUploadQuestionId": "q_income_ei_docs"
                 },
                 {
                     "value": "CPP_T4AP",
-                    "label": "Canada Pension Plan (CPP – T4A(P))"
+                    "label": "Canada Pension Plan (CPP \u2013 T4A(P))",
+                    "linkedUploadQuestionId": "q_income_cpp_docs"
                 },
                 {
                     "value": "OAS_T4AOAS",
-                    "label": "Old Age Security (OAS – T4A(OAS))"
+                    "label": "Old Age Security (OAS \u2013 T4A(OAS))",
+                    "linkedUploadQuestionId": "q_income_oas_docs"
                 },
                 {
                     "value": "OTHER_GOV_BENEFITS",
-                    "label": "Other Government Benefits"
+                    "label": "Other Government Benefits",
+                    "linkedUploadQuestionId": "q_income_gov_benefits_docs"
                 },
                 {
                     "value": "SCHOLARSHIPS_T4A",
-                    "label": "Scholarships / Bursaries / Grants (T4A)"
+                    "label": "Scholarships / Bursaries / Grants (T4A)",
+                    "linkedUploadQuestionId": "q_income_scholarship_docs"
                 },
                 {
                     "value": "TUITION_T2202",
-                    "label": "Tuition Fees (T2202)"
+                    "label": "Tuition Fees (T2202)",
+                    "linkedUploadQuestionId": "q_income_tuition_docs"
                 },
                 {
                     "value": "SUPPORT_PAYMENTS",
-                    "label": "Support Payments Received"
+                    "label": "Support Payments Received",
+                    "linkedUploadQuestionId": "q_income_support_docs"
                 },
                 {
                     "value": "OTHER_INCOME",
-                    "label": "Other Income"
+                    "label": "Other Income",
+                    "linkedUploadQuestionId": "q_income_other_docs"
                 }
             ],
             "validation": {
@@ -1366,7 +1394,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "EMPLOYMENT_T4"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_self_employment_docs",
@@ -1388,7 +1417,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "SELF_EMPLOYMENT"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_rental_docs",
@@ -1410,7 +1440,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "RENTAL_INCOME"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_investment_docs",
@@ -1432,7 +1463,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "BANK_INTEREST_T5_T3"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_capital_gains_docs",
@@ -1454,7 +1486,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "CAPITAL_GAINS"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_foreign_docs",
@@ -1476,7 +1509,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "FOREIGN_INCOME"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_ei_docs",
@@ -1498,7 +1532,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "EI_T4E"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_cpp_docs",
@@ -1520,7 +1555,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "CPP_T4AP"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_oas_docs",
@@ -1542,7 +1578,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "OAS_T4AOAS"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_gov_benefits_docs",
@@ -1564,7 +1601,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "OTHER_GOV_BENEFITS"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_scholarship_docs",
@@ -1586,7 +1624,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "SCHOLARSHIPS_T4A"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_tuition_docs",
@@ -1608,7 +1647,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "TUITION_T2202"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_support_docs",
@@ -1630,7 +1670,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "SUPPORT_PAYMENTS"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_income_other_docs",
@@ -1652,7 +1693,8 @@
                 "parentQuestionId": "income.sources",
                 "operator": "contains",
                 "value": "OTHER_INCOME"
-            }
+            },
+            "renderInline": true
         },
         {
             "id": "q_deduction_sources",

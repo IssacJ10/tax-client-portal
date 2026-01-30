@@ -61,6 +61,8 @@ interface QuestionRendererProps {
   // Document upload context
   filingId?: string
   personalFilingId?: string
+  // All questions in section for inline file upload lookup
+  allQuestions?: Question[]
 }
 
 export function QuestionRenderer({
@@ -77,6 +79,7 @@ export function QuestionRenderer({
   dependentIndex,
   filingId,
   personalFilingId,
+  allQuestions,
 }: QuestionRendererProps) {
   const getRoleLabel = () => {
     switch (role) {
@@ -102,6 +105,11 @@ export function QuestionRenderer({
       <div className="space-y-6">
         {section.questions && section.questions.length > 0 ? (
           section.questions.map((question) => {
+            // Skip questions marked for inline rendering only (they render inside checkbox options)
+            if ((question as any).renderInline) {
+              return null
+            }
+
             if (!QuestionRegistry.isQuestionVisible(question, formData)) {
               return null
             }
@@ -115,6 +123,9 @@ export function QuestionRenderer({
                 onChange={(value) => onFieldChange(question.name, value)}
                 filingId={filingId}
                 personalFilingId={personalFilingId}
+                allQuestions={allQuestions || section.questions}
+                formData={formData}
+                onFieldChange={onFieldChange}
               />
             )
           })
@@ -159,9 +170,13 @@ interface QuestionFieldProps {
   // Document upload context
   filingId?: string
   personalFilingId?: string
+  // For inline file uploads in checkbox options
+  allQuestions?: Question[]
+  formData?: Record<string, unknown>
+  onFieldChange?: (key: string, value: unknown) => void
 }
 
-function QuestionField({ question, value, error, onChange, filingId, personalFilingId }: QuestionFieldProps) {
+function QuestionField({ question, value, error, onChange, filingId, personalFilingId, allQuestions, formData, onFieldChange }: QuestionFieldProps) {
   // Clean white theme input styling
   const inputClassName = cn(
     "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400",
@@ -288,52 +303,84 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
                 // NA option is never disabled, but other options are disabled when NA is selected
                 const isNaOption = opt.value === "NA"
                 const isDisabled = !isNaOption && naIsSelected
+                const isChecked = selectedValues.includes(opt.value)
+
+                // Check for linked upload question (inline file upload)
+                const linkedUploadId = (opt as any).linkedUploadQuestionId
+                const linkedUploadQuestion = linkedUploadId && allQuestions
+                  ? allQuestions.find(q => q.id === linkedUploadId)
+                  : null
 
                 return (
-                  <div
-                    key={opt.value || `opt-${idx}`}
-                    className={cn(
-                      "flex items-start space-x-3 p-3 rounded-lg border transition-colors",
-                      isDisabled
-                        ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
-                        : "bg-gray-50 border-gray-200 hover:bg-gray-100"
-                    )}
-                  >
-                    <Checkbox
-                      id={`${question.id}-${opt.value || idx}`}
-                      checked={selectedValues.includes(opt.value)}
-                      disabled={isDisabled}
-                      onCheckedChange={(checked) => {
-                        if (isDisabled) return
-
-                        if (checked) {
-                          // If selecting NA, clear all other selections
-                          if (isNaOption) {
-                            onChange(["NA"])
-                          } else {
-                            // If selecting a non-NA option, remove NA if it was selected
-                            const newValues = selectedValues.filter((v: string) => v !== "NA")
-                            onChange([...newValues, opt.value])
-                          }
-                        } else {
-                          onChange(selectedValues.filter((v: string) => v !== opt.value))
-                        }
-                      }}
+                  <div key={opt.value || `opt-${idx}`} className="space-y-2">
+                    <div
                       className={cn(
-                        "border-gray-300 data-[state=checked]:bg-[#07477a] data-[state=checked]:border-[#07477a]",
-                        error && "border-rose-400",
-                        isDisabled && "cursor-not-allowed"
-                      )}
-                    />
-                    <Label
-                      htmlFor={`${question.id}-${opt.value || idx}`}
-                      className={cn(
-                        "font-normal leading-snug",
-                        isDisabled ? "text-gray-400 cursor-not-allowed" : "cursor-pointer text-gray-700"
+                        "flex items-start space-x-3 p-3 rounded-lg border transition-colors",
+                        isDisabled
+                          ? "bg-gray-100 border-gray-200 opacity-50 cursor-not-allowed"
+                          : isChecked && linkedUploadQuestion
+                            ? "bg-[#07477a]/5 border-[#07477a]/30"
+                            : "bg-gray-50 border-gray-200 hover:bg-gray-100"
                       )}
                     >
-                      {opt.label}
-                    </Label>
+                      <Checkbox
+                        id={`${question.id}-${opt.value || idx}`}
+                        checked={isChecked}
+                        disabled={isDisabled}
+                        onCheckedChange={(checked) => {
+                          if (isDisabled) return
+
+                          if (checked) {
+                            // If selecting NA, clear all other selections
+                            if (isNaOption) {
+                              onChange(["NA"])
+                            } else {
+                              // If selecting a non-NA option, remove NA if it was selected
+                              const newValues = selectedValues.filter((v: string) => v !== "NA")
+                              onChange([...newValues, opt.value])
+                            }
+                          } else {
+                            onChange(selectedValues.filter((v: string) => v !== opt.value))
+                          }
+                        }}
+                        className={cn(
+                          "border-gray-300 data-[state=checked]:bg-[#07477a] data-[state=checked]:border-[#07477a]",
+                          error && "border-rose-400",
+                          isDisabled && "cursor-not-allowed"
+                        )}
+                      />
+                      <Label
+                        htmlFor={`${question.id}-${opt.value || idx}`}
+                        className={cn(
+                          "font-normal leading-snug flex-1",
+                          isDisabled ? "text-gray-400 cursor-not-allowed" : "cursor-pointer text-gray-700"
+                        )}
+                      >
+                        {opt.label}
+                      </Label>
+                    </div>
+
+                    {/* Inline file upload when option is checked and has linked upload */}
+                    {isChecked && linkedUploadQuestion && formData && onFieldChange && (
+                      <div className="ml-6 pl-4 border-l-2 border-[#07477a]/20">
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-700 font-medium flex items-center gap-1">
+                            {linkedUploadQuestion.label}
+                            {linkedUploadQuestion.validation?.required && <span className="text-rose-500">*</span>}
+                          </Label>
+                          {linkedUploadQuestion.helpText && (
+                            <p className="text-xs text-gray-500">{linkedUploadQuestion.helpText}</p>
+                          )}
+                          <FileUploadField
+                            question={linkedUploadQuestion}
+                            value={formData[linkedUploadQuestion.name]}
+                            onChange={(val) => onFieldChange(linkedUploadQuestion.name, val)}
+                            filingId={filingId}
+                            personalFilingId={personalFilingId}
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )
               })}
