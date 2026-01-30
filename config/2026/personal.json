@@ -1729,14 +1729,18 @@
                 {
                     "value": "DONATIONS",
                     "label": "Donations"
+                },
+                {
+                    "value": "NA",
+                    "label": "None of the above apply to me"
                 }
             ],
             "validation": {
-                "required": false
+                "required": true
             },
             "step": "deductions_selection",
             "order": 10,
-            "helpText": "Upload documents for each selected deduction"
+            "helpText": "Select all deductions that apply, or choose 'None of the above' if none apply"
         },
         {
             "id": "q_deduction_docs",
