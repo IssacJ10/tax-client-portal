@@ -91,10 +91,15 @@ export interface ValidationRule {
 
 export interface ConditionalLogic {
   parentQuestionId: string;
-  operator: 'equals' | 'notEquals' | 'contains' | 'in' | 'greaterThan' | 'hasAny';
+  operator: 'equals' | 'notEquals' | 'contains' | 'in' | 'notIn' | 'greaterThan' | 'hasAny';
   value?: any;
   values?: any[];
 }
+
+// Statuses for which "Date Became Resident" should be hidden
+// Canadian citizens don't need to specify when they became residents
+// Add more statuses to this array as needed (e.g., 'PROTECTED_PERSON')
+export const HIDE_DATE_BECAME_RESIDENT_STATUSES = ['CANADIAN_CITIZEN'];
 
 export interface QuestionField {
   id: string;

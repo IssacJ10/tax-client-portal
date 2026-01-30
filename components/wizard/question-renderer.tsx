@@ -726,7 +726,7 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
               {fields.map((field: any) => {
                 // Check conditional visibility for this field within the repeater item
                 if (field.conditional) {
-                  const { field: parentField, operator, value: condValue } = field.conditional
+                  const { field: parentField, operator, value: condValue, values: condValues } = field.conditional
                   const parentValue = item[parentField]
 
                   let isVisible = false
@@ -736,6 +736,14 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
                       break
                     case "notEquals":
                       isVisible = parentValue !== condValue
+                      break
+                    case "in":
+                      // Show if value IS in the array
+                      isVisible = Array.isArray(condValues) && condValues.includes(parentValue)
+                      break
+                    case "notIn":
+                      // Show if value is NOT in the array (hide for specific statuses like Canadian Citizen)
+                      isVisible = !Array.isArray(condValues) || !condValues.includes(parentValue)
                       break
                     default:
                       isVisible = true

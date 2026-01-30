@@ -134,6 +134,11 @@ export class QuestionRegistry {
         return Number(parentValue) > Number(value);
       case 'in':
         return Array.isArray(values) && values.includes(parentValue);
+      case 'notIn':
+        // Returns true if the value is NOT in the array (shows field when value is not in list)
+        // Use this to hide fields when value IS in a specific list
+        // Example: Hide "Date Became Resident" when status is CANADIAN_CITIZEN
+        return !Array.isArray(values) || !values.includes(parentValue);
       case 'contains':
         return Array.isArray(parentValue) && parentValue.includes(value);
       case 'notContains':

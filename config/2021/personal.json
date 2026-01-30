@@ -493,7 +493,12 @@
                 "minDateRef": "personalInfo.dateOfBirth"
             },
             "step": "personal_info",
-            "order": 80
+            "order": 80,
+            "conditional": {
+                "parentQuestionId": "personalInfo.statusInCanada",
+                "operator": "notIn",
+                "values": ["CANADIAN_CITIZEN"]
+            }
         },
         {
             "id": "q_province_resided",
@@ -818,11 +823,17 @@
             "step": "spouse_info",
             "order": 30,
             "conditional": {
-                "parentQuestionId": "maritalStatus.status",
-                "operator": "in",
-                "values": [
-                    "MARRIED",
-                    "COMMON_LAW"
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": ["MARRIED", "COMMON_LAW"]
+                    },
+                    {
+                        "parentQuestionId": "spouse.statusInCanada",
+                        "operator": "notIn",
+                        "values": ["CANADIAN_CITIZEN"]
+                    }
                 ]
             }
         },
@@ -839,11 +850,17 @@
             "step": "spouse_info",
             "order": 35,
             "conditional": {
-                "parentQuestionId": "maritalStatus.status",
-                "operator": "in",
-                "values": [
-                    "MARRIED",
-                    "COMMON_LAW"
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": ["MARRIED", "COMMON_LAW"]
+                    },
+                    {
+                        "parentQuestionId": "spouse.statusInCanada",
+                        "operator": "notIn",
+                        "values": ["CANADIAN_CITIZEN"]
+                    }
                 ]
             }
         },
@@ -947,6 +964,11 @@
                     "validation": {
                         "required": false,
                         "maxDate": "today"
+                    },
+                    "conditional": {
+                        "field": "statusInCanada",
+                        "operator": "notIn",
+                        "values": ["CANADIAN_CITIZEN"]
                     }
                 },
                 {
