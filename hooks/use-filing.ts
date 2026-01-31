@@ -10,6 +10,7 @@ import { TrustFilingService } from "@/services/trust-filing-service"
 import { filingReducer, initialWizardState } from "@/lib/domain/filing-state-machine"
 import type { Filing, FilingType } from "@/lib/domain/types"
 import { toast } from "@/hooks/use-toast"
+import { logSaveError } from "@/services/error-logging-service"
 
 const fetchFiling = async (key: string) => {
   const docId = key.split("/")[1]
@@ -225,6 +226,15 @@ export function useFiling(filingId?: string, initialData?: Filing) {
       } catch (err) {
         // Show the exact error message to the user
         const errorMessage = err instanceof Error ? err.message : "Failed to save data"
+
+        // Log error with filing context
+        const filingType = state.phase === "CORPORATE_ACTIVE" ? "CORPORATE"
+          : state.phase === "TRUST_ACTIVE" ? "TRUST" : "INDIVIDUAL"
+        logSaveError(errorMessage, {
+          filingId: state.filingId || undefined,
+          filingType: filingType as any,
+          phase: state.phase,
+        }, err instanceof Error ? err : undefined)
 
         toast({
           title: "Error",

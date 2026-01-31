@@ -733,7 +733,7 @@ export default function HomePage() {
             {/* Address */}
             <motion.a
               variants={fadeUp}
-              href="https://www.google.com/maps/dir/?api=1&destination=Charlottetown,+PE"
+              href="https://www.google.com/maps/dir/?api=1&destination=46.2504142,-63.1430307"
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-200 group text-center cursor-pointer relative overflow-hidden"

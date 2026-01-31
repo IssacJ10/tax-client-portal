@@ -4,6 +4,7 @@ import axios, { AxiosError, AxiosRequestConfig, InternalAxiosRequestConfig } fro
 import { sanitizeInput, sanitizeFormData, containsDangerousPatterns, containsSqlInjection } from "@/lib/security/sanitize";
 import { getCsrfHeaders } from "@/lib/security/csrf";
 import { validateFileUpload } from "@/lib/security/validation";
+import { logError } from "@/services/error-logging-service";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -200,6 +201,19 @@ strapiClient.interceptors.response.use(
       }
 
       console.warn('Strapi validation error:', validationMessage, responseData);
+
+      // Log validation error to Strapi
+      logError({
+        errorType: "VALIDATION",
+        errorMessage: validationMessage,
+        metadata: {
+          url: config?.url,
+          method: config?.method,
+          statusCode: 400,
+          responseData: responseData?.error,
+        },
+      });
+
       return Promise.reject(new Error(validationMessage));
     }
 
@@ -229,6 +243,19 @@ strapiClient.interceptors.response.use(
         ? 'Server error. Please try again later.'
         : error.message || 'An error occurred'
     );
+
+    // Log server/network errors
+    logError({
+      errorType: error.response ? "SAVE" : "NETWORK",
+      errorMessage: cleanError.message,
+      errorStack: error.stack,
+      metadata: {
+        url: config?.url,
+        method: config?.method,
+        statusCode: error.response?.status,
+        originalMessage: error.message,
+      },
+    });
 
     return Promise.reject(cleanError);
   }
