@@ -1034,7 +1034,6 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             onPrev={handlePrev}
             isFirstSection={state.currentSectionIndex === 0}
             isLastSection={isLastSection}
-            isSyncing={isSyncing}
             role="primary"
             filingId={filingId}
           />
@@ -1060,7 +1059,6 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             onPrev={handlePrev}
             isFirstSection={state.currentSectionIndex === 0}
             isLastSection={isLastSection}
-            isSyncing={isSyncing}
             role={currentRole}
             dependentIndex={currentRole === "dependent" ? state.currentDependentIndex : undefined}
             filingId={filingId}

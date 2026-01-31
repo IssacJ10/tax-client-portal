@@ -55,7 +55,6 @@ interface QuestionRendererProps {
   onPrev: () => void
   isFirstSection: boolean
   isLastSection: boolean
-  isSyncing: boolean
   role: FilingRole
   dependentIndex?: number
   // Document upload context
@@ -74,7 +73,6 @@ export function QuestionRenderer({
   onPrev,
   isFirstSection,
   isLastSection,
-  isSyncing,
   role,
   dependentIndex,
   filingId,
@@ -150,7 +148,6 @@ export function QuestionRenderer({
 
         <Button
           onClick={onNext}
-          disabled={isSyncing}
           className="bg-[#07477a] hover:bg-[#053560] text-white"
         >
           {isLastSection && <Check className="mr-2 h-4 w-4" />}
