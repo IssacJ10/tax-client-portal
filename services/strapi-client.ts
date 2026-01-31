@@ -177,6 +177,32 @@ strapiClient.interceptors.response.use(
       return Promise.reject(new Error(`Too many requests. Please wait ${retryAfter || 60} seconds.`));
     }
 
+    // Handle 400 Bad Request - Validation errors from Strapi
+    if (error.response?.status === 400) {
+      const responseData = error.response.data as any;
+
+      // Strapi returns validation errors in error.message or error.details.errors
+      let validationMessage = 'Validation failed';
+
+      if (responseData?.error?.message) {
+        validationMessage = responseData.error.message;
+      } else if (responseData?.error?.details?.errors?.length > 0) {
+        // Extract field-specific errors
+        const fieldErrors = responseData.error.details.errors
+          .map((e: any) => {
+            const field = e.path?.join('.') || 'field';
+            return `${field}: ${e.message}`;
+          })
+          .join('; ');
+        validationMessage = fieldErrors || validationMessage;
+      } else if (responseData?.message) {
+        validationMessage = responseData.message;
+      }
+
+      console.warn('Strapi validation error:', validationMessage, responseData);
+      return Promise.reject(new Error(validationMessage));
+    }
+
     // Handle network errors with retry logic
     if (!error.response && config && !config._retryCount) {
       const requestKey = getRequestKey(config);

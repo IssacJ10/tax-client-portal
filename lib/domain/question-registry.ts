@@ -262,6 +262,66 @@ export class QuestionRegistry {
       const value = formData[question.name]; // Use name as key in formData
       const validation = question.validation;
 
+      // Special handling for repeater fields - validate each item's fields
+      if (question.type === 'repeater' && question.fields) {
+        const items = Array.isArray(value) ? value : [];
+
+        // Validate each item in the repeater
+        for (let itemIndex = 0; itemIndex < items.length; itemIndex++) {
+          const item = items[itemIndex] as Record<string, unknown>;
+
+          for (const field of question.fields as any[]) {
+            // Check conditional visibility for this field within the repeater item
+            if (field.conditional) {
+              const { field: parentField, operator, value: condValue, values: condValues } = field.conditional;
+              const parentValue = item[parentField];
+
+              let isFieldVisible = false;
+              switch (operator) {
+                case "equals":
+                  isFieldVisible = parentValue === condValue;
+                  break;
+                case "notEquals":
+                  isFieldVisible = parentValue !== condValue;
+                  break;
+                case "in":
+                  isFieldVisible = Array.isArray(condValues) && condValues.includes(parentValue);
+                  break;
+                case "notIn":
+                  isFieldVisible = !Array.isArray(condValues) || !condValues.includes(parentValue);
+                  break;
+                default:
+                  isFieldVisible = true;
+              }
+
+              if (!isFieldVisible) continue; // Skip validation for hidden fields
+            }
+
+            const fieldValue = item[field.name];
+            const fieldValidation = field.validation;
+
+            // Check required - simple "is required" message
+            if (fieldValidation?.required) {
+              if (fieldValue === undefined || fieldValue === null || fieldValue === "" ||
+                  (Array.isArray(fieldValue) && fieldValue.length === 0)) {
+                errors[`${question.id}_${itemIndex}_${field.name}`] = "is required";
+                isValid = false;
+              }
+            }
+
+            // Check pattern - simple "invalid format" message
+            if (fieldValue && fieldValidation?.pattern) {
+              const regex = new RegExp(fieldValidation.pattern);
+              if (!regex.test(String(fieldValue))) {
+                errors[`${question.id}_${itemIndex}_${field.name}`] = "invalid format";
+                isValid = false;
+              }
+            }
+          }
+        }
+        continue; // Skip regular validation for repeater questions (already handled above)
+      }
+
       // 2. Check Required
       let isRequired = validation?.required ||
         (validation?.conditionalRequired && this.isQuestionVisible({ conditional: validation.conditionalRequired.when }, formData));
@@ -363,25 +423,44 @@ export class QuestionRegistry {
 
       if (isRequired) {
         if (value === undefined || value === null || value === "" || (Array.isArray(value) && value.length === 0)) {
-          errors[question.id] = "This field is required";
+          // Simple "is required" message - the field label is already shown above
+          errors[question.id] = "is required";
           isValid = false;
           continue;
         }
       }
 
-      // 4. Check Patterns (if value exists)
+      // 4. Check Patterns (if value exists) - simple client-side validation
+      // Detailed error messages come from server if this passes
       if (value) {
         if (validation?.pattern) {
           const regex = new RegExp(validation.pattern);
           if (!regex.test(String(value))) {
-            errors[question.id] = "Invalid format";
+            errors[question.id] = "invalid format";
             isValid = false;
           }
         }
         // Native Type checks
         if (question.type === 'email' && !String(value).includes('@')) {
-          errors[question.id] = "Invalid email address";
+          errors[question.id] = "invalid email";
           isValid = false;
+        }
+        // Phone format check
+        if (question.type === 'phone' && !/^[\d\s\-+()]+$/.test(String(value))) {
+          errors[question.id] = "invalid phone";
+          isValid = false;
+        }
+        // Number range checks
+        if (question.type === 'number' && validation) {
+          const numValue = Number(value);
+          if (validation.min !== undefined && numValue < validation.min) {
+            errors[question.id] = `minimum ${validation.min}`;
+            isValid = false;
+          }
+          if (validation.max !== undefined && numValue > validation.max) {
+            errors[question.id] = `maximum ${validation.max}`;
+            isValid = false;
+          }
         }
       }
     }
@@ -424,11 +503,21 @@ export class QuestionRegistry {
 
         // Track which fields are missing in this section
         const missingFields: string[] = [];
-        for (const questionId of Object.keys(errors)) {
-          // Find the question to get its label
-          const question = section.questions?.find((q: any) => q.id === questionId);
+        for (const errorKey of Object.keys(errors)) {
+          // For repeater fields, the error key format is: questionId_itemIndex_fieldName
+          // For regular fields, the error key is just: questionId
+          const errorMessage = errors[errorKey];
+
+          // Find the question to get its label (handle both regular and repeater fields)
+          const baseQuestionId = errorKey.split('_')[0];
+          const question = section.questions?.find((q: any) => q.id === baseQuestionId || q.id === errorKey);
+
           if (question) {
-            missingFields.push(question.label || question.name);
+            // For repeater fields, the error message already contains the item and field info
+            missingFields.push(errorMessage);
+          } else {
+            // Fallback: use the error message itself
+            missingFields.push(errorMessage);
           }
           totalMissingFields++;
         }

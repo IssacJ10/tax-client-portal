@@ -397,12 +397,12 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
     if (!isValid) {
       setErrors(newErrors)
-      // Show toast notification for validation errors
+      // Simple toast - details shown inline under each field
       const errorCount = Object.keys(newErrors).length
       toast({
         variant: "destructive",
-        title: "Please complete required fields",
-        description: `${errorCount} ${errorCount === 1 ? 'field needs' : 'fields need'} your attention before continuing.`,
+        title: "Required Fields",
+        description: `Please complete ${errorCount} required ${errorCount === 1 ? 'field' : 'fields'} above.`,
       })
       return // STOP
     }

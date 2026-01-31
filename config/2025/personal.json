@@ -290,7 +290,9 @@
             "name": "personalInfo.sin",
             "validation": {
                 "required": true,
-                "pattern": "^\\d{3}-?\\d{3}-?\\d{3}$"
+                "pattern": "^\\d{3}-?\\d{3}-?\\d{3}$",
+                "message": "SIN must be 9 digits in format XXX-XXX-XXX or XXXXXXXXX",
+                "requiredMessage": "Social Insurance Number (SIN) is required"
             },
             "placeholder": "999-999-999",
             "step": "personal_info",

@@ -223,10 +223,11 @@ export function useFiling(filingId?: string, initialData?: Filing) {
 
         if (state.filingId) mutate(`filing/${state.filingId}`)
       } catch (err) {
-        // Show toast notification for validation errors (like duplicate business number)
+        // Show the exact error message to the user
         const errorMessage = err instanceof Error ? err.message : "Failed to save data"
+
         toast({
-          title: "Unable to Save",
+          title: "Error",
           description: errorMessage,
           variant: "destructive",
         })

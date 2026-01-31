@@ -565,7 +565,22 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
     }
   }
 
-  const isRequired = question.validation?.required
+  // Show asterisk if required OR conditionalRequired (when condition is met)
+  const evaluateConditionalRequired = () => {
+    const condReq = question.validation?.conditionalRequired
+    if (!condReq?.when || !formData) return false
+
+    const { parentQuestionId, operator, value, values } = condReq.when
+    const parentValue = formData[parentQuestionId]
+
+    switch (operator) {
+      case "equals": return parentValue === value
+      case "in": return Array.isArray(values) && values.includes(parentValue)
+      case "contains": return Array.isArray(parentValue) && parentValue.includes(value)
+      default: return false
+    }
+  }
+  const isRequired = question.validation?.required || evaluateConditionalRequired()
 
   // For checkbox type: show label if it has options (multi-select checkbox group)
   // Don't show label for single boolean checkbox (it has inline label)
