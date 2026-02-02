@@ -89,11 +89,18 @@ export interface ValidationRule {
   conditionalRequired?: { when: ConditionalLogic };
 }
 
-export interface ConditionalLogic {
+export interface ConditionalClause {
   parentQuestionId: string;
-  operator: 'equals' | 'notEquals' | 'contains' | 'in' | 'notIn' | 'greaterThan' | 'hasAny';
+  operator: 'equals' | 'notEquals' | 'notEqualsStrict' | 'contains' | 'notContains' | 'in' | 'notIn' | 'greaterThan' | 'hasAny';
   value?: any;
   values?: any[];
+}
+
+export interface ConditionalLogic extends ConditionalClause {
+  // Compound conditionals - all conditions in 'and' must be true
+  and?: ConditionalClause[];
+  // Any condition in 'or' being true shows the element
+  or?: ConditionalClause[];
 }
 
 // Statuses for which "Date Became Resident" should be hidden

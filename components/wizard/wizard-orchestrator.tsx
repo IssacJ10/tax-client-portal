@@ -367,7 +367,36 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   const handleFieldChange = useCallback(
     (key: string, value: unknown) => {
       setFormData((prev) => {
-        const updated = { ...prev, [key]: value }
+        const oldValue = prev[key]
+        let updated = { ...prev, [key]: value }
+
+        // Check if this field change hides any conditional sections
+        // If so, clear the data from those hidden sections to prevent validation errors
+        if (activeSchema) {
+          // For arrays, check if content actually changed (not just reference)
+          const valueChanged = Array.isArray(oldValue) && Array.isArray(value)
+            ? JSON.stringify(oldValue) !== JSON.stringify(value)
+            : oldValue !== value
+
+          if (valueChanged) {
+            // Clear data from conditional sections that are no longer visible
+            const fieldsToClear = QuestionRegistry.getFieldsToClearForConditional(
+              activeSchema,
+              key,
+              oldValue,
+              value,
+              currentRole,
+              prev // Pass full formData for context
+            )
+
+            if (fieldsToClear.length > 0) {
+              for (const fieldName of fieldsToClear) {
+                delete updated[fieldName]
+              }
+            }
+          }
+        }
+
         if (state.currentPersonalFilingId) {
           saveFormData(state.currentPersonalFilingId, updated)
         }
@@ -387,7 +416,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         return newErrors
       })
     },
-    [state.currentPersonalFilingId, saveFormData],
+    [state.currentPersonalFilingId, saveFormData, activeSchema, currentRole],
   )
 
   // Handle next button with Validation

@@ -469,6 +469,90 @@ export class QuestionRegistry {
   }
 
   /**
+   * Gets all field names that should be cleared when a conditional trigger changes.
+   * This is called when a parent field (like income.sources) is updated, and we need to
+   * clear data from conditional sections that are no longer visible.
+   *
+   * @param schema - The tax filing schema
+   * @param changedFieldName - The field that was changed (e.g., "income.sources")
+   * @param oldValue - The previous value of the field
+   * @param newValue - The new value of the field
+   * @param role - The current filing role
+   * @returns Array of field names to clear from formData
+   */
+  static getFieldsToClearForConditional(
+    schema: TaxFilingSchema,
+    changedFieldName: string,
+    oldValue: unknown,
+    newValue: unknown,
+    role: FilingRole,
+    fullFormData: Record<string, unknown> = {}
+  ): string[] {
+    if (!schema || !schema.steps || !schema.questions) {
+      return [];
+    }
+
+    const fieldsToClear: string[] = [];
+
+    // Create formData contexts for before and after the change
+    const oldFormData = { ...fullFormData, [changedFieldName]: oldValue };
+    const newFormData = { ...fullFormData, [changedFieldName]: newValue };
+
+    // Find steps that have conditional rules referencing the changed field
+    for (const step of schema.steps) {
+      if (!step.conditional?.parentQuestionId) continue;
+      if (step.conditional.parentQuestionId !== changedFieldName) continue;
+
+      // Check if the step was previously visible but is now hidden
+      const wasVisible = this.evaluateConditional(step.conditional, oldFormData);
+      const isVisible = this.evaluateConditional(step.conditional, newFormData);
+
+      if (wasVisible && !isVisible) {
+        // Step is now hidden - collect all question names in this step
+        const stepQuestions = schema.questions.filter(
+          q => q.step === step.id && this.matchRole(role, q.visibleForRoles)
+        );
+
+        for (const question of stepQuestions) {
+          if (question.name) {
+            fieldsToClear.push(question.name);
+          }
+        }
+      }
+    }
+
+    // Also check individual questions that have conditional rules referencing the changed field
+    for (const question of schema.questions) {
+      if (!question.conditional) continue;
+      if (!this.matchRole(role, question.visibleForRoles)) continue;
+
+      // Handle compound conditionals
+      let relevantClauses: any[] = [];
+      if (question.conditional.and) {
+        relevantClauses = question.conditional.and.filter((c: any) => c.parentQuestionId === changedFieldName);
+      } else if (question.conditional.or) {
+        relevantClauses = question.conditional.or.filter((c: any) => c.parentQuestionId === changedFieldName);
+      } else if (question.conditional.parentQuestionId === changedFieldName) {
+        relevantClauses = [question.conditional];
+      }
+
+      if (relevantClauses.length === 0) continue;
+
+      // Check if the question was previously visible but is now hidden
+      const wasVisible = this.isQuestionVisible(question, oldFormData);
+      const isVisible = this.isQuestionVisible(question, newFormData);
+
+      if (wasVisible && !isVisible && question.name) {
+        if (!fieldsToClear.includes(question.name)) {
+          fieldsToClear.push(question.name);
+        }
+      }
+    }
+
+    return fieldsToClear;
+  }
+
+  /**
    * Validates ALL sections for a specific role (primary/spouse/dependent).
    * Used when completing a phase to ensure all required fields are filled.
    * @param schema - The tax filing schema

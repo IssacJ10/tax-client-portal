@@ -167,7 +167,10 @@ export function useFiling(filingId?: string, initialData?: Filing) {
       currentPfIdRef.current = pfId
     }
 
-    formDataRef.current = { ...formDataRef.current, ...data }
+    // IMPORTANT: Replace the entire form data instead of merging
+    // This ensures that deleted fields (e.g., when conditional sections are hidden)
+    // are properly removed and not persisted to the server
+    formDataRef.current = { ...data }
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current)
 
     saveTimeoutRef.current = setTimeout(async () => {
