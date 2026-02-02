@@ -105,7 +105,7 @@ export default function HomePage() {
                 <motion.div variants={fadeUp} className="mb-8">
                   <div className="inline-flex items-center rounded-full border border-[#07477a]/20 bg-[#07477a]/10 backdrop-blur-sm px-4 py-1.5 text-sm font-semibold text-[#07477a]">
                     <span className="flex h-2 w-2 rounded-full bg-[#07477a] mr-2 animate-pulse" />
-                    Accepting New Clients for 2025
+                    Accepting New Clients
                   </div>
                 </motion.div>
 
