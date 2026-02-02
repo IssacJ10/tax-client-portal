@@ -107,7 +107,7 @@ export function SiteFooter() {
               </li>
               <li className="flex items-start gap-2">
                 <Mail className="h-4 w-4 mt-0.5 text-[#07477a]" />
-                <span className="text-gray-600">jjelevateservices@gmail.com</span>
+                <span className="text-gray-600">Contact@jjelevateas.com</span>
               </li>
               <li className="flex items-start gap-2">
                 <MapPin className="h-4 w-4 mt-0.5 text-[#07477a]" />

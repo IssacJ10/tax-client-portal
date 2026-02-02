@@ -716,7 +716,7 @@ export default function HomePage() {
             {/* Email */}
             <motion.a
               variants={fadeUp}
-              href="mailto:jjelevateservices@gmail.com"
+              href="mailto:Contact@jjelevateas.com"
               className="flex flex-col items-center justify-center p-8 bg-white/70 backdrop-blur-xl border border-white/50 shadow-lg rounded-3xl hover:border-[#07477a]/30 hover:shadow-2xl hover:-translate-y-2 transition-all duration-200 group text-center cursor-pointer relative overflow-hidden"
             >
               <div className="absolute inset-0 bg-[#07477a]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
@@ -724,7 +724,7 @@ export default function HomePage() {
                 <Mail className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Email Us</h3>
-              <p className="text-gray-500 font-medium break-all mb-4 relative z-10 text-sm">jjelevateservices@gmail.com</p>
+              <p className="text-gray-500 font-medium break-all mb-4 relative z-10 text-sm">Contact@jjelevateas.com</p>
               <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full group-hover:bg-[#07477a] group-hover:text-white transition-all duration-150 relative z-10">
                 Click to Email
               </span>
