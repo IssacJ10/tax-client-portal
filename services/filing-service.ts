@@ -717,6 +717,19 @@ export const FilingService = {
       })
     }
 
+    // Build rentOrPropertyTax array if present (component array in Strapi)
+    let rentOrPropertyTaxData = undefined
+    const rentOrPropertyTaxList = nestedData.rentOrPropertyTax?.list
+    if (rentOrPropertyTaxList && Array.isArray(rentOrPropertyTaxList)) {
+      rentOrPropertyTaxData = rentOrPropertyTaxList.map((item: any) => ({
+        residencyType: clean(item.residencyType),
+        startDate: clean(item.startDate),
+        endDate: clean(item.endDate),
+        fullAddress: clean(item.fullAddress),
+        amount: item.amount ? Number(item.amount) : null,
+      }))
+    }
+
     // Extract maritalStatus - handle both object format { status: "MARRIED" } and direct string
     const maritalStatusValue = pi.maritalStatus?.status || pi.maritalStatus || nestedData.maritalStatus?.status || nestedData.maritalStatus
 
@@ -759,6 +772,9 @@ export const FilingService = {
 
       // Dependents Component Array (filing.dependent-info, repeatable)
       dependents: dependentsData,
+
+      // Rent or Property Tax Component Array (filing.rent-or-property-tax, repeatable)
+      rentOrPropertyTax: rentOrPropertyTaxData,
 
       // Components (with type transformation)
       electionsCanada: nestedData.electionsCanada ? {

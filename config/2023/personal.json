@@ -78,6 +78,12 @@
             "description": "Tax Credit"
         },
         {
+            "id": "rent_or_property_tax",
+            "title": "Rent / Property Tax",
+            "order": 57,
+            "description": "Housing Costs"
+        },
+        {
             "id": "income_selection",
             "title": "Income Sources",
             "order": 60,
@@ -1654,6 +1660,65 @@
                 "operator": "hasAny",
                 "values": ["SELF", "SPOUSE", "DEPENDANT"]
             }
+        },
+        {
+            "id": "q_rent_or_property_tax",
+            "type": "repeater",
+            "label": "Rent or Property Tax Paid",
+            "name": "rentOrPropertyTax.list",
+            "step": "rent_or_property_tax",
+            "order": 10,
+            "helpText": "Add all residences where you paid rent or property tax during the tax year.",
+            "config": {
+                "addButtonLabel": "Add Residence"
+            },
+            "fields": [
+                {
+                    "type": "radio",
+                    "name": "residencyType",
+                    "label": "Residency Type",
+                    "options": [
+                        { "value": "RENT", "label": "Rent" },
+                        { "value": "OWNED", "label": "Owned" }
+                    ],
+                    "validation": {
+                        "required": true
+                    }
+                },
+                {
+                    "type": "date",
+                    "name": "startDate",
+                    "label": "Start Date",
+                    "validation": {
+                        "required": true
+                    }
+                },
+                {
+                    "type": "date",
+                    "name": "endDate",
+                    "label": "End Date (leave blank if current)",
+                    "validation": {
+                        "required": false
+                    }
+                },
+                {
+                    "type": "text",
+                    "name": "fullAddress",
+                    "label": "Full Address",
+                    "placeholder": "123 Main St, City, Province, Postal Code",
+                    "validation": {
+                        "required": true
+                    }
+                },
+                {
+                    "type": "number",
+                    "name": "amount",
+                    "label": "Amount Paid",
+                    "validation": {
+                        "required": true
+                    }
+                }
+            ]
         },
         {
             "id": "q_income_sources",
