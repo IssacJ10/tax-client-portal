@@ -219,9 +219,11 @@ function transformSelfEmployment(
   if (!obj) return undefined
 
   // Fields that should be converted to boolean
-  const booleanFields = ['gstRegistered', 'hasCapitalAssets']
+  const booleanFields = ['gstRegistered', 'hasCapitalAssets', 'usesVehicleForBusiness', 'hasHomeOffice']
   // Fields that are repeater arrays
   const arrayFields = ['capitalAssets', 'expenseCategories']
+  // Fields that are JSON objects (stored as-is)
+  const jsonFields = ['vehicleForBusiness', 'homeOfficeExpenses']
   // Fields allowed in the Strapi selfEmployment component schema
   // Document fields are stored in formData only, not in the component
   const allowedFields = [
@@ -231,7 +233,11 @@ function transformSelfEmployment(
     'gstRegistered',
     'gstNumber',
     'hasCapitalAssets',
-    'capitalAssets'
+    'capitalAssets',
+    'usesVehicleForBusiness',
+    'vehicleForBusiness',
+    'hasHomeOffice',
+    'homeOfficeExpenses'
   ]
 
   const result: any = {}
@@ -249,6 +255,9 @@ function transformSelfEmployment(
     } else if (arrayFields.includes(key)) {
       // Ensure arrays are properly formatted
       result[key] = Array.isArray(value) ? ensureArray(value, clean) : null
+    } else if (jsonFields.includes(key)) {
+      // JSON fields are stored as objects - pass through if object, otherwise null
+      result[key] = (typeof value === 'object' && value !== null && Object.keys(value).length > 0) ? value : null
     } else if (value === 'YES' || value === 'NO') {
       // Convert any other YES/NO strings to boolean
       result[key] = toBool(value)
@@ -662,13 +671,22 @@ export const FilingService = {
         sin: clean(sp.sin),
         birthDate: clean(sp.birthDate || sp.dateOfBirth),
         netIncome: sp.netIncome ? Number(sp.netIncome) : null,
-        dateBecameResident: clean(sp.dateBecameResident),
-        dateOfEntry: clean(sp.dateOfEntry),
         statusInCanada: clean(sp.statusInCanada),
+        becameResidentThisYear: clean(sp.becameResidentThisYear),
+        dateBecameResident: clean(sp.dateBecameResident),
         incomeSources: sp.incomeSources || null,
         taxSlips: sp.taxSlips || null,
         workExpenses: sp.workExpenses || null,
         deductions: sp.deductions || null,
+        email: clean(sp.email),
+        phoneNumber: clean(sp.phoneNumber),
+        sameAddress: clean(sp.sameAddress),
+        streetNumber: clean(sp.streetNumber),
+        streetName: clean(sp.streetName),
+        apartmentNumber: clean(sp.apartmentNumber),
+        city: clean(sp.city),
+        province: clean(sp.province),
+        postalCode: clean(sp.postalCode),
       }
     }
 
@@ -687,6 +705,7 @@ export const FilingService = {
           sin: clean(dep.sin),
           relationship: clean(dep.relationship),
           statusInCanada: clean(dep.statusInCanada),
+          becameResidentThisYear: clean(dep.becameResidentThisYear),
           dateBecameResident: clean(dep.dateBecameResident),
           earnsIncome: clean(dep.earnsIncome),
           netIncome: dep.netIncome ? Number(dep.netIncome) : null,
@@ -756,11 +775,56 @@ export const FilingService = {
 
       disabilityCredit: nestedData.disabilityCredit ? transformComponentWithBooleans(nestedData.disabilityCredit, toBool, clean) : undefined,
       workExpenses: nestedData.workExpenses ? transformComponentWithBooleans(nestedData.workExpenses, toBool, clean) : undefined,
-      homeOffice: nestedData.homeOffice ? transformComponentWithBooleans(nestedData.homeOffice, toBool, clean) : undefined,
-      vehicleExpenses: nestedData.vehicleExpenses ? transformComponentWithBooleans(nestedData.vehicleExpenses, toBool, clean) : undefined,
-      selfEmployment: nestedData.selfEmployment ? transformSelfEmployment(nestedData.selfEmployment, toBool, clean) : undefined,
-      rentalIncome: nestedData.rentalIncome ? transformRentalIncome(nestedData.rentalIncome, toBool, clean) : undefined,
-      movingExpenses: nestedData.movingExpenses ? transformComponentWithBooleans(nestedData.movingExpenses, toBool, clean) : undefined,
+      // Clear homeOffice fields if WORKED_FROM_HOME is not selected in workExpenses.categories
+      homeOffice: (() => {
+        const categories = nestedData.workExpenses?.categories || []
+        const hasWorkedFromHome = Array.isArray(categories) && categories.includes('WORKED_FROM_HOME')
+        if (!hasWorkedFromHome) {
+          // Return null to clear all homeOffice fields in Strapi
+          return null
+        }
+        return nestedData.homeOffice ? transformComponentWithBooleans(nestedData.homeOffice, toBool, clean) : undefined
+      })(),
+      // Clear vehicleExpenses fields if TRAVEL_FOR_WORK is not selected in workExpenses.categories
+      vehicleExpenses: (() => {
+        const categories = nestedData.workExpenses?.categories || []
+        const hasTravelForWork = Array.isArray(categories) && categories.includes('TRAVEL_FOR_WORK')
+        if (!hasTravelForWork) {
+          // Return null to clear all vehicleExpenses fields in Strapi
+          return null
+        }
+        return nestedData.vehicleExpenses ? transformComponentWithBooleans(nestedData.vehicleExpenses, toBool, clean) : undefined
+      })(),
+      // Clear selfEmployment fields if SELF_EMPLOYMENT is not selected in income.sources
+      selfEmployment: (() => {
+        const sources = nestedData.income?.sources || []
+        const hasSelfEmployment = Array.isArray(sources) && sources.includes('SELF_EMPLOYMENT')
+        if (!hasSelfEmployment) {
+          // Return null to clear all selfEmployment fields in Strapi
+          return null
+        }
+        return nestedData.selfEmployment ? transformSelfEmployment(nestedData.selfEmployment, toBool, clean) : undefined
+      })(),
+      // Clear rentalIncome fields if RENTAL_INCOME is not selected in income.sources
+      rentalIncome: (() => {
+        const sources = nestedData.income?.sources || []
+        const hasRentalIncome = Array.isArray(sources) && sources.includes('RENTAL_INCOME')
+        if (!hasRentalIncome) {
+          // Return null to clear all rentalIncome fields in Strapi
+          return null
+        }
+        return nestedData.rentalIncome ? transformRentalIncome(nestedData.rentalIncome, toBool, clean) : undefined
+      })(),
+      // Clear movingExpenses fields if MOVING_EXPENSES is not selected in deductions.sources
+      movingExpenses: (() => {
+        const sources = nestedData.deductions?.sources || []
+        const hasMovingExpenses = Array.isArray(sources) && sources.includes('MOVING_EXPENSES')
+        if (!hasMovingExpenses) {
+          // Return null to clear all movingExpenses fields in Strapi
+          return null
+        }
+        return nestedData.movingExpenses ? transformComponentWithBooleans(nestedData.movingExpenses, toBool, clean) : undefined
+      })(),
 
       // JSON Arrays
       incomeSources: nestedData.income?.sources || pi.incomeSources,

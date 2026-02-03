@@ -495,10 +495,17 @@
             "step": "personal_info",
             "order": 80,
             "conditional": {
-                "parentQuestionId": "personalInfo.statusInCanada",
-                "operator": "notIn",
-                "values": [
-                    "CANADIAN_CITIZEN"
+                "and": [
+                    {
+                        "parentQuestionId": "residency.becameResidentThisYear",
+                        "operator": "equals",
+                        "value": "YES"
+                    },
+                    {
+                        "parentQuestionId": "personalInfo.statusInCanada",
+                        "operator": "notIn",
+                        "values": ["CANADIAN_CITIZEN"]
+                    }
                 ]
             }
         },
@@ -570,7 +577,7 @@
         {
             "id": "q_lived_outside_canada",
             "type": "radio",
-            "label": "Did you live outside Canada on December 31?",
+            "label": "Have you lived outside of Canada in the selected tax year for more than 6 months?",
             "name": "residency.livedOutsideCanada",
             "options": [
                 {
@@ -622,8 +629,13 @@
             "validation": {
                 "required": true
             },
-            "step": "residency",
-            "order": 30
+            "step": "personal_info",
+            "order": 78,
+            "conditional": {
+                "parentQuestionId": "personalInfo.statusInCanada",
+                "operator": "notIn",
+                "values": ["CANADIAN_CITIZEN"]
+            }
         },
         {
             "id": "q_world_income",
@@ -644,7 +656,7 @@
         {
             "id": "q_marital_status",
             "type": "select",
-            "label": "Marital Status",
+            "label": "Marital status in the selected tax year",
             "name": "maritalStatus.status",
             "options": [
                 {
@@ -677,6 +689,60 @@
             },
             "step": "marital_status",
             "order": 10
+        },
+        {
+            "id": "q_marital_status_changed",
+            "type": "radio",
+            "label": "Did your marital status change during the selected tax year?",
+            "name": "maritalStatus.changed",
+            "options": [
+                {
+                    "value": "Yes",
+                    "label": "Yes"
+                },
+                {
+                    "value": "No",
+                    "label": "No"
+                }
+            ],
+            "validation": {
+                "conditionalRequired": {
+                    "when": {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "notEquals",
+                        "value": "SINGLE"
+                    }
+                }
+            },
+            "step": "marital_status",
+            "order": 15,
+            "conditional": {
+                "parentQuestionId": "maritalStatus.status",
+                "operator": "notEquals",
+                "value": "SINGLE"
+            }
+        },
+        {
+            "id": "q_marital_status_change_date",
+            "type": "date",
+            "label": "Date of marital status change",
+            "name": "maritalStatus.changeDate",
+            "validation": {
+                "conditionalRequired": {
+                    "when": {
+                        "parentQuestionId": "maritalStatus.changed",
+                        "operator": "equals",
+                        "value": "Yes"
+                    }
+                }
+            },
+            "step": "marital_status",
+            "order": 20,
+            "conditional": {
+                "parentQuestionId": "maritalStatus.changed",
+                "operator": "equals",
+                "value": "Yes"
+            }
         },
         {
             "id": "q_spouse_fullname",
@@ -813,10 +879,48 @@
             }
         },
         {
-            "id": "q_spouse_entry_date",
+            "id": "q_spouse_became_resident_year",
+            "type": "radio",
+            "label": "Did your spouse/partner become a resident of Canada in the selected tax year?",
+            "name": "spouse.becameResidentThisYear",
+            "options": [
+                {
+                    "value": "YES",
+                    "label": "Yes"
+                },
+                {
+                    "value": "NO",
+                    "label": "No"
+                }
+            ],
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 28,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.statusInCanada",
+                        "operator": "notIn",
+                        "values": ["CANADIAN_CITIZEN"]
+                    }
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_resident_date",
             "type": "date",
-            "label": "Spouse/Partner Date of Entry into Canada",
-            "name": "spouse.dateOfEntry",
+            "label": "Spouse/Partner Date Became Resident of Canada",
+            "name": "spouse.dateBecameResident",
             "validation": {
                 "required": false,
                 "maxDate": "today",
@@ -837,41 +941,12 @@
                     {
                         "parentQuestionId": "spouse.statusInCanada",
                         "operator": "notIn",
-                        "values": [
-                            "CANADIAN_CITIZEN"
-                        ]
-                    }
-                ]
-            }
-        },
-        {
-            "id": "q_spouse_resident_date",
-            "type": "date",
-            "label": "Spouse/Partner Date Became Resident of Canada",
-            "name": "spouse.dateBecameResident",
-            "validation": {
-                "required": false,
-                "maxDate": "today",
-                "minDateRef": "spouse.dateOfBirth"
-            },
-            "step": "spouse_info",
-            "order": 35,
-            "conditional": {
-                "and": [
-                    {
-                        "parentQuestionId": "maritalStatus.status",
-                        "operator": "in",
-                        "values": [
-                            "MARRIED",
-                            "COMMON_LAW"
-                        ]
+                        "values": ["CANADIAN_CITIZEN"]
                     },
                     {
-                        "parentQuestionId": "spouse.statusInCanada",
-                        "operator": "notIn",
-                        "values": [
-                            "CANADIAN_CITIZEN"
-                        ]
+                        "parentQuestionId": "spouse.becameResidentThisYear",
+                        "operator": "equals",
+                        "value": "YES"
                     }
                 ]
             }
@@ -881,6 +956,7 @@
             "type": "number",
             "label": "Spouse/Partner Net Income",
             "name": "spouse.netIncome",
+            "helpText": "If you and your spouse are filing your taxes together with us, we will calculate the net income. Please leave this field blank.",
             "validation": {
                 "required": false
             },
@@ -892,6 +968,258 @@
                 "values": [
                     "MARRIED",
                     "COMMON_LAW"
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_email",
+            "type": "email",
+            "label": "Spouse/Partner Email",
+            "name": "spouse.email",
+            "validation": {
+                "required": false
+            },
+            "step": "spouse_info",
+            "order": 42,
+            "conditional": {
+                "parentQuestionId": "maritalStatus.status",
+                "operator": "in",
+                "values": [
+                    "MARRIED",
+                    "COMMON_LAW"
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_phone",
+            "type": "tel",
+            "label": "Spouse/Partner Phone Number",
+            "name": "spouse.phoneNumber",
+            "validation": {
+                "required": false
+            },
+            "step": "spouse_info",
+            "order": 44,
+            "conditional": {
+                "parentQuestionId": "maritalStatus.status",
+                "operator": "in",
+                "values": [
+                    "MARRIED",
+                    "COMMON_LAW"
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_same_address",
+            "type": "radio",
+            "label": "Is your spouse/partner's address the same as yours?",
+            "name": "spouse.sameAddress",
+            "options": [
+                {
+                    "value": "YES",
+                    "label": "Yes"
+                },
+                {
+                    "value": "NO",
+                    "label": "No"
+                }
+            ],
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 46,
+            "conditional": {
+                "parentQuestionId": "maritalStatus.status",
+                "operator": "in",
+                "values": [
+                    "MARRIED",
+                    "COMMON_LAW"
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_street_number",
+            "type": "text",
+            "label": "Spouse/Partner Street Number",
+            "name": "spouse.streetNumber",
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 48,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.sameAddress",
+                        "operator": "equals",
+                        "value": "NO"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_street_name",
+            "type": "text",
+            "label": "Spouse/Partner Street Name",
+            "name": "spouse.streetName",
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 50,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.sameAddress",
+                        "operator": "equals",
+                        "value": "NO"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_apartment_number",
+            "type": "text",
+            "label": "Spouse/Partner Apartment/Unit Number",
+            "name": "spouse.apartmentNumber",
+            "validation": {
+                "required": false
+            },
+            "step": "spouse_info",
+            "order": 52,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.sameAddress",
+                        "operator": "equals",
+                        "value": "NO"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_city",
+            "type": "text",
+            "label": "Spouse/Partner City",
+            "name": "spouse.city",
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 54,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.sameAddress",
+                        "operator": "equals",
+                        "value": "NO"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_province",
+            "type": "select",
+            "label": "Spouse/Partner Province/Territory",
+            "name": "spouse.province",
+            "options": [
+                { "value": "AB", "label": "Alberta" },
+                { "value": "BC", "label": "British Columbia" },
+                { "value": "MB", "label": "Manitoba" },
+                { "value": "NB", "label": "New Brunswick" },
+                { "value": "NL", "label": "Newfoundland and Labrador" },
+                { "value": "NS", "label": "Nova Scotia" },
+                { "value": "NT", "label": "Northwest Territories" },
+                { "value": "NU", "label": "Nunavut" },
+                { "value": "ON", "label": "Ontario" },
+                { "value": "PE", "label": "Prince Edward Island" },
+                { "value": "QC", "label": "Quebec" },
+                { "value": "SK", "label": "Saskatchewan" },
+                { "value": "YT", "label": "Yukon" }
+            ],
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 56,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.sameAddress",
+                        "operator": "equals",
+                        "value": "NO"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_postal_code",
+            "type": "text",
+            "label": "Spouse/Partner Postal Code",
+            "name": "spouse.postalCode",
+            "placeholder": "A1A 1A1",
+            "validation": {
+                "required": true,
+                "pattern": "^[A-Za-z]\\d[A-Za-z][ -]?\\d[A-Za-z]\\d$"
+            },
+            "step": "spouse_info",
+            "order": 58,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.sameAddress",
+                        "operator": "equals",
+                        "value": "NO"
+                    }
                 ]
             }
         },
@@ -970,6 +1298,29 @@
                     }
                 },
                 {
+                    "type": "radio",
+                    "name": "becameResidentThisYear",
+                    "label": "Did this dependent become a resident of Canada in the selected tax year?",
+                    "options": [
+                        {
+                            "value": "YES",
+                            "label": "Yes"
+                        },
+                        {
+                            "value": "NO",
+                            "label": "No"
+                        }
+                    ],
+                    "validation": {
+                        "required": true
+                    },
+                    "conditional": {
+                        "field": "statusInCanada",
+                        "operator": "notIn",
+                        "values": ["CANADIAN_CITIZEN"]
+                    }
+                },
+                {
                     "type": "date",
                     "name": "dateBecameResident",
                     "label": "Date Became Resident of Canada",
@@ -978,10 +1329,17 @@
                         "maxDate": "today"
                     },
                     "conditional": {
-                        "field": "statusInCanada",
-                        "operator": "notIn",
-                        "values": [
-                            "CANADIAN_CITIZEN"
+                        "and": [
+                            {
+                                "field": "statusInCanada",
+                                "operator": "notIn",
+                                "values": ["CANADIAN_CITIZEN"]
+                            },
+                            {
+                                "field": "becameResidentThisYear",
+                                "operator": "equals",
+                                "value": "YES"
+                            }
                         ]
                     }
                 },
@@ -1202,6 +1560,8 @@
             "type": "radio",
             "label": "Did you have an interest in a foreign affiliate?",
             "name": "propertyAssets.foreignAffiliate",
+            "helpText": "(Income earned from a non-Canadian company that you own a significant share of)",
+            "helpTextBold": true,
             "options": [
                 {
                     "value": "YES",
@@ -1237,7 +1597,7 @@
         {
             "id": "q_disability_who",
             "type": "checkbox",
-            "label": "Who is the Disability Tax Credit for?",
+            "label": "Are you applying for the Disability Tax Credit?",
             "name": "disabilityCredit.affectedPersons",
             "options": [
                 {
@@ -1288,7 +1648,12 @@
                 "required": false
             },
             "step": "disability_credit",
-            "order": 30
+            "order": 30,
+            "conditional": {
+                "parentQuestionId": "disabilityCredit.affectedPersons",
+                "operator": "hasAny",
+                "values": ["SELF", "SPOUSE", "DEPENDANT"]
+            }
         },
         {
             "id": "q_income_sources",
@@ -1296,6 +1661,10 @@
             "label": "Select all income sources that apply to you",
             "name": "income.sources",
             "options": [
+                {
+                    "value": "NA",
+                    "label": "N/A - Not Applicable"
+                },
                 {
                     "value": "EMPLOYMENT_T4",
                     "label": "Employment Income (Job / Salary / Wages \u2013 T4)",
@@ -1751,7 +2120,12 @@
                 "required": false
             },
             "step": "deductions_selection",
-            "order": 20
+            "order": 20,
+            "conditional": {
+                "parentQuestionId": "deductions.sources",
+                "operator": "hasAny",
+                "values": ["FHSA", "RRSP", "UNION_DUES", "CHILD_CARE", "MOVING_EXPENSES", "MEDICAL_EXPENSES", "DONATIONS"]
+            }
         },
         {
             "id": "q_work_expenses",
@@ -1769,7 +2143,8 @@
                 },
                 {
                     "value": "PURCHASED_SUPPLIES",
-                    "label": "Purchased supplies or other work-related expenses"
+                    "label": "Purchased supplies or other work-related expenses",
+                    "linkedUploadQuestionId": "q_supplies_receipts"
                 }
             ],
             "validation": {
@@ -1803,6 +2178,30 @@
                     "PURCHASED_SUPPLIES"
                 ]
             }
+        },
+        {
+            "id": "q_supplies_receipts",
+            "type": "file",
+            "label": "Upload Receipts for Supplies / Work-Related Expenses",
+            "name": "workExpenses.suppliesReceipts",
+            "helpText": "Upload receipts for supplies, tools, or other work-related purchases",
+            "validation": {
+                "required": false
+            },
+            "config": {
+                "multiple": true,
+                "maxFiles": 10,
+                "maxSize": 10485760,
+                "accept": ".pdf,.jpg,.jpeg,.png"
+            },
+            "step": "work_expenses",
+            "order": 16,
+            "conditional": {
+                "parentQuestionId": "workExpenses.categories",
+                "operator": "contains",
+                "value": "PURCHASED_SUPPLIES"
+            },
+            "renderInline": true
         },
         {
             "id": "q_work_expense_types",
@@ -1886,9 +2285,9 @@
             "validation": {
                 "conditionalRequired": {
                     "when": {
-                        "parentQuestionId": "workExpenses.expenseTypes",
+                        "parentQuestionId": "workExpenses.categories",
                         "operator": "contains",
-                        "value": "HOME_OFFICE"
+                        "value": "WORKED_FROM_HOME"
                     }
                 }
             },
@@ -1896,9 +2295,9 @@
             "order": 10,
             "helpText": "We need this to calculate the portion of your home used for work.",
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -1909,18 +2308,18 @@
             "validation": {
                 "conditionalRequired": {
                     "when": {
-                        "parentQuestionId": "workExpenses.expenseTypes",
+                        "parentQuestionId": "workExpenses.categories",
                         "operator": "contains",
-                        "value": "HOME_OFFICE"
+                        "value": "WORKED_FROM_HOME"
                     }
                 }
             },
             "step": "home_office",
             "order": 15,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -1935,9 +2334,9 @@
             "order": 20,
             "helpText": "Enter the total monthly amount. We will calculate the work-from-home portion.",
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -1951,9 +2350,9 @@
             "step": "home_office",
             "order": 25,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -1967,9 +2366,9 @@
             "step": "home_office",
             "order": 30,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -1983,9 +2382,9 @@
             "step": "home_office",
             "order": 35,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -1999,9 +2398,9 @@
             "step": "home_office",
             "order": 40,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -2015,9 +2414,9 @@
             "step": "home_office",
             "order": 45,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -2031,9 +2430,9 @@
             "step": "home_office",
             "order": 50,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -2047,15 +2446,32 @@
             "step": "home_office",
             "order": 55,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
+            }
+        },
+        {
+            "id": "q_home_other_utilities_description",
+            "type": "text",
+            "label": "Other Utilities (Specify)",
+            "name": "homeOffice.otherUtilitiesDescription",
+            "placeholder": "e.g., Cable, Security system, etc.",
+            "validation": {
+                "required": false
+            },
+            "step": "home_office",
+            "order": 58,
+            "conditional": {
+                "parentQuestionId": "workExpenses.categories",
+                "operator": "contains",
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
             "id": "q_home_other_utilities",
             "type": "number",
-            "label": "Monthly Other Utilities",
+            "label": "Monthly Other Utilities Amount",
             "name": "homeOffice.monthlyOtherUtilities",
             "validation": {
                 "required": false
@@ -2063,9 +2479,9 @@
             "step": "home_office",
             "order": 60,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -2079,9 +2495,9 @@
             "step": "home_office",
             "order": 65,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -2095,9 +2511,9 @@
             "step": "home_office",
             "order": 70,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -2111,9 +2527,43 @@
             "step": "home_office",
             "order": 75,
             "conditional": {
-                "parentQuestionId": "workExpenses.expenseTypes",
+                "parentQuestionId": "workExpenses.categories",
                 "operator": "contains",
-                "value": "HOME_OFFICE"
+                "value": "WORKED_FROM_HOME"
+            }
+        },
+        {
+            "id": "q_home_other_expenses_description",
+            "type": "text",
+            "label": "Other eligible home office expenses (Specify)",
+            "name": "homeOffice.otherExpensesDescription",
+            "placeholder": "Describe any other eligible home office expenses",
+            "validation": {
+                "required": false
+            },
+            "step": "home_office",
+            "order": 80,
+            "helpText": "Enter any other eligible home office expenses not listed above",
+            "conditional": {
+                "parentQuestionId": "workExpenses.categories",
+                "operator": "contains",
+                "value": "WORKED_FROM_HOME"
+            }
+        },
+        {
+            "id": "q_home_other_expenses_amount",
+            "type": "number",
+            "label": "Other Home Office Expenses Amount (Monthly)",
+            "name": "homeOffice.otherExpensesAmount",
+            "validation": {
+                "required": false
+            },
+            "step": "home_office",
+            "order": 85,
+            "conditional": {
+                "parentQuestionId": "workExpenses.categories",
+                "operator": "contains",
+                "value": "WORKED_FROM_HOME"
             }
         },
         {
@@ -2326,14 +2776,14 @@
         {
             "id": "q_vehicle_fuel",
             "type": "number",
-            "label": "Monthly Fuel (gas / diesel / charging costs)",
-            "name": "vehicleExpenses.monthlyFuel",
+            "label": "Annual Fuel (gas / diesel / charging costs)",
+            "name": "vehicleExpenses.annualFuel",
             "validation": {
                 "required": false
             },
             "step": "vehicle_expenses",
             "order": 55,
-            "helpText": "Enter total monthly amounts. We will calculate the work-related yearly portion.",
+            "helpText": "Enter the total annual amounts. We will calculate the work-related portion.",
             "conditional": {
                 "parentQuestionId": "vehicleExpenses.notApplicable",
                 "operator": "notEquals",
@@ -2343,8 +2793,8 @@
         {
             "id": "q_vehicle_insurance",
             "type": "number",
-            "label": "Monthly Vehicle insurance",
-            "name": "vehicleExpenses.monthlyInsurance",
+            "label": "Annual Vehicle Insurance",
+            "name": "vehicleExpenses.annualInsurance",
             "validation": {
                 "required": false
             },
@@ -2359,8 +2809,8 @@
         {
             "id": "q_vehicle_maintenance",
             "type": "number",
-            "label": "Monthly Maintenance & repairs",
-            "name": "vehicleExpenses.monthlyMaintenance",
+            "label": "Annual Maintenance & Repairs",
+            "name": "vehicleExpenses.annualMaintenance",
             "validation": {
                 "required": false
             },
@@ -2375,8 +2825,8 @@
         {
             "id": "q_vehicle_license",
             "type": "number",
-            "label": "Monthly License & registration fees",
-            "name": "vehicleExpenses.monthlyLicense",
+            "label": "Annual License & Registration Fees",
+            "name": "vehicleExpenses.annualLicense",
             "validation": {
                 "required": false
             },
@@ -2391,8 +2841,8 @@
         {
             "id": "q_vehicle_parking",
             "type": "number",
-            "label": "Monthly Parking fees (work-related only)",
-            "name": "vehicleExpenses.monthlyParking",
+            "label": "Annual Parking Fees (work-related only)",
+            "name": "vehicleExpenses.annualParking",
             "validation": {
                 "required": false
             },
@@ -2407,8 +2857,8 @@
         {
             "id": "q_vehicle_lease",
             "type": "number",
-            "label": "Monthly Lease payments (if leasing)",
-            "name": "vehicleExpenses.monthlyLease",
+            "label": "Annual Lease Payments (if leasing)",
+            "name": "vehicleExpenses.annualLease",
             "validation": {
                 "required": false
             },
@@ -2423,8 +2873,8 @@
         {
             "id": "q_vehicle_loan_interest",
             "type": "number",
-            "label": "Monthly Interest on car loan (if owning)",
-            "name": "vehicleExpenses.monthlyLoanInterest",
+            "label": "Annual Interest on Car Loan (if owning)",
+            "name": "vehicleExpenses.annualLoanInterest",
             "validation": {
                 "required": false
             },
@@ -2439,8 +2889,8 @@
         {
             "id": "q_vehicle_rides",
             "type": "number",
-            "label": "Monthly Rides cost (Uber, taxi, etc.)",
-            "name": "vehicleExpenses.monthlyRides",
+            "label": "Annual Rides Cost (Uber, taxi, etc.)",
+            "name": "vehicleExpenses.annualRides",
             "validation": {
                 "required": false
             },
@@ -2455,8 +2905,8 @@
         {
             "id": "q_vehicle_other",
             "type": "number",
-            "label": "Monthly Other vehicle expenses",
-            "name": "vehicleExpenses.monthlyOther",
+            "label": "Annual Other Vehicle Expenses",
+            "name": "vehicleExpenses.annualOther",
             "validation": {
                 "required": false
             },
@@ -2604,7 +3054,7 @@
                     }
                 ]
             },
-            "helpText": "Upload receipts to support your expense amounts entered above",
+            "helpText": "Upload receipts to support your expense amounts entered above. The CRA can request receipts for up to seven years, so please keep your receipts for at least seven years.",
             "config": {
                 "multiple": true,
                 "maxFiles": 10,
@@ -2752,7 +3202,7 @@
         {
             "id": "q_self_emp_business_docs",
             "type": "file",
-            "label": "Upload business documents (Invoices, Bank statements, GST/HST returns)",
+            "label": "Upload business documents (Invoices, Bank statements, Receipts)",
             "name": "selfEmployment.businessDocuments",
             "validation": {
                 "required": false
@@ -2760,12 +3210,270 @@
             "step": "self_employment",
             "order": 55,
             "renderInline": true,
-            "helpText": "Upload invoices, bank statements, receipts, and GST/HST returns",
+            "helpText": "Upload invoices, bank statements, and receipts. The CRA can request receipts for up to seven years, so please keep your receipts for at least seven years.",
             "config": {
                 "multiple": true,
                 "maxFiles": 10,
                 "accept": ".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
             }
+        },
+        {
+            "id": "q_self_emp_uses_vehicle",
+            "type": "radio",
+            "label": "Do you use a vehicle for your self-employment business?",
+            "name": "selfEmployment.usesVehicleForBusiness",
+            "options": [
+                { "value": "YES", "label": "Yes" },
+                { "value": "NO", "label": "No" }
+            ],
+            "validation": { "required": false },
+            "step": "self_employment",
+            "order": 60,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "SELF_EMPLOYMENT"
+            },
+            "sectionHeader": "Vehicle Expenses",
+            "helpText": "Claim vehicle expenses used for business purposes"
+        },
+        {
+            "id": "q_self_emp_vehicle_info",
+            "type": "fieldGroup",
+            "label": "Vehicle Information",
+            "name": "selfEmployment.vehicleForBusiness",
+            "step": "self_employment",
+            "order": 61,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.usesVehicleForBusiness",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 3 },
+            "fields": [
+                { "name": "make", "type": "text", "label": "Make", "placeholder": "e.g., Toyota" },
+                { "name": "model", "type": "text", "label": "Model", "placeholder": "e.g., Camry" },
+                { "name": "year", "type": "number", "label": "Year", "placeholder": "e.g., 2022" }
+            ]
+        },
+        {
+            "id": "q_self_emp_vehicle_purchase",
+            "type": "fieldGroup",
+            "label": "Purchase Details",
+            "name": "selfEmployment.vehicleForBusiness",
+            "step": "self_employment",
+            "order": 62,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.usesVehicleForBusiness",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 2 },
+            "fields": [
+                { "name": "purchaseDate", "type": "date", "label": "Date vehicle purchased" },
+                { "name": "purchaseCost", "type": "number", "label": "Cost when purchased" }
+            ]
+        },
+        {
+            "id": "q_self_emp_vehicle_km",
+            "type": "fieldGroup",
+            "label": "Kilometres Driven",
+            "name": "selfEmployment.vehicleForBusiness",
+            "step": "self_employment",
+            "order": 63,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.usesVehicleForBusiness",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 3 },
+            "helpText": "Business use % is calculated automatically from km driven",
+            "fields": [
+                { "name": "totalKmDriven", "type": "number", "label": "Total KM (lifetime)" },
+                { "name": "kmDrivenThisYear", "type": "number", "label": "KM driven this year" },
+                { "name": "kmDrivenForBusiness", "type": "number", "label": "KM for business" }
+            ]
+        },
+        {
+            "id": "q_self_emp_vehicle_ucc",
+            "type": "fieldGroup",
+            "label": "Depreciation",
+            "name": "selfEmployment.vehicleForBusiness",
+            "step": "self_employment",
+            "order": 64,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.usesVehicleForBusiness",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 1 },
+            "helpText": "Used to calculate depreciation expenses. Leave blank if unknown.",
+            "fields": [
+                { "name": "uccStartOfYear", "type": "number", "label": "Undepreciated Capital Cost (UCC) at start of year" }
+            ]
+        },
+        {
+            "id": "q_self_emp_vehicle_expenses",
+            "type": "fieldGroup",
+            "label": "Annual Vehicle Expenses",
+            "name": "selfEmployment.vehicleForBusiness",
+            "step": "self_employment",
+            "order": 65,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.usesVehicleForBusiness",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 3 },
+            "helpText": "Enter total annual amounts - business portion will be calculated",
+            "fields": [
+                { "name": "annualFuel", "type": "number", "label": "Fuel (gas/diesel/charging)" },
+                { "name": "annualInsurance", "type": "number", "label": "Insurance" },
+                { "name": "annualMaintenance", "type": "number", "label": "Maintenance & Repairs" },
+                { "name": "annualLicense", "type": "number", "label": "License & Registration" },
+                { "name": "annualParking", "type": "number", "label": "Parking (work-related)" },
+                { "name": "annualLease", "type": "number", "label": "Lease Payments" },
+                { "name": "annualLoanInterest", "type": "number", "label": "Car Loan Interest" },
+                { "name": "annualRides", "type": "number", "label": "Rides (Uber, taxi, etc.)" },
+                { "name": "annualOther", "type": "number", "label": "Other Expenses" }
+            ]
+        },
+        {
+            "id": "q_self_emp_has_home_office",
+            "type": "radio",
+            "label": "Do you have a home office for your self-employment business?",
+            "name": "selfEmployment.hasHomeOffice",
+            "options": [
+                { "value": "YES", "label": "Yes" },
+                { "value": "NO", "label": "No" }
+            ],
+            "validation": { "required": false },
+            "step": "self_employment",
+            "order": 70,
+            "conditional": {
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "SELF_EMPLOYMENT"
+            },
+            "sectionHeader": "Home Office Expenses",
+            "helpText": "Claim home office expenses if you work from home"
+        },
+        {
+            "id": "q_self_emp_home_office_size",
+            "type": "fieldGroup",
+            "label": "Home Office Size",
+            "name": "selfEmployment.homeOfficeExpenses",
+            "step": "self_employment",
+            "order": 71,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.hasHomeOffice",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 2 },
+            "helpText": "The business use % is calculated from office size / total home size",
+            "fields": [
+                { "name": "totalHomeSize", "type": "number", "label": "Total home size (sq ft)" },
+                { "name": "workAreaSize", "type": "number", "label": "Work area size (sq ft)" }
+            ]
+        },
+        {
+            "id": "q_self_emp_home_office_housing",
+            "type": "fieldGroup",
+            "label": "Housing Costs (Monthly)",
+            "name": "selfEmployment.homeOfficeExpenses",
+            "step": "self_employment",
+            "order": 72,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.hasHomeOffice",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 2 },
+            "helpText": "Enter monthly amounts - business portion calculated automatically",
+            "fields": [
+                { "name": "monthlyRent", "type": "number", "label": "Rent (if renting)" },
+                { "name": "monthlyMortgageInterest", "type": "number", "label": "Mortgage Interest (if owning)" },
+                { "name": "monthlyPropertyTax", "type": "number", "label": "Property Tax" },
+                { "name": "monthlyInsurance", "type": "number", "label": "Home/Tenant Insurance" }
+            ]
+        },
+        {
+            "id": "q_self_emp_home_office_utilities",
+            "type": "fieldGroup",
+            "label": "Utilities (Monthly)",
+            "name": "selfEmployment.homeOfficeExpenses",
+            "step": "self_employment",
+            "order": 73,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.hasHomeOffice",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 4 },
+            "fields": [
+                { "name": "monthlyElectricity", "type": "number", "label": "Electricity" },
+                { "name": "monthlyWater", "type": "number", "label": "Water" },
+                { "name": "monthlyHeat", "type": "number", "label": "Heat/Gas" },
+                { "name": "monthlyInternet", "type": "number", "label": "Internet" }
+            ]
+        },
+        {
+            "id": "q_self_emp_home_office_other_utilities",
+            "type": "fieldGroup",
+            "label": "Other Utilities (Monthly)",
+            "name": "selfEmployment.homeOfficeExpenses",
+            "step": "self_employment",
+            "order": 74,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.hasHomeOffice",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 2 },
+            "helpText": "e.g., Cable, Security system, etc.",
+            "fields": [
+                { "name": "otherUtilitiesDescription", "type": "text", "label": "Other Utilities (Specify)" },
+                { "name": "monthlyOtherUtilities", "type": "number", "label": "Monthly Amount" }
+            ]
+        },
+        {
+            "id": "q_self_emp_home_office_maintenance",
+            "type": "fieldGroup",
+            "label": "Maintenance (Monthly)",
+            "name": "selfEmployment.homeOfficeExpenses",
+            "step": "self_employment",
+            "order": 75,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.hasHomeOffice",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 3 },
+            "fields": [
+                { "name": "monthlyCleaningSupplies", "type": "number", "label": "Cleaning Supplies" },
+                { "name": "monthlyMinorRepairs", "type": "number", "label": "Light bulbs/Minor repairs" },
+                { "name": "monthlyOtherMaintenance", "type": "number", "label": "Other Maintenance" }
+            ]
+        },
+        {
+            "id": "q_self_emp_home_office_other",
+            "type": "fieldGroup",
+            "label": "Other Home Office Expenses (Monthly)",
+            "name": "selfEmployment.homeOfficeExpenses",
+            "step": "self_employment",
+            "order": 76,
+            "conditional": {
+                "parentQuestionId": "selfEmployment.hasHomeOffice",
+                "operator": "equals",
+                "value": "YES"
+            },
+            "config": { "layout": "compact", "columns": 2 },
+            "helpText": "Any other eligible home office expenses not listed above",
+            "fields": [
+                { "name": "otherExpensesDescription", "type": "text", "label": "Other Expenses (Specify)" },
+                { "name": "otherExpensesAmount", "type": "number", "label": "Monthly Amount" }
+            ]
         },
         {
             "id": "q_rental_address",
@@ -3412,149 +4120,102 @@
         },
         {
             "id": "q_moving_transport_expenses",
-            "type": "checkbox",
+            "type": "fieldGroup",
             "label": "Transportation & Storage Expenses",
             "name": "movingExpenses.transportExpenses",
-            "options": [
-                {
-                    "value": "MOVING_COMPANY",
-                    "label": "Moving company charges"
-                },
-                {
-                    "value": "TRUCK_RENTAL",
-                    "label": "Truck or trailer rental"
-                },
-                {
-                    "value": "STORAGE",
-                    "label": "Storage costs (up to 30 days)"
-                }
-            ],
-            "validation": {
-                "required": false
-            },
+            "sectionHeader": "Transportation & Storage",
             "step": "moving_expenses",
             "order": 45,
             "conditional": {
                 "parentQuestionId": "deductions.sources",
                 "operator": "contains",
                 "value": "MOVING_EXPENSES"
-            }
+            },
+            "config": { "layout": "compact", "columns": 3 },
+            "fields": [
+                { "name": "movingCompany", "type": "number", "label": "Moving company charges" },
+                { "name": "truckRental", "type": "number", "label": "Truck or trailer rental" },
+                { "name": "storageCosts", "type": "number", "label": "Storage costs (up to 30 days)" }
+            ]
         },
         {
             "id": "q_moving_travel_expenses",
-            "type": "checkbox",
+            "type": "fieldGroup",
             "label": "Travel Costs",
             "name": "movingExpenses.travelExpenses",
-            "options": [
-                {
-                    "value": "VEHICLE",
-                    "label": "Vehicle expenses (km driven)"
-                },
-                {
-                    "value": "FUEL",
-                    "label": "Gas / fuel"
-                },
-                {
-                    "value": "MEALS",
-                    "label": "Meals during move"
-                },
-                {
-                    "value": "ACCOMMODATION",
-                    "label": "Accommodation (hotel stays)"
-                }
-            ],
-            "validation": {
-                "required": false
-            },
+            "sectionHeader": "Travel Costs",
             "step": "moving_expenses",
             "order": 50,
             "conditional": {
                 "parentQuestionId": "deductions.sources",
                 "operator": "contains",
                 "value": "MOVING_EXPENSES"
-            }
+            },
+            "config": { "layout": "compact", "columns": 4 },
+            "fields": [
+                { "name": "vehicleExpenses", "type": "number", "label": "Vehicle expenses (km driven)" },
+                { "name": "fuelCosts", "type": "number", "label": "Gas / fuel" },
+                { "name": "mealsCosts", "type": "number", "label": "Meals during move" },
+                { "name": "accommodationCosts", "type": "number", "label": "Accommodation (hotel stays)" }
+            ]
         },
         {
             "id": "q_moving_temp_living",
-            "type": "checkbox",
+            "type": "fieldGroup",
             "label": "Temporary Living Expenses",
             "name": "movingExpenses.tempLivingExpenses",
-            "options": [
-                {
-                    "value": "TEMP_ACCOMMODATION",
-                    "label": "Temporary accommodation near new home (Maximum 15 days)"
-                }
-            ],
-            "validation": {
-                "required": false
-            },
+            "sectionHeader": "Temporary Living",
             "step": "moving_expenses",
             "order": 55,
             "conditional": {
                 "parentQuestionId": "deductions.sources",
                 "operator": "contains",
                 "value": "MOVING_EXPENSES"
-            }
+            },
+            "config": { "layout": "compact", "columns": 1 },
+            "fields": [
+                { "name": "tempAccommodation", "type": "number", "label": "Temporary accommodation near new home (Maximum 15 days)" }
+            ]
         },
         {
             "id": "q_moving_home_expenses",
-            "type": "checkbox",
+            "type": "fieldGroup",
             "label": "Home-Related Costs",
             "name": "movingExpenses.homeExpenses",
-            "options": [
-                {
-                    "value": "LEGAL_FEES",
-                    "label": "Legal fees to sell old home"
-                },
-                {
-                    "value": "REAL_ESTATE",
-                    "label": "Real estate commission"
-                },
-                {
-                    "value": "LEASE_PENALTY",
-                    "label": "Penalty for breaking lease"
-                }
-            ],
-            "validation": {
-                "required": false
-            },
+            "sectionHeader": "Home-Related Costs",
             "step": "moving_expenses",
             "order": 60,
             "conditional": {
                 "parentQuestionId": "deductions.sources",
                 "operator": "contains",
                 "value": "MOVING_EXPENSES"
-            }
+            },
+            "config": { "layout": "compact", "columns": 3 },
+            "fields": [
+                { "name": "legalFees", "type": "number", "label": "Legal fees to sell old home" },
+                { "name": "realEstateCommission", "type": "number", "label": "Real estate commission" },
+                { "name": "leasePenalty", "type": "number", "label": "Penalty for breaking lease" }
+            ]
         },
         {
             "id": "q_moving_other_expenses",
-            "type": "checkbox",
+            "type": "fieldGroup",
             "label": "Other Eligible Expenses",
             "name": "movingExpenses.otherExpenses",
-            "options": [
-                {
-                    "value": "UTILITY_FEES",
-                    "label": "Utility disconnection / reconnection fees"
-                },
-                {
-                    "value": "ADDRESS_CHANGE",
-                    "label": "Address change costs"
-                },
-                {
-                    "value": "OTHER",
-                    "label": "Other moving-related expenses"
-                }
-            ],
-            "validation": {
-                "required": false
-            },
+            "sectionHeader": "Other Expenses",
             "step": "moving_expenses",
             "order": 65,
             "conditional": {
                 "parentQuestionId": "deductions.sources",
                 "operator": "contains",
                 "value": "MOVING_EXPENSES"
-            }
+            },
+            "config": { "layout": "compact", "columns": 3 },
+            "fields": [
+                { "name": "utilityFees", "type": "number", "label": "Utility disconnection / reconnection fees" },
+                { "name": "addressChangeCosts", "type": "number", "label": "Address change costs" },
+                { "name": "otherCosts", "type": "number", "label": "Other moving-related expenses" }
+            ]
         },
         {
             "id": "q_moving_vehicle_used",
@@ -3771,7 +4432,9 @@
                     "personalInfo.lastName",
                     "personalInfo.sin",
                     "personalInfo.dateOfBirth",
-                    "maritalStatus.status"
+                    "maritalStatus.status",
+                    "maritalStatus.changed",
+                    "maritalStatus.changeDate"
                 ],
                 "editStepId": "personal_identity"
             },
@@ -4031,24 +4694,24 @@
                     "vehicleExpenses.totalKmDriven",
                     "vehicleExpenses.kmDrivenThisYear",
                     "vehicleExpenses.kmDrivenForWork",
-                    "vehicleExpenses.monthlyFuel",
-                    "vehicleExpenses.monthlyInsurance",
-                    "vehicleExpenses.monthlyMaintenance",
-                    "vehicleExpenses.monthlyLicense",
-                    "vehicleExpenses.monthlyParking",
-                    "vehicleExpenses.monthlyLease",
-                    "vehicleExpenses.monthlyLoanInterest"
+                    "vehicleExpenses.annualFuel",
+                    "vehicleExpenses.annualInsurance",
+                    "vehicleExpenses.annualMaintenance",
+                    "vehicleExpenses.annualLicense",
+                    "vehicleExpenses.annualParking",
+                    "vehicleExpenses.annualLease",
+                    "vehicleExpenses.annualLoanInterest"
                 ],
                 "format": {
                     "vehicleExpenses.purchaseDate": "date",
                     "vehicleExpenses.purchaseCost": "currency",
-                    "vehicleExpenses.monthlyFuel": "currency",
-                    "vehicleExpenses.monthlyInsurance": "currency",
-                    "vehicleExpenses.monthlyMaintenance": "currency",
-                    "vehicleExpenses.monthlyLicense": "currency",
-                    "vehicleExpenses.monthlyParking": "currency",
-                    "vehicleExpenses.monthlyLease": "currency",
-                    "vehicleExpenses.monthlyLoanInterest": "currency"
+                    "vehicleExpenses.annualFuel": "currency",
+                    "vehicleExpenses.annualInsurance": "currency",
+                    "vehicleExpenses.annualMaintenance": "currency",
+                    "vehicleExpenses.annualLicense": "currency",
+                    "vehicleExpenses.annualParking": "currency",
+                    "vehicleExpenses.annualLease": "currency",
+                    "vehicleExpenses.annualLoanInterest": "currency"
                 },
                 "editStepId": "vehicle_expenses"
             },

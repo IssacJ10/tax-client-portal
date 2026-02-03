@@ -645,7 +645,7 @@ export default function HomePage() {
                 <motion.ul variants={staggerContainer} className="space-y-4 pt-4 mb-8">
                   {[
                     "Guaranteed Rates & Transparent Pricing",
-                    "CPA-Certified Review on Every Return",
+                    "CPA-Certified Review",
                     "Year-Round Support (We don't disappear after April!)"
                   ].map((item, i) => (
                     <motion.li key={i} variants={fadeUp} className="flex items-center gap-3">
@@ -759,9 +759,9 @@ export default function HomePage() {
                 <Clock className="h-6 w-6 text-[#07477a]" />
               </div>
               <h3 className="font-bold text-lg mb-2 text-gray-900 relative z-10">Office Hours</h3>
-              <p className="text-gray-500 font-medium mb-4 relative z-10 text-sm">Mon - Fri: 9:00 AM - 5:00 PM<br /><span className="text-xs text-[#07477a]/70">(Weekends by Appointment)</span></p>
+              <p className="text-gray-500 font-medium mb-4 relative z-10 text-sm">Open 24/7 during tax season<br /><span className="text-xs text-[#07477a]/70">5:00 PM - 11:00 PM local time off-season</span></p>
               <span className="text-xs font-bold text-[#07477a] uppercase tracking-wider bg-[#07477a]/10 px-4 py-1.5 rounded-full relative z-10">
-                Open Weekdays
+                24/7 Tax Season
               </span>
             </motion.div>
           </motion.div>

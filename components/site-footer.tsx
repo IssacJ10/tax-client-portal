@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Facebook, Twitter, Linkedin, Mail, Phone, MapPin } from "lucide-react"
+import { Facebook, Linkedin, Mail, Phone, MapPin, Instagram, Youtube, Calendar, MessageCircle } from "lucide-react"
 
 export function SiteFooter() {
   const pathname = usePathname()
@@ -30,15 +30,29 @@ export function SiteFooter() {
             <p className="text-sm text-gray-600 mb-4">
               Professional accounting and tax filing services for Canadians.
             </p>
-            <div className="flex space-x-3">
-              <Link href="#" className="text-gray-500 hover:text-[#07477a] transition-colors">
+            <div className="flex flex-wrap gap-3">
+              <Link href="https://www.facebook.com/profile.php?id=61573533512866" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#07477a] transition-colors" title="Facebook">
                 <Facebook className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-gray-500 hover:text-[#07477a] transition-colors">
-                <Twitter className="h-5 w-5" />
+              <Link href="https://www.instagram.com/jj_elevate_/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#07477a] transition-colors" title="Instagram">
+                <Instagram className="h-5 w-5" />
               </Link>
-              <Link href="#" className="text-gray-500 hover:text-[#07477a] transition-colors">
+              <Link href="https://x.com/JismaJose85083" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#07477a] transition-colors" title="X (Twitter)">
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+                </svg>
+              </Link>
+              <Link href="https://www.linkedin.com/company/jj-elevate-accounting-solutions-inc/" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#07477a] transition-colors" title="LinkedIn">
                 <Linkedin className="h-5 w-5" />
+              </Link>
+              <Link href="https://www.youtube.com/@JJElevateServices" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#07477a] transition-colors" title="YouTube">
+                <Youtube className="h-5 w-5" />
+              </Link>
+              <Link href="https://wa.me/17057703951" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#25D366] transition-colors" title="WhatsApp">
+                <MessageCircle className="h-5 w-5" />
+              </Link>
+              <Link href="https://calendly.com/jjelevateas-info/30min" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-[#07477a] transition-colors" title="Book Appointment">
+                <Calendar className="h-5 w-5" />
               </Link>
             </div>
           </div>
@@ -118,7 +132,7 @@ export function SiteFooter() {
         </div>
 
         <div className="mt-8 border-t border-[#07477a]/10 pt-8 text-center text-sm text-gray-500">
-          <p>© 2025 JJ Elevate Accounting Solutions Inc. All rights reserved.</p>
+          <p>© JJ Elevate Accounting Solutions Inc. All rights reserved.</p>
         </div>
       </div>
     </footer>

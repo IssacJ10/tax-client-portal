@@ -110,7 +110,7 @@ export const HIDE_DATE_BECAME_RESIDENT_STATUSES = ['CANADIAN_CITIZEN'];
 
 export interface QuestionField {
   id: string;
-  type: 'text' | 'email' | 'phone' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'file' | 'repeater' | 'textarea';
+  type: 'text' | 'email' | 'phone' | 'number' | 'date' | 'select' | 'radio' | 'checkbox' | 'file' | 'repeater' | 'textarea' | 'fieldGroup';
   name: string;
   label: string;
   placeholder?: string;
@@ -121,6 +121,7 @@ export interface QuestionField {
   step?: string;
   order?: number;
   helpText?: string;
+  sectionHeader?: string; // Optional section divider header displayed above the question
   fields?: QuestionField[];
   config?: {
     addButtonLabel?: string;
@@ -129,6 +130,9 @@ export interface QuestionField {
     multiple?: boolean;  // Allow multiple file uploads
     maxFiles?: number;   // Maximum number of files (default: 10)
     accept?: string;     // Accepted file types (e.g., ".pdf,.jpg")
+    // Field group options
+    layout?: 'compact' | 'stacked';  // Layout style for fieldGroup
+    columns?: number;    // Number of columns for fieldGroup (1-4)
   };
 }
 

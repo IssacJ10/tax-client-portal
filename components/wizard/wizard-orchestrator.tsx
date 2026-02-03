@@ -390,8 +390,28 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
             )
 
             if (fieldsToClear.length > 0) {
+              console.log('[handleFieldChange] Clearing fields due to conditional change:', fieldsToClear)
               for (const fieldName of fieldsToClear) {
                 delete updated[fieldName]
+              }
+            }
+
+            // Also scan all questions and clear any that are now hidden
+            // This ensures proper clearing even if the cascading logic misses something
+            if (activeSchema.questions) {
+              for (const question of activeSchema.questions) {
+                if (!question.conditional || !question.name) continue
+                // Skip if field is already empty
+                if (updated[question.name] === undefined || updated[question.name] === null) continue
+                // Skip questions not for this role
+                if (question.visibleForRoles && !question.visibleForRoles.includes(currentRole)) continue
+
+                // Check if the question is now hidden
+                const isVisible = QuestionRegistry.isQuestionVisible(question, updated)
+                if (!isVisible) {
+                  console.log(`[handleFieldChange] Clearing ${question.name} - question is now hidden`)
+                  delete updated[question.name]
+                }
               }
             }
           }

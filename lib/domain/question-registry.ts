@@ -329,9 +329,11 @@ export class QuestionRegistry {
       // 3. For file upload questions, determine if they should be required
       // Rule: File uploads are required when there's a triggering question answered affirmatively
       // EXCEPTION: If the question has renderInline: true, respect the explicit validation.required setting
+      // EXCEPTION: If the question explicitly has validation.required = false, respect that setting
       const isInlineUpload = (question as any).renderInline === true;
+      const isExplicitlyOptional = validation?.required === false;
 
-      if (question.type === 'file' && !isRequired && !isInlineUpload) {
+      if (question.type === 'file' && !isRequired && !isInlineUpload && !isExplicitlyOptional) {
         const fileNamespace = question.name.split('.')[0]; // e.g., "selfEmployment" from "selfEmployment.assetReceipts"
         const fileFieldName = question.name.split('.').slice(1).join('.'); // e.g., "assetReceipts"
 
@@ -496,57 +498,96 @@ export class QuestionRegistry {
 
     // Create formData contexts for before and after the change
     const oldFormData = { ...fullFormData, [changedFieldName]: oldValue };
-    const newFormData = { ...fullFormData, [changedFieldName]: newValue };
+    let currentFormData = { ...fullFormData, [changedFieldName]: newValue };
 
-    // Find steps that have conditional rules referencing the changed field
-    for (const step of schema.steps) {
-      if (!step.conditional?.parentQuestionId) continue;
-      if (step.conditional.parentQuestionId !== changedFieldName) continue;
+    // Helper function to find fields to clear for a specific changed field
+    const findFieldsToClear = (targetFieldName: string, beforeData: Record<string, unknown>, afterData: Record<string, unknown>): string[] => {
+      const found: string[] = [];
 
-      // Check if the step was previously visible but is now hidden
-      const wasVisible = this.evaluateConditional(step.conditional, oldFormData);
-      const isVisible = this.evaluateConditional(step.conditional, newFormData);
+      // Find steps that have conditional rules referencing the changed field
+      for (const step of schema.steps) {
+        if (!step.conditional?.parentQuestionId) continue;
+        if (step.conditional.parentQuestionId !== targetFieldName) continue;
 
-      if (wasVisible && !isVisible) {
-        // Step is now hidden - collect all question names in this step
-        const stepQuestions = schema.questions.filter(
-          q => q.step === step.id && this.matchRole(role, q.visibleForRoles)
-        );
+        // Check if the step was previously visible but is now hidden
+        const wasVisible = this.evaluateConditional(step.conditional, beforeData);
+        const isVisible = this.evaluateConditional(step.conditional, afterData);
 
-        for (const question of stepQuestions) {
-          if (question.name) {
-            fieldsToClear.push(question.name);
+        if (wasVisible && !isVisible) {
+          // Step is now hidden - collect all question names in this step
+          const stepQuestions = schema.questions.filter(
+            q => q.step === step.id && this.matchRole(role, q.visibleForRoles)
+          );
+
+          for (const question of stepQuestions) {
+            if (question.name && !found.includes(question.name)) {
+              found.push(question.name);
+            }
           }
         }
       }
-    }
 
-    // Also check individual questions that have conditional rules referencing the changed field
-    for (const question of schema.questions) {
-      if (!question.conditional) continue;
-      if (!this.matchRole(role, question.visibleForRoles)) continue;
+      // Also check individual questions that have conditional rules referencing the changed field
+      for (const question of schema.questions) {
+        if (!question.conditional) continue;
+        if (!this.matchRole(role, question.visibleForRoles)) continue;
 
-      // Handle compound conditionals
-      let relevantClauses: any[] = [];
-      if (question.conditional.and) {
-        relevantClauses = question.conditional.and.filter((c: any) => c.parentQuestionId === changedFieldName);
-      } else if (question.conditional.or) {
-        relevantClauses = question.conditional.or.filter((c: any) => c.parentQuestionId === changedFieldName);
-      } else if (question.conditional.parentQuestionId === changedFieldName) {
-        relevantClauses = [question.conditional];
-      }
+        // Handle compound conditionals
+        let relevantClauses: any[] = [];
+        if (question.conditional.and) {
+          relevantClauses = question.conditional.and.filter((c: any) => c.parentQuestionId === targetFieldName);
+        } else if (question.conditional.or) {
+          relevantClauses = question.conditional.or.filter((c: any) => c.parentQuestionId === targetFieldName);
+        } else if (question.conditional.parentQuestionId === targetFieldName) {
+          relevantClauses = [question.conditional];
+        }
 
-      if (relevantClauses.length === 0) continue;
+        if (relevantClauses.length === 0) continue;
 
-      // Check if the question was previously visible but is now hidden
-      const wasVisible = this.isQuestionVisible(question, oldFormData);
-      const isVisible = this.isQuestionVisible(question, newFormData);
+        // Check if the question was previously visible but is now hidden
+        const wasVisible = this.isQuestionVisible(question, beforeData);
+        const isVisible = this.isQuestionVisible(question, afterData);
 
-      if (wasVisible && !isVisible && question.name) {
-        if (!fieldsToClear.includes(question.name)) {
-          fieldsToClear.push(question.name);
+        if (wasVisible && !isVisible && question.name) {
+          if (!found.includes(question.name)) {
+            found.push(question.name);
+          }
         }
       }
+
+      return found;
+    };
+
+    // First pass: find fields directly affected by the initial change
+    const initialFieldsToClear = findFieldsToClear(changedFieldName, oldFormData, currentFormData);
+    fieldsToClear.push(...initialFieldsToClear);
+
+    // Cascading pass: find fields that depend on the fields being cleared
+    // Keep iterating until no new fields are found
+    let newlyCleared = [...initialFieldsToClear];
+    while (newlyCleared.length > 0) {
+      const nextRound: string[] = [];
+
+      for (const clearedFieldName of newlyCleared) {
+        // Simulate the state before clearing this field (it had a value)
+        // and after (it's undefined/cleared)
+        const beforeClear = { ...currentFormData };
+        const afterClear = { ...currentFormData, [clearedFieldName]: undefined };
+
+        const cascadedFields = findFieldsToClear(clearedFieldName, beforeClear, afterClear);
+
+        for (const cascadedField of cascadedFields) {
+          if (!fieldsToClear.includes(cascadedField)) {
+            fieldsToClear.push(cascadedField);
+            nextRound.push(cascadedField);
+          }
+        }
+
+        // Update currentFormData to reflect the cleared field
+        currentFormData = afterClear;
+      }
+
+      newlyCleared = nextRound;
     }
 
     return fieldsToClear;

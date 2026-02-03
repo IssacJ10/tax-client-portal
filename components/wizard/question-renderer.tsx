@@ -548,6 +548,15 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
           />
         )
 
+      case "fieldGroup":
+        return (
+          <FieldGroupRenderer
+            question={question}
+            value={value}
+            onChange={onChange}
+          />
+        )
+
       default:
         return (
           <Input
@@ -584,7 +593,17 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
   const isMultiSelectCheckbox = question.type === "checkbox" && question.options && question.options.length > 0
   const shouldShowLabel = question.type !== "checkbox" || isMultiSelectCheckbox
 
+  // Check for section header property
+  const sectionHeader = (question as any).sectionHeader
+
   return (
+    <>
+      {/* Section Header - renders above the question as a visual divider */}
+      {sectionHeader && (
+        <div className="pt-4 pb-2 mb-2 border-t border-gray-200 first:border-t-0 first:pt-0">
+          <h3 className="text-lg font-semibold text-[#07477a]">{sectionHeader}</h3>
+        </div>
+      )}
     <div className="space-y-2">
       {shouldShowLabel && (
         <Label htmlFor={question.id} className={cn("flex items-center gap-1 text-gray-900 font-medium", error && "text-rose-500")}>
@@ -593,7 +612,7 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
         </Label>
       )}
       {question.helpText && shouldShowLabel && (
-        <p className="text-sm text-gray-500">{question.helpText}</p>
+        <p className={cn("text-sm text-gray-500", (question as any).helpTextBold && "font-semibold text-gray-700")}>{question.helpText}</p>
       )}
 
       {renderInput()}
@@ -604,6 +623,7 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
         </p>
       )}
     </div>
+    </>
   )
 }
 
@@ -892,7 +912,63 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
   const handleFieldChange = (itemIndex: number, fieldName: string, fieldValue: unknown) => {
     const newItems = items.map((item, i) => {
       if (i === itemIndex) {
-        return { ...item, [fieldName]: fieldValue }
+        const updatedItem = { ...item, [fieldName]: fieldValue }
+
+        // Helper to evaluate a single conditional clause against the current item state
+        const evaluateClause = (clause: any, itemState: Record<string, unknown>): boolean => {
+          const { field: parentField, operator, value: condValue, values: condValues } = clause
+          const parentValue = itemState[parentField]
+
+          switch (operator) {
+            case "equals":
+              return parentValue === condValue
+            case "notEquals":
+              return parentValue !== condValue
+            case "in":
+              return Array.isArray(condValues) && condValues.includes(parentValue)
+            case "notIn":
+              return !Array.isArray(condValues) || !condValues.includes(parentValue)
+            default:
+              return true
+          }
+        }
+
+        // Helper to check if a field would be visible given current item state
+        const wouldFieldBeVisible = (field: any, itemState: Record<string, unknown>): boolean => {
+          if (!field.conditional) return true
+
+          if (field.conditional.and && Array.isArray(field.conditional.and)) {
+            return field.conditional.and.every((clause: any) => evaluateClause(clause, itemState))
+          } else if (field.conditional.or && Array.isArray(field.conditional.or)) {
+            return field.conditional.or.some((clause: any) => evaluateClause(clause, itemState))
+          } else {
+            return evaluateClause(field.conditional, itemState)
+          }
+        }
+
+        // Clear conditional fields that would now be hidden due to this change
+        // Use a loop to handle cascading clears (field A clears, which hides field B, which clears)
+        let clearedAnyField = true
+        while (clearedAnyField) {
+          clearedAnyField = false
+
+          fields.forEach((field: any) => {
+            if (!field.conditional) return
+            // Skip if already cleared
+            if (updatedItem[field.name] === undefined) return
+
+            const isVisible = wouldFieldBeVisible(field, updatedItem)
+
+            // If the field would now be hidden and has a value, clear it
+            if (!isVisible) {
+              console.log(`[RepeaterField] Clearing ${field.name} - field is now hidden`)
+              delete updatedItem[field.name]
+              clearedAnyField = true
+            }
+          })
+        }
+
+        return updatedItem
       }
       return item
     })
@@ -927,27 +1003,37 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
               {fields.map((field: any) => {
                 // Check conditional visibility for this field within the repeater item
                 if (field.conditional) {
-                  const { field: parentField, operator, value: condValue, values: condValues } = field.conditional
-                  const parentValue = item[parentField]
+                  // Helper to evaluate a single conditional clause
+                  const evaluateClause = (clause: any): boolean => {
+                    const { field: parentField, operator, value: condValue, values: condValues } = clause
+                    const parentValue = item[parentField]
+
+                    switch (operator) {
+                      case "equals":
+                        return parentValue === condValue
+                      case "notEquals":
+                        return parentValue !== condValue
+                      case "in":
+                        return Array.isArray(condValues) && condValues.includes(parentValue)
+                      case "notIn":
+                        return !Array.isArray(condValues) || !condValues.includes(parentValue)
+                      default:
+                        return true
+                    }
+                  }
 
                   let isVisible = false
-                  switch (operator) {
-                    case "equals":
-                      isVisible = parentValue === condValue
-                      break
-                    case "notEquals":
-                      isVisible = parentValue !== condValue
-                      break
-                    case "in":
-                      // Show if value IS in the array
-                      isVisible = Array.isArray(condValues) && condValues.includes(parentValue)
-                      break
-                    case "notIn":
-                      // Show if value is NOT in the array (hide for specific statuses like Canadian Citizen)
-                      isVisible = !Array.isArray(condValues) || !condValues.includes(parentValue)
-                      break
-                    default:
-                      isVisible = true
+
+                  // Handle compound conditionals with 'and' array
+                  if (field.conditional.and && Array.isArray(field.conditional.and)) {
+                    // All conditions in 'and' array must be true
+                    isVisible = field.conditional.and.every((clause: any) => evaluateClause(clause))
+                  } else if (field.conditional.or && Array.isArray(field.conditional.or)) {
+                    // Any condition in 'or' array being true shows the field
+                    isVisible = field.conditional.or.some((clause: any) => evaluateClause(clause))
+                  } else {
+                    // Simple single conditional
+                    isVisible = evaluateClause(field.conditional)
                   }
 
                   if (!isVisible) return null
@@ -985,6 +1071,100 @@ function RepeaterField({ question, value, onChange }: RepeaterFieldProps) {
         <Plus className="mr-2 h-4 w-4" />
         {addButtonLabel}
       </Button>
+    </div>
+  )
+}
+
+// FieldGroup Component for compact grouped input fields
+interface FieldGroupRendererProps {
+  question: Question
+  value: unknown
+  onChange: (value: unknown) => void
+}
+
+function FieldGroupRenderer({ question, value, onChange }: FieldGroupRendererProps) {
+  const fields = question.fields || []
+  const columns = question.config?.columns || 2
+
+  // Value is stored as an object with field names as keys
+  const groupValue = (typeof value === 'object' && value !== null) ? value as Record<string, unknown> : {}
+
+  const handleFieldChange = (fieldName: string, fieldValue: unknown) => {
+    const newValue = { ...groupValue, [fieldName]: fieldValue }
+    // Remove empty/undefined values to keep object clean
+    if (fieldValue === '' || fieldValue === undefined || fieldValue === null) {
+      delete newValue[fieldName]
+    }
+    onChange(Object.keys(newValue).length > 0 ? newValue : undefined)
+  }
+
+  const inputClassName = "bg-white border-gray-200 text-gray-900 placeholder:text-gray-400 focus:border-[#07477a] focus:ring-[#07477a]/20"
+
+  // Grid column class based on config
+  const gridColsClass = columns === 1 ? 'grid-cols-1'
+    : columns === 2 ? 'grid-cols-1 sm:grid-cols-2'
+    : columns === 3 ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
+    : 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4'
+
+  return (
+    <div className={`grid gap-4 ${gridColsClass}`}>
+      {fields.map((field: any) => {
+        const fieldValue = groupValue[field.name]
+
+        return (
+          <div key={field.name} className="space-y-1.5">
+            <Label className="text-sm text-gray-700 font-medium">
+              {field.label}
+              {field.validation?.required && <span className="text-rose-500 ml-1">*</span>}
+            </Label>
+            {field.type === 'number' ? (
+              <div className="relative">
+                {field.label.toLowerCase().includes('$') ||
+                 ['fuel', 'insurance', 'maintenance', 'parking', 'lease', 'interest', 'rent', 'tax', 'electricity', 'heat', 'water', 'internet', 'other'].some(
+                   term => field.name.toLowerCase().includes(term) || field.label.toLowerCase().includes(term)
+                 ) ? (
+                  <>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">$</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={(fieldValue as number) ?? ''}
+                      onChange={(e) => handleFieldChange(field.name, e.target.value ? Number(e.target.value) : '')}
+                      placeholder={field.placeholder || '0.00'}
+                      className={`${inputClassName} pl-7`}
+                    />
+                  </>
+                ) : (
+                  <Input
+                    type="number"
+                    value={(fieldValue as number) ?? ''}
+                    onChange={(e) => handleFieldChange(field.name, e.target.value ? Number(e.target.value) : '')}
+                    placeholder={field.placeholder}
+                    className={inputClassName}
+                  />
+                )}
+              </div>
+            ) : field.type === 'date' ? (
+              <DatePicker
+                value={(fieldValue as string) || ''}
+                onChange={(val) => handleFieldChange(field.name, val)}
+                minDate={getDateConstraints(field.name || '').min}
+                maxDate={getDateConstraints(field.name || '').max}
+                placeholder={field.placeholder || 'Select date'}
+              />
+            ) : (
+              <Input
+                type={field.type || 'text'}
+                value={(fieldValue as string) || ''}
+                onChange={(e) => handleFieldChange(field.name, e.target.value)}
+                placeholder={field.placeholder}
+                className={inputClassName}
+              />
+            )}
+          </div>
+        )
+      })}
     </div>
   )
 }
