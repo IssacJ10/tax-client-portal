@@ -15,7 +15,7 @@ interface FilingContextType {
     isLoading: boolean;
     isSyncing: boolean;
     addSpouse: () => Promise<any>;
-    addDependent: () => Promise<any>;
+    addDependent: (dependentIndex?: number) => Promise<any>;
     startDependent: (personalFilingId: string, index: number) => void;
     createPrimaryFiling: (filingId: string) => Promise<any>;
     markFilingInProgress: (filingId: string) => Promise<void>;

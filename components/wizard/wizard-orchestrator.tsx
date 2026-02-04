@@ -252,32 +252,53 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
       // For corporate/trust filings, get formData from the appropriate child
       let savedData: Record<string, unknown> | undefined
+      let filingFound = true // Track if the filing was found
+
       if (isCorporateFiling) {
         savedData = (filing as any).corporateFiling?.formData
+        filingFound = !!(filing as any).corporateFiling
       } else if (isTrustFiling) {
         savedData = (filing as any).trustFiling?.formData
+        filingFound = !!(filing as any).trustFiling
       } else {
         // Personal filing - find from personalFilings array
         const currentFiling = filing.personalFilings.find((pf) => pf.id === state.currentPersonalFilingId)
         savedData = currentFiling?.formData
+        filingFound = !!currentFiling
       }
 
       // Also load data on initial mount if we haven't loaded yet
       const isInitialLoad = !hasLoadedInitialDataRef.current
 
       if (didSwitchPerson || isInitialLoad) {
+        // IMPORTANT: If we switched to a new person but the filing isn't found yet,
+        // don't set formData to empty - wait for the next render when SWR refreshes.
+        // This prevents race conditions when creating spouse/dependent filings.
+        if (!filingFound && didSwitchPerson) {
+          console.log('[WizardOrchestrator] Waiting for filing to be available:', state.currentPersonalFilingId)
+          return // Don't update formData yet, wait for filing refresh
+        }
+
         // Always reset errors when switching person or on initial load
         setErrors({})
 
         // If formData is empty/undefined or has no meaningful keys, use empty object
         const hasData = savedData && Object.keys(savedData).length > 0
-        setFormData(hasData ? savedData! : {})
+        const dataToLoad = hasData ? savedData! : {}
+        setFormData(dataToLoad)
         hasLoadedInitialDataRef.current = true
+
+        // IMPORTANT: Also populate the save buffer with loaded data
+        // This ensures that if user clicks "Next" without making changes,
+        // the pre-populated data (e.g., spouse info copied from primary) will still be saved
+        if (hasData && state.currentPersonalFilingId) {
+          saveFormData(state.currentPersonalFilingId, dataToLoad)
+        }
 
         prevPersonalFilingIdRef.current = state.currentPersonalFilingId
       }
     }
-  }, [filing, state.currentPersonalFilingId, isCorporateFiling, isTrustFiling])
+  }, [filing, state.currentPersonalFilingId, isCorporateFiling, isTrustFiling, saveFormData])
 
   // Calculate role based on phase
   const getCurrentRole = (phase: string): "primary" | "spouse" | "dependent" => {
@@ -319,10 +340,22 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     }
   }, [state.phase, shouldAutoSkipSpouse, skipSpouse])
 
+  // Type for dependant data from the form
+  type DependantData = {
+    earnsIncome?: string;
+    fullName?: string;
+    birthDate?: string;
+    sin?: string;
+    relationship?: string;
+    statusInCanada?: string;
+    becameResidentThisYear?: string;
+    dateBecameResident?: string;
+  }
+
   // Check dependants list for DEPENDENT_CHECKPOINT logic
   // Get dependants list from formData (current session) or stored data (page reload)
-  const dependantsFromForm = formData["dependants.list"] as Array<{ earnsIncome?: string; fullName?: string }> | undefined
-  const dependantsFromStored = primaryFiling?.formData?.["dependants.list"] as Array<{ earnsIncome?: string; fullName?: string }> | undefined
+  const dependantsFromForm = formData["dependants.list"] as Array<DependantData> | undefined
+  const dependantsFromStored = primaryFiling?.formData?.["dependants.list"] as Array<DependantData> | undefined
   const dependantsList = dependantsFromForm || dependantsFromStored || []
 
   // Check if any dependant has earnsIncome = "YES" (for filtering which dependants need filings)
@@ -590,12 +623,13 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     }
   }, [saveAndExit, toast, router])
 
-  // Handle add spouse
+  // Handle add spouse - service layer auto-copies spouse data from primary
   const handleAddSpouse = useCallback(async () => {
     await addSpouse()
   }, [addSpouse])
 
   // Handle add dependents - creates filings for earning dependants only
+  // Service layer auto-copies data from primary's dependants.list using the index
   const handleAddDependents = useCallback(async () => {
     // Get the count of earning dependants from the dependants list
     const earningCount = earningDependants.length
@@ -604,9 +638,15 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     setIsCreatingDependents(true)
     try {
       // Create all dependents first, collecting their IDs
+      // Find the original index of each earning dependent in the full dependants list
       const newDependentIds: string[] = []
       for (let i = 0; i < earningCount; i++) {
-        const dependent = await addDependent()
+        // Find the original index of this earning dependent in the full list
+        const earningDep = earningDependants[i]
+        const originalIndex = dependantsList.findIndex(dep => dep === earningDep)
+
+        // Pass the index so service can auto-copy from primary's dependants.list
+        const dependent = await addDependent(originalIndex >= 0 ? originalIndex : i)
         if (dependent) {
           newDependentIds.push(dependent.id)
         }
@@ -627,7 +667,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     } finally {
       setIsCreatingDependents(false)
     }
-  }, [addDependent, startDependent, earningDependants.length, filing])
+  }, [addDependent, startDependent, earningDependants, dependantsList, filing])
 
   // Handle edit from review screen - navigate to specific person's section
   const handleEditPerson = useCallback((personalFilingId: string, sectionIndex: number) => {

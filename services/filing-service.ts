@@ -566,12 +566,14 @@ export const FilingService = {
     }
   },
 
-  async addFamilyMember(filingId: string, role: FilingRole): Promise<PersonalFiling> {
+  async addFamilyMember(filingId: string, role: FilingRole, initialFormData?: Record<string, unknown>): Promise<PersonalFiling> {
     const release = await familyMemberMutex.acquire()
     try {
+      // Fetch the filing to check for existing records and get primary data
+      const existingFiling = await this.getFiling(filingId)
+
       // For primary role, check if one already exists to prevent duplicates
       if (role === "primary") {
-        const existingFiling = await this.getFiling(filingId)
         const existingPrimary = existingFiling.personalFilings?.find(pf => pf.type === "primary")
         if (existingPrimary) {
           console.warn("Primary personal filing already exists, returning existing one")
@@ -579,11 +581,147 @@ export const FilingService = {
         }
       }
 
+      // Build initial formData - either from parameter or auto-copy from primary
+      let formData: Record<string, unknown> = initialFormData || {}
+
+      // AUTO-COPY: For spouse role, copy spouse details from primary's formData
+      if (role === "spouse" && Object.keys(formData).length === 0) {
+        const primaryFiling = existingFiling.personalFilings?.find(pf => pf.type === "primary")
+        const primaryFormData = primaryFiling?.formData || {}
+
+        // Debug: Log what we have
+        console.log('[addFamilyMember] DEBUG - Primary filing found:', !!primaryFiling)
+        console.log('[addFamilyMember] DEBUG - Primary formData keys:', Object.keys(primaryFormData))
+
+        // Check if primary has spouse data - could be fullName OR firstName
+        const hasSpouseFullName = !!primaryFormData['spouse.fullName']
+        const hasSpouseFirstName = !!primaryFormData['spouse.firstName']
+        console.log('[addFamilyMember] DEBUG - spouse.fullName:', primaryFormData['spouse.fullName'])
+        console.log('[addFamilyMember] DEBUG - spouse.firstName:', primaryFormData['spouse.firstName'])
+        console.log('[addFamilyMember] DEBUG - spouse.birthDate:', primaryFormData['spouse.birthDate'])
+        console.log('[addFamilyMember] DEBUG - spouse.dateOfBirth:', primaryFormData['spouse.dateOfBirth'])
+        console.log('[addFamilyMember] DEBUG - spouse.sameAddress:', primaryFormData['spouse.sameAddress'])
+
+        if (hasSpouseFullName || hasSpouseFirstName) {
+          console.log('[addFamilyMember] Auto-copying spouse data from primary')
+
+          let firstName, middleName, lastName
+
+          if (hasSpouseFullName) {
+            // Parse fullName into firstName/middleName/lastName
+            const fullName = primaryFormData['spouse.fullName'] as string
+            const parts = fullName.trim().split(/\s+/)
+            if (parts.length === 1) {
+              firstName = parts[0]
+            } else if (parts.length === 2) {
+              firstName = parts[0]
+              lastName = parts[1]
+            } else {
+              firstName = parts[0]
+              middleName = parts.slice(1, -1).join(' ')
+              lastName = parts[parts.length - 1]
+            }
+          } else {
+            // Use separate fields directly
+            firstName = primaryFormData['spouse.firstName']
+            lastName = primaryFormData['spouse.lastName']
+            middleName = primaryFormData['spouse.middleName']
+          }
+
+          // Try both possible date field names
+          const spouseDOB = primaryFormData['spouse.birthDate'] || primaryFormData['spouse.dateOfBirth']
+
+          formData = {
+            'personalInfo.firstName': firstName,
+            'personalInfo.lastName': lastName,
+            'personalInfo.middleName': middleName,
+            'personalInfo.sin': primaryFormData['spouse.sin'],
+            'personalInfo.dateOfBirth': spouseDOB,
+            'personalInfo.statusInCanada': primaryFormData['spouse.statusInCanada'],
+            'personalInfo.email': primaryFormData['spouse.email'],
+            'personalInfo.phoneNumber': primaryFormData['spouse.phoneNumber'],
+            'residency.becameResidentThisYear': primaryFormData['spouse.becameResidentThisYear'],
+            'residency.dateBecameResident': primaryFormData['spouse.dateBecameResident'],
+          }
+
+          // Handle address: if sameAddress is YES, copy PRIMARY's address; otherwise copy spouse's address
+          if (primaryFormData['spouse.sameAddress'] === 'YES') {
+            // Copy primary's address to spouse
+            formData['personalInfo.streetNumber'] = primaryFormData['personalInfo.streetNumber']
+            formData['personalInfo.streetName'] = primaryFormData['personalInfo.streetName']
+            formData['personalInfo.apartmentNumber'] = primaryFormData['personalInfo.apartmentNumber']
+            formData['personalInfo.city'] = primaryFormData['personalInfo.city']
+            formData['personalInfo.province'] = primaryFormData['personalInfo.province']
+            formData['personalInfo.postalCode'] = primaryFormData['personalInfo.postalCode']
+          } else {
+            // Copy spouse's own address fields
+            formData['personalInfo.streetNumber'] = primaryFormData['spouse.streetNumber']
+            formData['personalInfo.streetName'] = primaryFormData['spouse.streetName']
+            formData['personalInfo.apartmentNumber'] = primaryFormData['spouse.apartmentNumber']
+            formData['personalInfo.city'] = primaryFormData['spouse.city']
+            formData['personalInfo.province'] = primaryFormData['spouse.province']
+            formData['personalInfo.postalCode'] = primaryFormData['spouse.postalCode']
+          }
+
+          // Remove undefined values
+          formData = Object.fromEntries(
+            Object.entries(formData).filter(([_, v]) => v !== undefined && v !== null)
+          )
+        }
+      }
+
+      // AUTO-COPY: For dependent role, copy from dependants.list if initialFormData has index
+      // The caller can pass { _dependentIndex: 0 } to indicate which dependent to copy
+      if (role === "dependent" && initialFormData?._dependentIndex !== undefined) {
+        const primaryFiling = existingFiling.personalFilings?.find(pf => pf.type === "primary")
+        const primaryFormData = primaryFiling?.formData || {}
+        const dependantsList = primaryFormData['dependants.list'] as Array<any> | undefined
+        const dependentIndex = initialFormData._dependentIndex as number
+
+        if (dependantsList && dependantsList[dependentIndex]) {
+          const dep = dependantsList[dependentIndex]
+          console.log(`[addFamilyMember] Auto-copying dependent[${dependentIndex}] data from primary:`, dep)
+
+          // Parse fullName into firstName/lastName
+          let firstName, lastName, middleName
+          if (dep.fullName) {
+            const parts = dep.fullName.trim().split(/\s+/)
+            if (parts.length === 1) {
+              firstName = parts[0]
+            } else if (parts.length === 2) {
+              firstName = parts[0]
+              lastName = parts[1]
+            } else {
+              firstName = parts[0]
+              middleName = parts.slice(1, -1).join(' ')
+              lastName = parts[parts.length - 1]
+            }
+          }
+
+          formData = {
+            'personalInfo.firstName': firstName || dep.firstName,
+            'personalInfo.lastName': lastName || dep.lastName,
+            'personalInfo.middleName': middleName || dep.middleName,
+            'personalInfo.sin': dep.sin,
+            'personalInfo.dateOfBirth': dep.birthDate,
+            'personalInfo.statusInCanada': dep.statusInCanada,
+            'residency.becameResidentThisYear': dep.becameResidentThisYear,
+            'residency.dateBecameResident': dep.dateBecameResident,
+          }
+          // Remove undefined values and the _dependentIndex marker
+          formData = Object.fromEntries(
+            Object.entries(formData).filter(([k, v]) => v !== undefined && v !== null && k !== '_dependentIndex')
+          )
+        }
+      }
+
+      console.log(`[addFamilyMember] Creating ${role} with formData:`, Object.keys(formData).length > 0 ? formData : '(empty)')
+
       const response = await strapiClient.post<StrapiResponse<any>>("/personal-filings", {
         data: {
           filing: filingId,
           type: role,
-          formData: {},
+          formData,
           individualStatus: "DRAFT"
         }
       })

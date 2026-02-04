@@ -60,12 +60,14 @@ export function useFiling(filingId?: string, initialData?: Filing) {
   }, [])
 
   // Action: Add Spouse (with mutex guard)
+  // Service layer auto-copies spouse data from primary's formData
   // NOTE: We no longer mark primary as COMPLETED here - all filings stay DRAFT until submission
   const addSpouse = useCallback(async () => {
     if (!state.filingId || isAddingSpouseRef.current) return null
     isAddingSpouseRef.current = true
     dispatch({ type: "SET_LOADING", payload: true })
     try {
+      // Service will auto-copy spouse data from primary's formData
       const spouseFiling = await FilingService.addFamilyMember(state.filingId, "spouse")
       dispatch({ type: "START_SPOUSE", payload: { personalFilingId: spouseFiling.id } })
       await mutate(`filing/${state.filingId}`)
@@ -79,13 +81,17 @@ export function useFiling(filingId?: string, initialData?: Filing) {
   }, [state.filingId])
 
   // Action: Add Dependent (with mutex guard)
+  // Accepts optional dependentIndex to auto-copy data from primary's dependants.list
+  // Service layer handles the actual data copying
   // Returns the created dependent but does NOT automatically start it
-  const addDependent = useCallback(async () => {
+  const addDependent = useCallback(async (dependentIndex?: number) => {
     if (!state.filingId || isAddingDependentRef.current) return null
     isAddingDependentRef.current = true
     dispatch({ type: "SET_LOADING", payload: true })
     try {
-      const dependentFiling = await FilingService.addFamilyMember(state.filingId, "dependent")
+      // Pass _dependentIndex to service so it can auto-copy from primary's dependants.list
+      const initialData = dependentIndex !== undefined ? { _dependentIndex: dependentIndex } : undefined
+      const dependentFiling = await FilingService.addFamilyMember(state.filingId, "dependent", initialData)
       dispatch({ type: "ADD_DEPENDENT" })
       await mutate(`filing/${state.filingId}`)
       return dependentFiling
