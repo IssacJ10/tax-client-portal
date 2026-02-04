@@ -3925,33 +3925,35 @@
         {
             "id": "q_rental_partial_home_size",
             "type": "number",
-            "label": "Total Home Size (sq ft) - if partial rental",
+            "label": "Total Property Size (sq ft)",
             "name": "rentalIncome.totalHomeSize",
+            "helpText": "Enter the total square footage of the rental property",
             "validation": {
                 "required": false
             },
             "step": "rental_income",
             "order": 80,
             "conditional": {
-                "parentQuestionId": "rentalIncome.propertyType",
-                "operator": "equals",
-                "value": "BASEMENT"
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "RENTAL_INCOME"
             }
         },
         {
             "id": "q_rental_area_size",
             "type": "number",
-            "label": "Rental Area Size (sq ft)",
+            "label": "Rented Portion Size (sq ft)",
             "name": "rentalIncome.rentalAreaSize",
+            "helpText": "Enter the square footage of the portion that is rented out",
             "validation": {
                 "required": false
             },
             "step": "rental_income",
             "order": 85,
             "conditional": {
-                "parentQuestionId": "rentalIncome.propertyType",
-                "operator": "equals",
-                "value": "BASEMENT"
+                "parentQuestionId": "income.sources",
+                "operator": "contains",
+                "value": "RENTAL_INCOME"
             }
         },
         {
