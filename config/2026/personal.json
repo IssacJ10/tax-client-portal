@@ -1273,6 +1273,59 @@
             }
         },
         {
+            "id": "q_spouse_lived_outside_canada",
+            "type": "radio",
+            "label": "Has your spouse/partner lived outside of Canada in the selected tax year for more than 6 months?",
+            "name": "spouse.livedOutsideCanada",
+            "options": [
+                { "value": "YES", "label": "Yes" },
+                { "value": "NO", "label": "No" }
+            ],
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 60,
+            "conditional": {
+                "parentQuestionId": "maritalStatus.status",
+                "operator": "in",
+                "values": [
+                    "MARRIED",
+                    "COMMON_LAW"
+                ]
+            }
+        },
+        {
+            "id": "q_spouse_country_of_residence",
+            "type": "text",
+            "label": "Country of Residence",
+            "name": "spouse.countryOfResidence",
+            "placeholder": "e.g. United States, United Kingdom",
+            "helpText": "Enter the country where your spouse/partner resided for more than 6 months",
+            "validation": {
+                "required": true
+            },
+            "step": "spouse_info",
+            "order": 62,
+            "conditional": {
+                "and": [
+                    {
+                        "parentQuestionId": "maritalStatus.status",
+                        "operator": "in",
+                        "values": [
+                            "MARRIED",
+                            "COMMON_LAW"
+                        ]
+                    },
+                    {
+                        "parentQuestionId": "spouse.livedOutsideCanada",
+                        "operator": "equals",
+                        "value": "YES"
+                    }
+                ]
+            }
+        },
+        {
             "id": "q_dependants",
             "type": "repeater",
             "label": "Dependant Details",
@@ -4577,7 +4630,9 @@
                 "fields": [
                     "spouse.fullName",
                     "spouse.sin",
-                    "spouse.netIncome"
+                    "spouse.netIncome",
+                    "spouse.livedOutsideCanada",
+                    "spouse.countryOfResidence"
                 ],
                 "format": {
                     "spouse.netIncome": "currency"
