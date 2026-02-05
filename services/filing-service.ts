@@ -825,6 +825,8 @@ export const FilingService = {
         city: clean(sp.city),
         province: clean(sp.province),
         postalCode: clean(sp.postalCode),
+        livedOutsideCanada: clean(sp.livedOutsideCanada),
+        countryOfResidence: clean(sp.countryOfResidence),
       }
     }
 
