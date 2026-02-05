@@ -62,22 +62,22 @@ export function SiteFooter() {
             <h3 className="font-semibold mb-4 text-gray-900">Services</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="#" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Personal Tax Filing
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Business Tax Returns
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Self-Employed Services
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Tax Planning
                 </Link>
               </li>
@@ -89,22 +89,22 @@ export function SiteFooter() {
             <h3 className="font-semibold mb-4 text-gray-900">Company</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="#about" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href="/#about" className="text-gray-600 hover:text-[#07477a] transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-gray-600 hover:text-[#07477a] transition-colors">
-                  Privacy Policy
+                <Link href="/#features" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                  Our Services
                 </Link>
               </li>
               <li>
-                <Link href="#" className="text-gray-600 hover:text-[#07477a] transition-colors">
-                  Terms of Service
+                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                  Client Portal
                 </Link>
               </li>
               <li>
-                <Link href="#contact" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href="/#contact" className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Contact Us
                 </Link>
               </li>
