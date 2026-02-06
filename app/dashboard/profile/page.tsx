@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ArrowLeft } from "lucide-react"
 import { useSession } from "@/context/session-provider"
+import { ValidationSchemas } from "@/lib/security/validation"
 
 // --- Validation Schemas ---
 
@@ -22,13 +23,10 @@ const profileSchema = z.object({
         .regex(/^[a-zA-Z \-']+$/, "Only letters, spaces, hyphens, and apostrophes allowed"),
 })
 
+// Use centralized password schema with common password check
 const passwordSchema = z.object({
     currentPassword: z.string().min(1, "Current password is required"),
-    password: z.string().min(8, "Password must be at least 8 characters")
-        .regex(/[A-Z]/, "Must contain at least one uppercase letter")
-        .regex(/[a-z]/, "Must contain at least one lowercase letter")
-        .regex(/[0-9]/, "Must contain at least one number")
-        .regex(/[^A-Za-z0-9]/, "Must contain at least one special character"),
+    password: ValidationSchemas.password,
     passwordConfirmation: z.string()
 }).refine((data) => data.password === data.passwordConfirmation, {
     message: "Passwords do not match",
@@ -46,6 +44,16 @@ export default function ProfilePage() {
     const [error, setError] = useState<string | null>(null)
     const [success, setSuccess] = useState<string | null>(null)
 
+    // Helper to get auth headers (development uses localStorage, production uses cookies)
+    const getAuthHeaders = (): HeadersInit => {
+        const isProduction = process.env.NODE_ENV === 'production'
+        if (isProduction) return {}
+
+        // Development: use token from context or localStorage
+        const authToken = token || localStorage.getItem('tax-auth-token')
+        return authToken ? { Authorization: `Bearer ${authToken}` } : {}
+    }
+
     const profileForm = useForm<ProfileFormValues>({
         resolver: zodResolver(profileSchema),
         defaultValues: { firstName: "", lastName: "" }
@@ -58,11 +66,10 @@ export default function ProfilePage() {
     // Load User Data
     useEffect(() => {
         const fetchUser = async () => {
-            if (!token) return
-
             try {
                 const res = await fetch(`${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'}/api/users/me`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    credentials: 'include', // httpOnly cookie auth (production)
+                    headers: getAuthHeaders(), // Development fallback
                 })
 
                 if (!res.ok) throw new Error("Failed to load profile")
@@ -92,9 +99,10 @@ export default function ProfilePage() {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'}/api/users/me`, {
                 method: "PUT",
+                credentials: 'include', // httpOnly cookie auth (production)
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
+                    ...getAuthHeaders(), // Development fallback
                 },
                 body: JSON.stringify(data)
             })
@@ -127,9 +135,10 @@ export default function ProfilePage() {
         try {
             const res = await fetch(`${process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'}/api/auth/change-password`, {
                 method: "POST",
+                credentials: 'include', // httpOnly cookie auth (production)
                 headers: {
                     "Content-Type": "application/json",
-                    Authorization: `Bearer ${token}`
+                    ...getAuthHeaders(), // Development fallback
                 },
                 body: JSON.stringify(data)
             })

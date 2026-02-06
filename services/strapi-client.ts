@@ -20,7 +20,7 @@ const RETRY_DELAY_BASE = 1000;
 /**
  * Security-enhanced Axios client
  * Features:
- * - Automatic JWT injection
+ * - Automatic JWT injection via httpOnly cookies
  * - Request/response sanitization
  * - CSRF protection
  * - Rate limiting awareness
@@ -34,6 +34,8 @@ export const strapiClient = axios.create({
     "Content-Type": "application/json",
   },
   timeout: REQUEST_TIMEOUT,
+  // CRITICAL: Enable credentials for httpOnly cookie authentication
+  withCredentials: true,
 });
 
 /**
@@ -81,14 +83,21 @@ function validateRequestData(data: unknown): { safe: boolean; error?: string } {
   return checkValue(data);
 }
 
-// Security Step 1: Request interceptor - JWT injection, sanitization, CSRF
+// Security Step 1: Request interceptor - sanitization, CSRF
+// Production: Uses httpOnly cookies (withCredentials: true)
+// Development: Falls back to localStorage token (sameSite='lax' cookies don't work cross-origin)
 strapiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
-      // Add JWT token
-      const token = localStorage.getItem("tax-auth-token");
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+      const isProduction = process.env.NODE_ENV === 'production';
+
+      // DEVELOPMENT ONLY: Add Authorization header from localStorage
+      // In production, httpOnly cookies handle auth via withCredentials: true
+      if (!isProduction) {
+        const token = localStorage.getItem("tax-auth-token");
+        if (token) {
+          config.headers.Authorization = `Bearer ${token}`;
+        }
       }
 
       // Add CSRF token for state-changing requests
@@ -102,7 +111,6 @@ strapiClient.interceptors.request.use(
     if (config.data) {
       const validation = validateRequestData(config.data);
       if (!validation.safe) {
-        console.warn('Security: Blocked potentially dangerous request data');
         return Promise.reject(new Error(validation.error || 'Invalid request data'));
       }
 
@@ -125,56 +133,28 @@ strapiClient.interceptors.request.use(
 // Security Step 2: Response interceptor - Error handling, auto-logout, retry logic
 strapiClient.interceptors.response.use(
   (response) => {
-    // Log response time for monitoring (development only)
-    if (process.env.NODE_ENV === 'development') {
-      const config = response.config as any;
-      if (config.metadata?.startTime) {
-        const duration = Date.now() - config.metadata.startTime;
-        if (duration > 5000) {
-          console.warn(`Slow request: ${config.url} took ${duration}ms`);
-        }
-      }
-    }
-
     return response;
   },
   async (error: AxiosError) => {
     const config = error.config as InternalAxiosRequestConfig & { _retryCount?: number };
 
-    // Handle 401 Unauthorized - Auto logout
+    // Handle 401 Unauthorized
+    // IMPORTANT: Do NOT auto-redirect here - let session-provider handle session management
+    // This prevents race conditions where a single failed request (e.g., 2025 filings query
+    // that runs before token is loaded) causes logout even though user is authenticated
     if (error.response?.status === 401) {
-      if (typeof window !== "undefined") {
-        // Clear all session data
-        localStorage.removeItem("tax-auth-token");
-        localStorage.removeItem("tax-refresh-token");
-        localStorage.removeItem("tax-auth-user");
-
-        // Clear secure storage
-        try {
-          const { tokenCache } = await import("@/lib/security/secure-storage");
-          tokenCache.clear();
-        } catch {
-          // Secure storage not available
-        }
-
-        // Redirect to login (unless already on login page)
-        if (!window.location.pathname.includes('/auth/login')) {
-          window.location.href = "/auth/login";
-        }
-      }
+      // Just reject the error - let the calling code and session-provider decide what to do
       return Promise.reject(error);
     }
 
     // Handle 403 Forbidden - Access denied
     if (error.response?.status === 403) {
-      console.warn('Security: Access denied to resource');
       return Promise.reject(new Error('You do not have permission to access this resource'));
     }
 
     // Handle 429 Too Many Requests - Rate limited
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after'];
-      console.warn(`Rate limited. Retry after: ${retryAfter}s`);
       return Promise.reject(new Error(`Too many requests. Please wait ${retryAfter || 60} seconds.`));
     }
 
@@ -199,8 +179,6 @@ strapiClient.interceptors.response.use(
       } else if (responseData?.message) {
         validationMessage = responseData.message;
       }
-
-      console.warn('Strapi validation error:', validationMessage, responseData);
 
       // Log validation error to Strapi
       logError({
@@ -302,14 +280,9 @@ const MAX_FILE_SIZE_MB = 10;
 /**
  * Upload a file to Strapi's media library
  * Includes security validations for file type, size, and content
+ * Uses httpOnly cookies for authentication
  */
 export async function uploadFile(file: File): Promise<UploadedFile> {
-  // Validate authentication
-  const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null;
-  if (!token) {
-    throw new Error('Authentication required');
-  }
-
   // Validate file
   const validation = validateFileUpload(file, {
     maxSizeMB: MAX_FILE_SIZE_MB,
@@ -332,11 +305,21 @@ export async function uploadFile(file: File): Promise<UploadedFile> {
   const sanitizedFile = new File([file], sanitizedName, { type: file.type });
   formData.append('files', sanitizedFile);
 
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // DEVELOPMENT ONLY: Get token from localStorage
+  // In production, httpOnly cookies handle auth via credentials: 'include'
+  const devToken = !isProduction && typeof window !== 'undefined'
+    ? localStorage.getItem('tax-auth-token')
+    : null;
+
   try {
     const response = await fetch(`${STRAPI_URL}/api/upload`, {
       method: 'POST',
+      credentials: 'include', // Sends httpOnly cookies (works in production)
       headers: {
-        Authorization: `Bearer ${token}`,
+        // Development fallback: Authorization header
+        ...(devToken ? { Authorization: `Bearer ${devToken}` } : {}),
         ...getCsrfHeaders(),
       },
       body: formData,

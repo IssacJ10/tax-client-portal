@@ -14,6 +14,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import Link from "next/link";
+import { ValidationSchemas } from "@/lib/security/validation";
 
 // Validation schemas
 const signInSchema = z.object({
@@ -21,14 +22,7 @@ const signInSchema = z.object({
     password: z.string().min(1, "Password is required"),
 });
 
-const passwordSchema = z
-    .string()
-    .min(8, "Password must be at least 8 characters")
-    .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-    .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-    .regex(/[0-9]/, "Password must contain at least one number")
-    .regex(/[^A-Za-z0-9]/, "Password must contain at least one special character");
-
+// Use centralized password schema with common password check
 const signUpSchema = z
     .object({
         firstName: z
@@ -40,7 +34,7 @@ const signUpSchema = z
             .min(2, "Last name must be at least 2 characters")
             .regex(/^[a-zA-Z \-']+$/, "Last name can only contain letters, spaces, hyphens, and apostrophes"),
         email: z.string().email("Please enter a valid email address"),
-        password: passwordSchema,
+        password: ValidationSchemas.password,
         confirmPassword: z.string(),
     })
     .refine((data) => data.password === data.confirmPassword, {
@@ -112,6 +106,7 @@ function AuthContent() {
             const strapiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api";
             const res = await fetch(`${strapiUrl}/auth/local`, {
                 method: "POST",
+                credentials: 'include', // CRITICAL: Receive httpOnly cookies from server
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -128,10 +123,9 @@ function AuthContent() {
                 throw new Error("Invalid email or password");
             }
 
-            // Store refresh token if provided
-            if (responseData.refreshToken) {
-                localStorage.setItem("tax-refresh-token", responseData.refreshToken);
-            }
+            // Note: Tokens are now set as httpOnly cookies by the server
+            // We no longer store tokens in localStorage for security
+            // The jwt in response body is kept for backwards compatibility only
 
             // Use SessionProvider's login method
             login(responseData.jwt, responseData.user);
@@ -156,6 +150,7 @@ function AuthContent() {
             const strapiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:1337/api";
             const res = await fetch(`${strapiUrl}/auth/local/register`, {
                 method: "POST",
+                credentials: 'include', // CRITICAL: Receive httpOnly cookies from server
                 headers: {
                     "Content-Type": "application/json",
                 },

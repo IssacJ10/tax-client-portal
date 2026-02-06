@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useFilingContext } from "@/context/filing-context"
 import { useReCaptcha } from "@/components/recaptcha-provider"
 import { calculatePricingFromSchema, formatPrice, formatFilingRef } from "@/lib/domain/pricing-engine"
+import { maskSin } from "@/lib/security/sin-protection"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import {
   Check,
@@ -693,6 +694,16 @@ function formatAnswerValue(value: any, question: any): string {
       return date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
     } catch {
       return String(value)
+    }
+  }
+
+  // SECURITY: Mask SIN fields to protect sensitive PII
+  if (question.name?.toLowerCase().includes('sin') || question.label?.toLowerCase().includes('sin')) {
+    const strValue = String(value)
+    // Only mask if it looks like a SIN (9 digits with optional dashes)
+    const digitsOnly = strValue.replace(/\D/g, '')
+    if (digitsOnly.length === 9) {
+      return maskSin(digitsOnly)
     }
   }
 

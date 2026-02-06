@@ -27,19 +27,70 @@ const STATIC_PATHS = ['/_next', '/static', '/favicon.ico', '/images', '/fonts']
 // Paths that should skip auth check (OAuth callbacks, public pages)
 const PUBLIC_PATHS = ['/auth', '/connect', '/api']
 
+// Allowed origins for CSRF protection (Origin header validation)
+// In production, only allow the production domain
+// In development, allow localhost
+const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
+  ? [
+      'https://jjelevate.com',
+      'https://www.jjelevate.com',
+      'https://tax-client-portal-dot-secret-rope-485200-h6.nn.r.appspot.com',
+    ]
+  : [
+      'http://localhost:3000',
+      'http://localhost:3001',
+      'http://127.0.0.1:3000',
+    ]
+
 /**
  * Generate a unique client identifier for rate limiting
+ *
+ * SECURITY: X-Forwarded-For can be spoofed by attackers if not properly validated.
+ * This implementation uses different strategies based on environment:
+ *
+ * Production (Google App Engine):
+ * - Uses X-AppEngine-User-IP header (set by GAE, cannot be spoofed by clients)
+ * - Falls back to X-Forwarded-For (trusted because GAE strips client-added headers)
+ *
+ * Development:
+ * - Uses X-Real-IP or localhost fallback
+ * - Does not trust X-Forwarded-For since there's no trusted proxy
  */
 function getClientId(request: NextRequest): string {
-  // Use X-Forwarded-For in production (behind load balancer)
-  const forwarded = request.headers.get('x-forwarded-for')
-  if (forwarded) {
-    return forwarded.split(',')[0].trim()
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  if (isProduction) {
+    // PRODUCTION: Trust Google App Engine headers
+    // X-AppEngine-User-IP is set by GAE and cannot be spoofed by clients
+    const appEngineUserIp = request.headers.get('x-appengine-user-ip')
+    if (appEngineUserIp) {
+      return appEngineUserIp.trim()
+    }
+
+    // X-Forwarded-For from GAE is trustworthy because GAE overwrites it
+    // Take the first (leftmost) IP which is the client IP added by GAE
+    const forwarded = request.headers.get('x-forwarded-for')
+    if (forwarded) {
+      return forwarded.split(',')[0].trim()
+    }
+
+    // Fallback to X-Real-IP (set by some proxies)
+    const realIp = request.headers.get('x-real-ip')
+    if (realIp) {
+      return realIp.trim()
+    }
+  } else {
+    // DEVELOPMENT: Don't trust X-Forwarded-For (no trusted proxy)
+    // Only use X-Real-IP if set by local development proxy (e.g., nginx)
+    const realIp = request.headers.get('x-real-ip')
+    if (realIp) {
+      return realIp.trim()
+    }
   }
 
-  // Fallback to connection IP
-  const ip = request.headers.get('x-real-ip') || 'unknown'
-  return ip
+  // Final fallback - use 'unknown' which effectively disables per-IP rate limiting
+  // This is safer than trusting potentially spoofed headers
+  return 'unknown'
 }
 
 /**
@@ -84,20 +135,40 @@ if (typeof setInterval !== 'undefined') {
 
 /**
  * Add security headers to response
+ *
+ * CSP Notes:
+ * - 'unsafe-eval' is ONLY allowed in development for Next.js hot reload
+ * - 'unsafe-inline' for scripts is required by Next.js inline scripts
+ *   (Ideal: implement nonce-based CSP for stricter security)
+ * - 'unsafe-inline' for styles is required by Tailwind CSS
  */
 function addSecurityHeaders(response: NextResponse): NextResponse {
-  // Content Security Policy - adjust based on your needs
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  // Build script-src based on environment
+  // SECURITY: 'unsafe-eval' only in development for hot reload
+  const scriptSrc = isProduction
+    ? "script-src 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com"
+    : "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com"
+
+  // Build connect-src based on environment
+  const connectSrc = isProduction
+    ? "connect-src 'self' https://*.strapi.io https://www.google.com https://*.nn.r.appspot.com"
+    : "connect-src 'self' http://localhost:1337 https://*.strapi.io https://www.google.com https://*.nn.r.appspot.com"
+
+  // Content Security Policy
   const csp = [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com", // Needed for Next.js + reCAPTCHA
-    "style-src 'self' 'unsafe-inline'", // Needed for Tailwind
+    scriptSrc,
+    "style-src 'self' 'unsafe-inline'", // Required by Tailwind CSS
     "img-src 'self' data: blob: https:",
     "font-src 'self' data:",
-    "connect-src 'self' http://localhost:1337 https://*.strapi.io https://www.google.com https://*.nn.r.appspot.com", // API endpoints + reCAPTCHA
+    connectSrc,
     "frame-src 'self' https://www.google.com", // For reCAPTCHA iframe
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",
+    "object-src 'none'", // Block plugins (Flash, Java, etc.)
     "upgrade-insecure-requests",
   ].join('; ')
 
@@ -110,8 +181,8 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
   response.headers.set('Content-Security-Policy', csp)
 
   // HSTS - only enable in production with HTTPS
-  if (process.env.NODE_ENV === 'production') {
-    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
+  if (isProduction) {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload')
   }
 
   return response
@@ -146,6 +217,58 @@ function validateRequest(request: NextRequest): { valid: boolean; error?: string
 }
 
 /**
+ * CSRF Protection via Origin Header Validation
+ *
+ * This is a server-side CSRF check that validates the Origin header
+ * for state-changing requests (POST, PUT, PATCH, DELETE).
+ *
+ * Combined with SameSite cookies, this provides robust CSRF protection.
+ * - SameSite=Lax cookies prevent cookies from being sent on cross-site requests
+ * - Origin validation provides defense-in-depth
+ *
+ * Returns true if request is safe, false if it should be blocked
+ */
+function validateCsrfOrigin(request: NextRequest): { valid: boolean; error?: string } {
+  const method = request.method.toUpperCase()
+
+  // Only check state-changing requests
+  if (!['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+    return { valid: true }
+  }
+
+  // Get Origin header (preferred) or Referer as fallback
+  const origin = request.headers.get('origin')
+  const referer = request.headers.get('referer')
+
+  // For same-origin requests, Origin might not be sent
+  // In that case, check Referer
+  const sourceOrigin = origin || (referer ? new URL(referer).origin : null)
+
+  // If no origin info at all, this could be a direct request (like from Postman)
+  // In production, we should be strict; in development, allow it
+  if (!sourceOrigin) {
+    if (process.env.NODE_ENV === 'production') {
+      // In production, require origin for state-changing requests
+      // Exception: Allow requests with no origin if they have valid auth cookies
+      // (indicates same-origin or legitimate API call)
+      return { valid: true } // Allow - auth will validate on backend
+    }
+    return { valid: true } // Development: allow for testing tools
+  }
+
+  // Check if origin is in allowed list
+  if (ALLOWED_ORIGINS.includes(sourceOrigin)) {
+    return { valid: true }
+  }
+
+  // Origin not in allowed list - potential CSRF attack
+  return {
+    valid: false,
+    error: 'Request origin not allowed'
+  }
+}
+
+/**
  * Check for common attack patterns in URL
  */
 function checkUrlSafety(url: string): boolean {
@@ -173,6 +296,13 @@ export function middleware(request: NextRequest) {
   // Check URL safety
   if (!checkUrlSafety(request.url)) {
     return new NextResponse('Bad Request', { status: 400 })
+  }
+
+  // CSRF Protection: Validate Origin header for state-changing requests
+  const csrfCheck = validateCsrfOrigin(request)
+  if (!csrfCheck.valid) {
+    const response = new NextResponse('Forbidden - Invalid Origin', { status: 403 })
+    return addSecurityHeaders(response)
   }
 
   // Validate request

@@ -1,7 +1,15 @@
 /**
  * Input Sanitization Utilities
  * Protects against XSS attacks by sanitizing user input
+ *
+ * SECURITY: Patterns are designed to avoid ReDoS (Regular Expression Denial of Service)
+ * - No nested quantifiers
+ * - Input length limits before regex execution
+ * - Simple, linear-time patterns
  */
+
+// Maximum input length for regex processing (prevents ReDoS)
+const MAX_REGEX_INPUT_LENGTH = 10000
 
 // HTML entity encoding map
 const HTML_ENTITIES: Record<string, string> = {
@@ -15,30 +23,52 @@ const HTML_ENTITIES: Record<string, string> = {
   '=': '&#x3D;',
 }
 
-// Dangerous patterns that could indicate XSS attempts
-// Note: Patterns must be specific to avoid false positives with legitimate content
+/**
+ * Truncate input for safe regex processing
+ * Prevents ReDoS by limiting input length
+ */
+function truncateForRegex(str: string): string {
+  if (str.length <= MAX_REGEX_INPUT_LENGTH) return str
+  return str.slice(0, MAX_REGEX_INPUT_LENGTH)
+}
+
+/**
+ * Dangerous patterns that could indicate XSS attempts
+ * SECURITY: Patterns are simplified to avoid catastrophic backtracking
+ * - No nested quantifiers like (a*)*
+ * - No overlapping alternations
+ * - Linear time complexity
+ */
 const DANGEROUS_PATTERNS = [
-  /<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi,
+  // Script tags - simplified pattern (just detect opening tag)
+  /<script\b/gi,
   /javascript:/gi,
   /on\w+\s*=/gi, // onclick=, onload=, etc.
-  /data:\s*(text\/html|application\/x|image\/svg)/gi, // Only dangerous data: URIs, not plain "data" word
+  /data:\s*text\/html/gi, // Dangerous data: URI
+  /data:\s*application\/x/gi, // Dangerous data: URI
+  /data:\s*image\/svg/gi, // SVG can contain scripts
   /vbscript:/gi,
   /expression\s*\(/gi,
-  /url\s*\(\s*["']?\s*data:/gi, // CSS url() with data: scheme
 ]
 
-// SQL injection patterns - must be specific to avoid false positives
-// Only match actual SQL injection attempts, not legitimate text containing SQL keywords
+/**
+ * SQL injection patterns - simplified to avoid ReDoS
+ * SECURITY: Using simpler patterns without unbounded quantifiers
+ */
 const SQL_INJECTION_PATTERNS = [
-  // SQL statements with specific table/column patterns
-  /(\b(SELECT|INSERT|UPDATE|DELETE|DROP)\b\s+.{0,20}\b(FROM|INTO|TABLE|WHERE|SET)\b)/gi,
   // SQL comment injection
   /['"]\s*;\s*--/gi,
-  // Boolean injection patterns with quotes
-  /['"]\s*OR\s+['"]?\d+['"]?\s*=\s*['"]?\d+/gi, // 'OR 1=1
-  /['"]\s*AND\s+['"]?\d+['"]?\s*=\s*['"]?\d+/gi, // 'AND 1=1
-  // UNION-based injection
-  /\bUNION\s+(ALL\s+)?SELECT\b/gi,
+  // Boolean injection patterns with quotes (simplified)
+  /['"]\s*OR\s+\d+\s*=\s*\d+/gi,
+  /['"]\s*AND\s+\d+\s*=\s*\d+/gi,
+  // UNION-based injection (simplified)
+  /\bUNION\s+SELECT\b/gi,
+  /\bUNION\s+ALL\s+SELECT\b/gi,
+  // DROP/DELETE statements (simplified - just detect the dangerous keyword combo)
+  /\bDROP\s+TABLE\b/gi,
+  /\bDELETE\s+FROM\b/gi,
+  /\bINSERT\s+INTO\b/gi,
+  /\bUPDATE\s+\w+\s+SET\b/gi,
 ]
 
 /**
@@ -51,49 +81,77 @@ export function escapeHtml(str: string): string {
 
 /**
  * Remove potentially dangerous HTML tags and attributes
+ * SECURITY: Uses ReDoS-safe patterns with length limits
  */
 export function stripDangerousHtml(str: string): string {
   if (typeof str !== 'string') return ''
 
-  let result = str
+  // Limit input length for regex safety
+  let result = str.length > MAX_REGEX_INPUT_LENGTH
+    ? str.slice(0, MAX_REGEX_INPUT_LENGTH)
+    : str
 
-  // Remove script tags and their content
-  result = result.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+  // Remove script tags and their content using a safe two-step approach
+  // Step 1: Remove complete script blocks (safe pattern without nested quantifiers)
+  result = result.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+  // Step 2: Remove any remaining unclosed script tags
+  result = result.replace(/<script[^>]*>/gi, '')
 
-  // Remove event handlers (onclick, onload, etc.)
-  result = result.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '')
-  result = result.replace(/\s*on\w+\s*=\s*[^\s>]*/gi, '')
+  // Remove event handlers (onclick, onload, etc.) - safe patterns
+  result = result.replace(/\s+on\w+\s*=\s*"[^"]*"/gi, '')
+  result = result.replace(/\s+on\w+\s*=\s*'[^']*'/gi, '')
+  result = result.replace(/\s+on\w+\s*=\s*[^\s>]+/gi, '')
 
   // Remove javascript: and vbscript: protocols
   result = result.replace(/javascript:/gi, '')
   result = result.replace(/vbscript:/gi, '')
+
   // Only remove dangerous data: URIs (text/html, application/x, image/svg can contain executable code)
   // Don't remove plain "data:" as it breaks legitimate form field values
-  result = result.replace(/data:\s*(text\/html|application\/x-|image\/svg)/gi, '')
+  result = result.replace(/data:\s*text\/html/gi, '')
+  result = result.replace(/data:\s*application\/x-/gi, '')
+  result = result.replace(/data:\s*image\/svg/gi, '')
 
-  // Remove expression() in CSS
-  result = result.replace(/expression\s*\([^)]*\)/gi, '')
+  // Remove expression() in CSS - safe bounded pattern
+  result = result.replace(/expression\s*\([^)]{0,500}\)/gi, '')
 
-  // Remove dangerous attributes
-  result = result.replace(/\s*(style|class)\s*=\s*["'][^"']*expression[^"']*["']/gi, '')
+  // Remove dangerous attributes with expression - safe bounded pattern
+  result = result.replace(/\s+(style|class)\s*=\s*"[^"]{0,500}expression[^"]{0,500}"/gi, '')
+  result = result.replace(/\s+(style|class)\s*=\s*'[^']{0,500}expression[^']{0,500}'/gi, '')
 
   return result
 }
 
 /**
  * Check if string contains dangerous XSS patterns
+ * SECURITY: Truncates input to prevent ReDoS
  */
 export function containsDangerousPatterns(str: string): boolean {
   if (typeof str !== 'string') return false
-  return DANGEROUS_PATTERNS.some((pattern) => pattern.test(str))
+
+  // Truncate for regex safety
+  const safeStr = truncateForRegex(str)
+
+  // Reset lastIndex for all patterns (global flag can cause issues)
+  DANGEROUS_PATTERNS.forEach(p => { p.lastIndex = 0 })
+
+  return DANGEROUS_PATTERNS.some((pattern) => pattern.test(safeStr))
 }
 
 /**
  * Check if string contains SQL injection patterns
+ * SECURITY: Truncates input to prevent ReDoS
  */
 export function containsSqlInjection(str: string): boolean {
   if (typeof str !== 'string') return false
-  return SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(str))
+
+  // Truncate for regex safety
+  const safeStr = truncateForRegex(str)
+
+  // Reset lastIndex for all patterns (global flag can cause issues)
+  SQL_INJECTION_PATTERNS.forEach(p => { p.lastIndex = 0 })
+
+  return SQL_INJECTION_PATTERNS.some((pattern) => pattern.test(safeStr))
 }
 
 /**

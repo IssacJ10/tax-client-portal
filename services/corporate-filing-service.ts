@@ -2,6 +2,7 @@
 
 import { strapiClient, type StrapiResponse } from "./strapi-client"
 import type { Filing, FilingStatus } from "@/lib/domain/types"
+import { authFetch } from "@/lib/security/auth-fetch"
 
 /**
  * Corporate Filing child entity - stores T2 corporate tax data
@@ -95,42 +96,31 @@ export class CorporateFilingService {
    */
   static async initFiling(year: number): Promise<{ filing: CorporateFilingWithData; corporateFiling: CorporateFiling }> {
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
-    const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null
-
-    if (!token) throw new Error('No authentication token')
 
     try {
       // Step 1: Get tax year ID
-      const yearRes = await fetch(`${strapiUrl}/api/tax-years?filters[year][$eq]=${year}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const yearRes = await authFetch(`${strapiUrl}/api/tax-years?filters[year][$eq]=${year}`)
       if (!yearRes.ok) throw new Error('Failed to fetch tax year configuration')
       const yearJson = await yearRes.json()
       if (!yearJson.data || yearJson.data.length === 0) throw new Error(`Tax Year ${year} not configured.`)
       const taxYearId = yearJson.data[0].id
 
       // Step 2: Get CORPORATE filing type ID
-      const typeRes = await fetch(`${strapiUrl}/api/filing-types?filters[type][$eq]=CORPORATE`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const typeRes = await authFetch(`${strapiUrl}/api/filing-types?filters[type][$eq]=CORPORATE`)
       if (!typeRes.ok) throw new Error('Failed to fetch filing type')
       const typeJson = await typeRes.json()
       if (!typeJson.data || typeJson.data.length === 0) throw new Error('Corporate filing type not found')
       const filingTypeId = typeJson.data[0].id
 
       // Step 3: Get default status ID
-      const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=NOT_STARTED`, {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      const statusRes = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=NOT_STARTED`)
       let statusId
       if (statusRes.ok) {
         const statusJson = await statusRes.json()
         statusId = statusJson.data?.[0]?.id
       }
       if (!statusId) {
-        const statusRes2 = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=IN_PROGRESS`, {
-          headers: { Authorization: `Bearer ${token}` }
-        })
+        const statusRes2 = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=IN_PROGRESS`)
         if (statusRes2.ok) {
           const statusJson2 = await statusRes2.json()
           statusId = statusJson2.data?.[0]?.id
@@ -585,13 +575,8 @@ export class CorporateFilingService {
    */
   static async markFilingInProgress(filingId: string): Promise<void> {
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
-    const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null
 
-    if (!token) throw new Error('No authentication token')
-
-    const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=IN_PROGRESS`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const statusRes = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=IN_PROGRESS`)
 
     if (!statusRes.ok) throw new Error('Failed to fetch status')
     const statusJson = await statusRes.json()
@@ -619,9 +604,6 @@ export class CorporateFilingService {
    */
   static async submitForReview(filingId: string): Promise<CorporateFilingWithData> {
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
-    const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null
-
-    if (!token) throw new Error('No authentication token')
 
     // ============================================================
     // STEP 1: Get filing data (must complete before proceeding)
@@ -688,9 +670,7 @@ export class CorporateFilingService {
     // STEP 5: Get status ID for UNDER_REVIEW (must complete before mutation)
     // ============================================================
     console.log('[submitForReview] STEP 5: Getting UNDER_REVIEW status ID...')
-    const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=UNDER_REVIEW`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const statusRes = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=UNDER_REVIEW`)
 
     if (!statusRes.ok) throw new Error('Failed to fetch status')
     const statusJson = await statusRes.json()

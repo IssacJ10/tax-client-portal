@@ -44,10 +44,21 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
     useEffect(() => {
         const fetchYears = async () => {
             try {
-                const token = localStorage.getItem('tax-auth-token')
                 const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
+                const isProduction = process.env.NODE_ENV === 'production'
+
+                // Build headers - use localStorage token in development only
+                const headers: HeadersInit = {}
+                if (!isProduction) {
+                    const token = localStorage.getItem('tax-auth-token')
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`
+                    }
+                }
+
                 const res = await fetch(`${strapiUrl}/api/tax-years?filters[isActive][$eq]=true&sort[0]=year:desc`, {
-                    headers: { Authorization: `Bearer ${token}` }
+                    credentials: 'include', // Sends httpOnly cookies (works in production)
+                    headers,
                 })
                 if (res.ok) {
                     const json = await res.json()
@@ -78,15 +89,24 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
         setError(null) // Clear previous errors
         setInfoMessage(null) // Clear previous info message
         try {
-            const token = localStorage.getItem('tax-auth-token')
             const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
+            const isProduction = process.env.NODE_ENV === 'production'
+
+            // Build headers - use localStorage token in development only
+            const headers: HeadersInit = {}
+            if (!isProduction) {
+                const token = localStorage.getItem('tax-auth-token')
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`
+                }
+            }
 
             // Only check for existing PERSONAL filings - Corporate and Trust can have multiple
             if (type === "INDIVIDUAL") {
                 // Get current user's PERSONAL filings for this year
                 const existingRes = await fetch(
                     `${strapiUrl}/api/filings?filters[taxYear][year][$eq]=${year}&filters[filingType][type][$eq]=PERSONAL&populate[filingStatus]=*&populate[filingType]=*`,
-                    { headers: { Authorization: `Bearer ${token}` } }
+                    { credentials: 'include', headers }
                 )
 
                 if (existingRes.ok) {

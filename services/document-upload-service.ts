@@ -13,6 +13,7 @@
 
 import { getCsrfHeaders } from "@/lib/security/csrf";
 import { validateFileUpload } from "@/lib/security/validation";
+import { getAuthHeaders } from "@/lib/security/auth-fetch";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -109,13 +110,6 @@ function sanitizeFilename(filename: string): string {
     return sanitized || 'document';
 }
 
-/**
- * Get auth token from storage
- */
-function getAuthToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('tax-auth-token');
-}
 
 /**
  * Upload a document securely to GCS via Strapi
@@ -128,15 +122,8 @@ export async function uploadSecureDocument(
     file: File,
     options: SecureUploadOptions
 ): Promise<SecureDocumentInfo> {
-    // Validate authentication
-    const token = getAuthToken();
-    if (!token) {
-        throw new DocumentUploadError(
-            'Please log in to upload documents',
-            'AUTH',
-            false
-        );
-    }
+    // Get auth headers (handles both production cookies and development localStorage token)
+    const authHeaders = getAuthHeaders();
 
     // Validate filingId
     if (!options.filingId) {
@@ -295,8 +282,15 @@ export async function uploadSecureDocument(
         xhr.open('POST', `${STRAPI_URL}/api/documents/upload`);
         xhr.timeout = 60000; // 60 second timeout for large files
 
-        // Set auth header
-        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+        // CRITICAL: Enable credentials for httpOnly cookie authentication
+        xhr.withCredentials = true;
+
+        // Set auth headers (handles both production cookies and development localStorage token)
+        Object.entries(authHeaders).forEach(([key, value]) => {
+            if (value) {
+                xhr.setRequestHeader(key, value as string);
+            }
+        });
 
         // Set CSRF headers
         const csrfHeaders = getCsrfHeaders();
@@ -355,15 +349,11 @@ export async function uploadSecureDocumentWithRetry(
  * Returns a time-limited signed URL
  */
 export async function getDocumentDownloadUrl(documentId: string): Promise<string> {
-    const token = getAuthToken();
-    if (!token) {
-        throw new DocumentUploadError('Please log in to download documents', 'AUTH', false);
-    }
-
     const response = await fetch(`${STRAPI_URL}/api/documents/${documentId}/download`, {
         method: 'GET',
+        credentials: 'include', // CRITICAL: Send httpOnly cookies for auth
         headers: {
-            'Authorization': `Bearer ${token}`,
+            ...getAuthHeaders(),
             ...getCsrfHeaders(),
         },
     });
@@ -389,15 +379,11 @@ export async function getDocumentDownloadUrl(documentId: string): Promise<string
  * List documents for a filing
  */
 export async function listFilingDocuments(filingId: string): Promise<SecureDocumentInfo[]> {
-    const token = getAuthToken();
-    if (!token) {
-        throw new DocumentUploadError('Please log in to view documents', 'AUTH', false);
-    }
-
     const response = await fetch(`${STRAPI_URL}/api/documents/filing/${filingId}`, {
         method: 'GET',
+        credentials: 'include', // CRITICAL: Send httpOnly cookies for auth
         headers: {
-            'Authorization': `Bearer ${token}`,
+            ...getAuthHeaders(),
             ...getCsrfHeaders(),
         },
     });

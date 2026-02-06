@@ -3,25 +3,24 @@ runtime: nodejs20
 service: portal-dev
 
 # Instance configuration
-instance_class: F2  # 256MB RAM, 600MHz CPU
+instance_class: F2
 
-# Environment variables (build-time and runtime)
 env_variables:
   NODE_ENV: "production"
   PORT: "8080"
-  # These will be set during deployment
-  # NEXT_PUBLIC_STRAPI_URL: "https://strapi-dev-dot-PROJECT_ID.nn.r.appspot.com"
-  # NEXT_PUBLIC_API_URL: "https://strapi-dev-dot-PROJECT_ID.nn.r.appspot.com/api"
-  # JJ_PORTAL_CAPTCHA_KEY: "your-recaptcha-site-key"
+  NEXT_PUBLIC_STRAPI_URL: "https://cms-dev-dot-secret-rope-485200-h6.nn.r.appspot.com"
+  NEXT_PUBLIC_API_URL: "https://cms-dev-dot-secret-rope-485200-h6.nn.r.appspot.com/api"
+  JJ_PORTAL_CAPTCHA_KEY: "6LdhjlYsAAAAAN-C1EmNPoePjQ--ZlfyrwPD8HrH"
 
-# Auto-scaling configuration
 automatic_scaling:
-  min_instances: 0        # Scale to zero when no traffic
-  max_instances: 3        # Max instances for dev
-  min_idle_instances: 0   # No idle instances (cost saving)
+  min_instances: 0
+  max_instances: 3
+  min_idle_instances: 0
   target_cpu_utilization: 0.65
 
-# Build configuration
 build_env_variables:
   NODE_ENV: "production"
   NEXT_TELEMETRY_DISABLED: "1"
+  NEXT_PUBLIC_STRAPI_URL: "https://cms-dev-dot-secret-rope-485200-h6.nn.r.appspot.com"
+  NEXT_PUBLIC_API_URL: "https://cms-dev-dot-secret-rope-485200-h6.nn.r.appspot.com/api"
+  JJ_PORTAL_CAPTCHA_KEY: "6LdhjlYsAAAAAN-C1EmNPoePjQ--ZlfyrwPD8HrH"

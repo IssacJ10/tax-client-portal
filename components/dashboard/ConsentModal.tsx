@@ -36,18 +36,30 @@ export const ConsentModal = () => {
     }, [isAuthenticated, user]);
 
     const handleAgree = async () => {
-        if (!token || !user) return;
+        if (!user) return;
 
         setIsSubmitting(true);
         try {
             const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+            const isProduction = process.env.NODE_ENV === 'production';
+
+            // Build headers - use localStorage token in development, cookies in production
+            const headers: HeadersInit = {
+                'Content-Type': 'application/json',
+            };
+
+            // Development: add Authorization header from localStorage or context
+            if (!isProduction) {
+                const storedToken = token || localStorage.getItem('tax-auth-token');
+                if (storedToken) {
+                    headers['Authorization'] = `Bearer ${storedToken}`;
+                }
+            }
 
             const res = await fetch(`${strapiUrl}/api/dashboard/consent`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                credentials: 'include', // Sends httpOnly cookies (works in production)
+                headers,
             });
 
             const responseText = await res.text();
@@ -61,7 +73,10 @@ export const ConsentModal = () => {
                 throw new Error(`Failed to record consent: ${res.status} ${res.statusText} - ${responseText}`);
             }
 
-            login(token, { ...user, hasConsentedToTerms: true });
+            // Update user state with consent flag
+            // Use stored token for login (token from context may be null after page refresh)
+            const storedToken = token || localStorage.getItem('tax-auth-token') || '';
+            login(storedToken, { ...user, hasConsentedToTerms: true });
 
             toast({
                 title: "Welcome to JJ Elevate",
