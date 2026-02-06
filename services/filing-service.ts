@@ -802,6 +802,9 @@ export const FilingService = {
       // Handle fullName splitting if provided
       const spouseName = sp.fullName ? splitName(sp.fullName) : { firstName: sp.firstName, lastName: sp.lastName, middleName: sp.middleName }
 
+      // If sameAddress is YES, copy primary's address to spouse in Strapi
+      const usePrimaryAddress = sp.sameAddress === 'YES'
+
       spouseData = {
         firstName: clean(spouseName.firstName),
         lastName: clean(spouseName.lastName),
@@ -819,12 +822,13 @@ export const FilingService = {
         email: clean(sp.email),
         phoneNumber: clean(sp.phoneNumber),
         sameAddress: clean(sp.sameAddress),
-        streetNumber: clean(sp.streetNumber),
-        streetName: clean(sp.streetName),
-        apartmentNumber: clean(sp.apartmentNumber),
-        city: clean(sp.city),
-        province: clean(sp.province),
-        postalCode: clean(sp.postalCode),
+        // Copy primary's address if sameAddress is YES, otherwise use spouse's address
+        streetNumber: usePrimaryAddress ? clean(pi.streetNumber) : clean(sp.streetNumber),
+        streetName: usePrimaryAddress ? clean(pi.streetName) : clean(sp.streetName),
+        apartmentNumber: usePrimaryAddress ? clean(pi.apartmentNumber) : clean(sp.apartmentNumber),
+        city: usePrimaryAddress ? clean(pi.city) : clean(sp.city),
+        province: usePrimaryAddress ? clean(pi.province) : clean(sp.province),
+        postalCode: usePrimaryAddress ? clean(pi.postalCode) : clean(sp.postalCode),
         livedOutsideCanada: clean(sp.livedOutsideCanada),
         countryOfResidence: clean(sp.countryOfResidence),
       }
