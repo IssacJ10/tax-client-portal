@@ -4,6 +4,7 @@ import { useEffect, useCallback, useState, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import { useFilingContext } from "@/context/filing-context"
+import { FilingService } from "@/services/filing-service"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import { getPhaseInfo } from "@/lib/domain/filing-state-machine"
 import type { WizardPhase } from "@/lib/domain/types"
@@ -271,6 +272,11 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       const isInitialLoad = !hasLoadedInitialDataRef.current
 
       if (didSwitchPerson || isInitialLoad) {
+        console.log('[WizardOrchestrator] Loading formData - didSwitchPerson:', didSwitchPerson, 'isInitialLoad:', isInitialLoad)
+        console.log('[WizardOrchestrator] currentPersonalFilingId:', state.currentPersonalFilingId)
+        console.log('[WizardOrchestrator] filingFound:', filingFound)
+        console.log('[WizardOrchestrator] savedData:', savedData ? JSON.stringify(Object.keys(savedData)) : 'undefined/null')
+
         // IMPORTANT: If we switched to a new person but the filing isn't found yet,
         // don't set formData to empty - wait for the next render when SWR refreshes.
         // This prevents race conditions when creating spouse/dependent filings.
@@ -285,6 +291,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         // If formData is empty/undefined or has no meaningful keys, use empty object
         const hasData = savedData && Object.keys(savedData).length > 0
         const dataToLoad = hasData ? savedData! : {}
+        console.log('[WizardOrchestrator] Setting formData with', Object.keys(dataToLoad).length, 'keys:', Object.keys(dataToLoad))
         setFormData(dataToLoad)
         hasLoadedInitialDataRef.current = true
 
@@ -628,6 +635,29 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
     await addSpouse()
   }, [addSpouse])
 
+  // Handle continue with existing spouse - syncs address from primary before starting
+  const handleContinueSpouse = useCallback(async (spouseFilingId: string) => {
+    console.log('[handleContinueSpouse] Starting with spouseFilingId:', spouseFilingId)
+
+    // Log existing spouse data before sync
+    const existingSpouse = filing?.personalFilings?.find(pf => pf.id === spouseFilingId)
+    console.log('[handleContinueSpouse] Existing spouse formData BEFORE sync:', JSON.stringify(existingSpouse?.formData, null, 2))
+
+    // Sync spouse address from primary's current sameAddress setting
+    // This handles the case where primary changed sameAddress or address fields
+    // after spouse filing was created
+    if (filingId) {
+      await FilingService.syncSpouseAddressFromPrimary(filingId, spouseFilingId)
+      // Refresh filing to get updated data
+      await refreshFiling()
+    }
+
+    // Log spouse data after refresh
+    console.log('[handleContinueSpouse] Spouse formData AFTER sync and refresh will be logged by useEffect')
+
+    dispatch({ type: "START_SPOUSE", payload: { personalFilingId: spouseFilingId } })
+  }, [filingId, dispatch, refreshFiling, filing])
+
   // Handle add dependents - creates filings for earning dependants only
   // Service layer auto-copies data from primary's dependants.list using the index
   const handleAddDependents = useCallback(async () => {
@@ -670,7 +700,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
   }, [addDependent, startDependent, earningDependants, dependantsList, filing])
 
   // Handle edit from review screen - navigate to specific person's section
-  const handleEditPerson = useCallback((personalFilingId: string, sectionIndex: number) => {
+  const handleEditPerson = useCallback(async (personalFilingId: string, sectionIndex: number) => {
     // Find the person type
     const personFiling = filing?.personalFilings.find(pf => pf.id === personalFilingId)
     if (!personFiling) return
@@ -682,6 +712,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         payload: { filingId: filingId, personalFilingId }
       })
     } else if (personFiling.type === "spouse") {
+      // Sync spouse address from primary's current sameAddress setting
+      await FilingService.syncSpouseAddressFromPrimary(filingId, personalFilingId)
+      await refreshFiling()
       dispatch({
         type: "START_SPOUSE",
         payload: { personalFilingId }
@@ -698,7 +731,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
     // Go to the specific section
     dispatch({ type: "GO_TO_SECTION", payload: sectionIndex })
-  }, [filing, filingId, dispatch])
+  }, [filing, filingId, dispatch, refreshFiling])
 
   // Handle add spouse from review screen
   const handleAddSpouseFromReview = useCallback(async () => {
@@ -735,6 +768,9 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
       case "SPOUSE": {
         const spouseFiling = filing?.personalFilings?.find(pf => pf.type === "spouse")
         if (spouseFiling) {
+          // Sync spouse address from primary's current sameAddress setting
+          await FilingService.syncSpouseAddressFromPrimary(filingId, spouseFiling.id)
+          await refreshFiling()
           dispatch({
             type: "START_SPOUSE",
             payload: { personalFilingId: spouseFiling.id }
@@ -785,7 +821,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
 
     // Scroll to top when switching phases
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }, [filing, filingId, dispatch, flushSave, goToReview])
+  }, [filing, filingId, dispatch, flushSave, goToReview, refreshFiling])
 
   // Render loading state
   if (isLoading && !filing) {
@@ -815,7 +851,7 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
               description="You've already started adding your spouse's information. Let's continue where you left off."
               primaryAction={{
                 label: "Continue Spouse Info",
-                onClick: () => dispatch({ type: "START_SPOUSE", payload: { personalFilingId: existingSpouse.id } }),
+                onClick: () => handleContinueSpouse(existingSpouse.id),
                 isLoading: isLoading,
               }}
             />

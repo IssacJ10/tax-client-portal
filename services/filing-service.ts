@@ -610,7 +610,9 @@ export const FilingService = {
           if (hasSpouseFullName) {
             // Parse fullName into firstName/middleName/lastName
             const fullName = primaryFormData['spouse.fullName'] as string
+            console.log('[addFamilyMember] DEBUG - Parsing fullName:', JSON.stringify(fullName))
             const parts = fullName.trim().split(/\s+/)
+            console.log('[addFamilyMember] DEBUG - Name parts:', parts)
             if (parts.length === 1) {
               firstName = parts[0]
             } else if (parts.length === 2) {
@@ -621,15 +623,21 @@ export const FilingService = {
               middleName = parts.slice(1, -1).join(' ')
               lastName = parts[parts.length - 1]
             }
+            console.log('[addFamilyMember] DEBUG - Parsed name:', { firstName, middleName, lastName })
           } else {
             // Use separate fields directly
             firstName = primaryFormData['spouse.firstName']
             lastName = primaryFormData['spouse.lastName']
             middleName = primaryFormData['spouse.middleName']
+            console.log('[addFamilyMember] DEBUG - Using separate fields:', { firstName, lastName, middleName })
           }
 
           // Try both possible date field names
           const spouseDOB = primaryFormData['spouse.birthDate'] || primaryFormData['spouse.dateOfBirth']
+          console.log('[addFamilyMember] DEBUG - spouse DOB:', spouseDOB)
+          console.log('[addFamilyMember] DEBUG - spouse SIN:', primaryFormData['spouse.sin'])
+          console.log('[addFamilyMember] DEBUG - spouse email:', primaryFormData['spouse.email'])
+          console.log('[addFamilyMember] DEBUG - spouse phone:', primaryFormData['spouse.phoneNumber'])
 
           formData = {
             'personalInfo.firstName': firstName,
@@ -643,6 +651,8 @@ export const FilingService = {
             'residency.becameResidentThisYear': primaryFormData['spouse.becameResidentThisYear'],
             'residency.dateBecameResident': primaryFormData['spouse.dateBecameResident'],
           }
+
+          console.log('[addFamilyMember] DEBUG - formData BEFORE address:', JSON.stringify(formData, null, 2))
 
           // Handle address: if sameAddress is YES, copy PRIMARY's address; otherwise copy spouse's address
           if (primaryFormData['spouse.sameAddress'] === 'YES') {
@@ -663,10 +673,14 @@ export const FilingService = {
             formData['personalInfo.postalCode'] = primaryFormData['spouse.postalCode']
           }
 
+          console.log('[addFamilyMember] DEBUG - formData AFTER address:', JSON.stringify(formData, null, 2))
+
           // Remove undefined values
           formData = Object.fromEntries(
             Object.entries(formData).filter(([_, v]) => v !== undefined && v !== null)
           )
+
+          console.log('[addFamilyMember] DEBUG - FINAL formData to send:', JSON.stringify(formData, null, 2))
         }
       }
 
@@ -715,7 +729,7 @@ export const FilingService = {
         }
       }
 
-      console.log(`[addFamilyMember] Creating ${role} with formData:`, Object.keys(formData).length > 0 ? formData : '(empty)')
+      console.log(`[addFamilyMember] Creating ${role} with formData:`, Object.keys(formData).length > 0 ? JSON.stringify(formData, null, 2) : '(empty)')
 
       const response = await strapiClient.post<StrapiResponse<any>>("/personal-filings", {
         data: {
@@ -725,9 +739,177 @@ export const FilingService = {
           individualStatus: "DRAFT"
         }
       })
-      return transformPersonalFiling(response.data.data)
+
+      console.log(`[addFamilyMember] API Response for ${role}:`, JSON.stringify(response.data.data, null, 2))
+
+      const transformedFiling = transformPersonalFiling(response.data.data)
+      console.log(`[addFamilyMember] Transformed ${role} filing formData:`, JSON.stringify(transformedFiling.formData, null, 2))
+
+      return transformedFiling
     } finally {
       release()
+    }
+  },
+
+  /**
+   * Sync spouse's data from primary
+   * Called when continuing with a spouse filing to ensure:
+   * 1. Personal info (name, SIN, DOB, email, phone) is copied if missing
+   * 2. Address is up-to-date based on primary's sameAddress setting
+   *
+   * IMPORTANT: This function ONLY updates the formData field, not individual Strapi fields.
+   * This prevents accidentally overwriting data the spouse has already filled in.
+   */
+  async syncSpouseAddressFromPrimary(filingId: string, spouseFilingId: string): Promise<PersonalFiling | null> {
+    try {
+      // Get the parent filing with all personal filings
+      const filing = await this.getFiling(filingId)
+
+      // Find primary and spouse filings
+      const primaryFiling = filing.personalFilings?.find(pf => pf.type === "primary")
+      const spouseFiling = filing.personalFilings?.find(pf => pf.documentId === spouseFilingId || pf.id === spouseFilingId)
+
+      if (!primaryFiling || !spouseFiling) {
+        console.log('[syncSpouseFromPrimary] Primary or spouse filing not found')
+        return null
+      }
+
+      const primaryFormData = primaryFiling.formData || {}
+      const spouseFormData = spouseFiling.formData || {}
+
+      console.log('[syncSpouseFromPrimary] Existing spouse formData keys:', Object.keys(spouseFormData))
+
+      // Build updates object - only add fields that are MISSING from spouse
+      const updates: Record<string, unknown> = {}
+
+      // --- PERSONAL INFO: Copy from primary's spouse.* fields if missing ---
+      // Parse fullName if available
+      let firstName, middleName, lastName
+      const spouseFullName = primaryFormData['spouse.fullName'] as string | undefined
+      if (spouseFullName) {
+        const parts = spouseFullName.trim().split(/\s+/)
+        if (parts.length === 1) {
+          firstName = parts[0]
+        } else if (parts.length === 2) {
+          firstName = parts[0]
+          lastName = parts[1]
+        } else {
+          firstName = parts[0]
+          middleName = parts.slice(1, -1).join(' ')
+          lastName = parts[parts.length - 1]
+        }
+      } else {
+        firstName = primaryFormData['spouse.firstName']
+        lastName = primaryFormData['spouse.lastName']
+        middleName = primaryFormData['spouse.middleName']
+      }
+
+      // Copy personal info ONLY if missing from spouse
+      if (!spouseFormData['personalInfo.firstName'] && firstName) {
+        updates['personalInfo.firstName'] = firstName
+        console.log('[syncSpouseFromPrimary] Copying missing firstName:', firstName)
+      }
+      if (!spouseFormData['personalInfo.lastName'] && lastName) {
+        updates['personalInfo.lastName'] = lastName
+        console.log('[syncSpouseFromPrimary] Copying missing lastName:', lastName)
+      }
+      if (!spouseFormData['personalInfo.middleName'] && middleName) {
+        updates['personalInfo.middleName'] = middleName
+      }
+      if (!spouseFormData['personalInfo.sin'] && primaryFormData['spouse.sin']) {
+        updates['personalInfo.sin'] = primaryFormData['spouse.sin']
+        console.log('[syncSpouseFromPrimary] Copying missing SIN')
+      }
+      if (!spouseFormData['personalInfo.dateOfBirth']) {
+        const spouseDOB = primaryFormData['spouse.birthDate'] || primaryFormData['spouse.dateOfBirth']
+        if (spouseDOB) {
+          updates['personalInfo.dateOfBirth'] = spouseDOB
+          console.log('[syncSpouseFromPrimary] Copying missing DOB:', spouseDOB)
+        }
+      }
+      if (!spouseFormData['personalInfo.email'] && primaryFormData['spouse.email']) {
+        updates['personalInfo.email'] = primaryFormData['spouse.email']
+        console.log('[syncSpouseFromPrimary] Copying missing email')
+      }
+      if (!spouseFormData['personalInfo.phoneNumber'] && primaryFormData['spouse.phoneNumber']) {
+        updates['personalInfo.phoneNumber'] = primaryFormData['spouse.phoneNumber']
+        console.log('[syncSpouseFromPrimary] Copying missing phone')
+      }
+      if (!spouseFormData['personalInfo.statusInCanada'] && primaryFormData['spouse.statusInCanada']) {
+        updates['personalInfo.statusInCanada'] = primaryFormData['spouse.statusInCanada']
+      }
+      if (!spouseFormData['residency.becameResidentThisYear'] && primaryFormData['spouse.becameResidentThisYear']) {
+        updates['residency.becameResidentThisYear'] = primaryFormData['spouse.becameResidentThisYear']
+      }
+      if (!spouseFormData['residency.dateBecameResident'] && primaryFormData['spouse.dateBecameResident']) {
+        updates['residency.dateBecameResident'] = primaryFormData['spouse.dateBecameResident']
+      }
+
+      // --- ADDRESS: Always sync based on sameAddress setting ---
+      const sameAddress = primaryFormData['spouse.sameAddress']
+      console.log('[syncSpouseFromPrimary] sameAddress from primary:', sameAddress)
+
+      let newAddress: Record<string, unknown>
+      if (sameAddress === 'YES') {
+        // Use primary's address
+        newAddress = {
+          'personalInfo.streetNumber': primaryFormData['personalInfo.streetNumber'],
+          'personalInfo.streetName': primaryFormData['personalInfo.streetName'],
+          'personalInfo.apartmentNumber': primaryFormData['personalInfo.apartmentNumber'],
+          'personalInfo.city': primaryFormData['personalInfo.city'],
+          'personalInfo.province': primaryFormData['personalInfo.province'],
+          'personalInfo.postalCode': primaryFormData['personalInfo.postalCode'],
+        }
+        console.log('[syncSpouseFromPrimary] Using primary\'s address')
+      } else {
+        // Use spouse's own address from primary's spouse data
+        newAddress = {
+          'personalInfo.streetNumber': primaryFormData['spouse.streetNumber'],
+          'personalInfo.streetName': primaryFormData['spouse.streetName'],
+          'personalInfo.apartmentNumber': primaryFormData['spouse.apartmentNumber'],
+          'personalInfo.city': primaryFormData['spouse.city'],
+          'personalInfo.province': primaryFormData['spouse.province'],
+          'personalInfo.postalCode': primaryFormData['spouse.postalCode'],
+        }
+        console.log('[syncSpouseFromPrimary] Using spouse\'s own address from primary')
+      }
+
+      // Add address fields to updates (always sync address)
+      Object.assign(updates, newAddress)
+
+      // Check if anything actually changed
+      const hasChanges = Object.entries(updates).some(([key, value]) => {
+        return spouseFormData[key] !== value && value !== undefined && value !== null
+      })
+
+      if (!hasChanges) {
+        console.log('[syncSpouseFromPrimary] No changes needed, skipping update')
+        return spouseFiling
+      }
+
+      // Filter out undefined/null values
+      const filteredUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, v]) => v !== undefined && v !== null)
+      )
+
+      // Merge updates with existing formData (preserve ALL existing data)
+      const updatedFormData = {
+        ...spouseFormData,
+        ...filteredUpdates
+      }
+
+      console.log('[syncSpouseFromPrimary] Updating spouse with', Object.keys(filteredUpdates).length, 'fields:', Object.keys(filteredUpdates))
+
+      // IMPORTANT: Only update formData field, NOT individual Strapi fields
+      const response = await strapiClient.put<StrapiResponse<any>>(`/personal-filings/${spouseFilingId}`, {
+        data: {
+          formData: updatedFormData
+        }
+      })
+      return transformPersonalFiling(response.data.data)
+    } catch (error) {
+      console.error('[syncSpouseFromPrimary] Error:', error)
+      return null
     }
   },
 
