@@ -985,7 +985,7 @@
             "label": "Spouse/Partner Email",
             "name": "spouse.email",
             "validation": {
-                "required": false
+                "required": true
             },
             "step": "spouse_info",
             "order": 42,
@@ -1004,7 +1004,7 @@
             "label": "Spouse/Partner Phone Number",
             "name": "spouse.phoneNumber",
             "validation": {
-                "required": false
+                "required": true
             },
             "step": "spouse_info",
             "order": 44,

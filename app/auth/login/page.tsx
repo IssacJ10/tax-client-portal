@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Chrome, ShieldCheck, ArrowLeft, CheckCircle2 } from "lucide-react";
+import { Loader2, Chrome, ShieldCheck, ArrowLeft, CheckCircle2, Eye, EyeOff } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -65,6 +65,11 @@ function AuthContent() {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [isRegistered, setIsRegistered] = useState(false);
+
+    // Password visibility states
+    const [showSignInPassword, setShowSignInPassword] = useState(false);
+    const [showSignUpPassword, setShowSignUpPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
     // Sign in form
     const {
@@ -276,13 +281,23 @@ function AuthContent() {
                                             Forgot password?
                                         </Link>
                                     </div>
-                                    <Input
-                                        id="password"
-                                        type="password"
-                                        {...registerSignIn("password")}
-                                        disabled={isLoading}
-                                        className={signInErrors.password ? "border-red-500" : ""}
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            id="password"
+                                            type={showSignInPassword ? "text" : "password"}
+                                            {...registerSignIn("password")}
+                                            disabled={isLoading}
+                                            className={signInErrors.password ? "border-red-500 pr-10" : "pr-10"}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSignInPassword(!showSignInPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                            tabIndex={-1}
+                                        >
+                                            {showSignInPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                     {signInErrors.password && <p className="text-xs text-red-500">{signInErrors.password.message}</p>}
                                 </div>
                                 <Button type="submit" className="w-full bg-[#07477a] hover:bg-[#053560] shadow-lg shadow-[#07477a]/20" size="lg" disabled={isLoading}>
@@ -388,26 +403,46 @@ function AuthContent() {
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="reg-password">Password</Label>
-                                    <Input
-                                        id="reg-password"
-                                        type="password"
-                                        placeholder="Minimum 8 characters"
-                                        {...registerSignUp("password")}
-                                        disabled={isLoading}
-                                        className={signUpErrors.password ? "border-red-500" : ""}
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            id="reg-password"
+                                            type={showSignUpPassword ? "text" : "password"}
+                                            placeholder="Minimum 8 characters"
+                                            {...registerSignUp("password")}
+                                            disabled={isLoading}
+                                            className={signUpErrors.password ? "border-red-500 pr-10" : "pr-10"}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSignUpPassword(!showSignUpPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                            tabIndex={-1}
+                                        >
+                                            {showSignUpPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                     {signUpErrors.password && <p className="text-xs text-red-500">{signUpErrors.password.message}</p>}
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="confirmPassword">Confirm Password</Label>
-                                    <Input
-                                        id="confirmPassword"
-                                        type="password"
-                                        placeholder="Re-enter your password"
-                                        {...registerSignUp("confirmPassword")}
-                                        disabled={isLoading}
-                                        className={signUpErrors.confirmPassword ? "border-red-500" : ""}
-                                    />
+                                    <div className="relative">
+                                        <Input
+                                            id="confirmPassword"
+                                            type={showConfirmPassword ? "text" : "password"}
+                                            placeholder="Re-enter your password"
+                                            {...registerSignUp("confirmPassword")}
+                                            disabled={isLoading}
+                                            className={signUpErrors.confirmPassword ? "border-red-500 pr-10" : "pr-10"}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                                            tabIndex={-1}
+                                        >
+                                            {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                                        </button>
+                                    </div>
                                     {signUpErrors.confirmPassword && <p className="text-xs text-red-500">{signUpErrors.confirmPassword.message}</p>}
                                 </div>
                                 <Button type="submit" className="w-full bg-[#07477a] hover:bg-[#053560] shadow-lg shadow-[#07477a]/20" size="lg" disabled={isLoading}>
