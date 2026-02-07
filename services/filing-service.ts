@@ -1035,7 +1035,13 @@ export const FilingService = {
     }
 
     // Extract maritalStatus - handle both object format { status: "MARRIED" } and direct string
-    const maritalStatusValue = pi.maritalStatus?.status || pi.maritalStatus || nestedData.maritalStatus?.status || nestedData.maritalStatus
+    // Avoid falling through to the raw object (e.g. { changed: "No" }) when status is absent
+    // Use undefined (not null) when status is missing so the field is omitted from the payload
+    // and doesn't overwrite a previously saved value in Strapi
+    const rawMaritalStatus = pi.maritalStatus ?? nestedData.maritalStatus
+    const maritalStatusValue = typeof rawMaritalStatus === 'string'
+      ? rawMaritalStatus
+      : rawMaritalStatus?.status || undefined
 
     const mappedPayload = {
       // Personal Info (Flattened)

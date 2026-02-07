@@ -1,42 +1,38 @@
 /**
  * Authenticated Fetch Utilities
  *
- * Provides consistent authentication handling for fetch calls:
- * - Production (HTTPS): Uses httpOnly cookies via credentials: 'include'
- * - Development (HTTP): Uses localStorage token as Authorization header fallback
- *   (because sameSite='lax' cookies don't work on cross-origin fetch)
+ * Dual-mode authentication:
+ * - Production (jjelevateas.com): httpOnly cookies (more secure, shared parent domain)
+ * - Development (App Engine, localhost): localStorage + Bearer token
  */
 
-const isProduction = process.env.NODE_ENV === 'production';
+import { useLocalStorageAuth } from './environment';
 
 /**
  * Get authentication headers for fetch requests
- * In development, returns Authorization header from localStorage
- * In production, returns empty object (cookies handle auth)
+ * - Development: Returns Authorization header from localStorage
+ * - Production: Returns empty (relies on httpOnly cookies)
  */
 export function getAuthHeaders(): HeadersInit {
-  if (isProduction) {
-    return {};
-  }
-
-  // Development: use localStorage token
-  if (typeof window !== 'undefined') {
+  // Only send Authorization header in development mode
+  if (useLocalStorageAuth() && typeof window !== 'undefined') {
     const token = localStorage.getItem('tax-auth-token');
     if (token) {
       return { Authorization: `Bearer ${token}` };
     }
   }
 
+  // Production uses httpOnly cookies - no Authorization header needed
   return {};
 }
 
 /**
  * Get fetch options for authenticated requests
- * Includes credentials: 'include' for cookies and auth headers for development
+ * Includes credentials: 'include' and auth headers
  */
 export function getAuthFetchOptions(additionalHeaders?: HeadersInit): RequestInit {
   return {
-    credentials: 'include', // Sends httpOnly cookies (works in production)
+    credentials: 'include',
     headers: {
       ...getAuthHeaders(),
       ...additionalHeaders,
@@ -46,7 +42,7 @@ export function getAuthFetchOptions(additionalHeaders?: HeadersInit): RequestIni
 
 /**
  * Make an authenticated fetch request
- * Automatically handles auth for both development and production
+ * Uses Bearer token auth which works across all browsers
  */
 export async function authFetch(
   url: string,
@@ -66,19 +62,18 @@ export async function authFetch(
 
 /**
  * Check if user has an auth token available
- * In development: checks localStorage
- * In production: always returns true (assumes cookies are present if authenticated)
+ * Note: In production, this only checks localStorage backup.
+ * The actual auth is via httpOnly cookies which can't be checked client-side.
  */
 export function hasAuthToken(): boolean {
-  if (isProduction) {
-    // In production, we can't check httpOnly cookies from JS
-    // Return true and let the server validate
-    return true;
-  }
-
   if (typeof window !== 'undefined') {
     return !!localStorage.getItem('tax-auth-token');
   }
 
   return false;
 }
+
+/**
+ * Check if we're using cookie-based auth (production)
+ */
+export { useLocalStorageAuth, useHttpOnlyCookies } from './environment';

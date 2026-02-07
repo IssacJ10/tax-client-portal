@@ -13,6 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, ArrowLeft, Eye, EyeOff } from "lucide-react"
 import { useSession } from "@/context/session-provider"
 import { ValidationSchemas } from "@/lib/security/validation"
+import { useLocalStorageAuth } from "@/lib/security/environment"
 
 // --- Validation Schemas ---
 
@@ -49,14 +50,14 @@ export default function ProfilePage() {
     const [showNewPassword, setShowNewPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
 
-    // Helper to get auth headers (development uses localStorage, production uses cookies)
+    // Helper to get auth headers - dual-mode auth
+    // Development: use localStorage token, Production: rely on httpOnly cookies
     const getAuthHeaders = (): HeadersInit => {
-        const isProduction = process.env.NODE_ENV === 'production'
-        if (isProduction) return {}
-
-        // Development: use token from context or localStorage
-        const authToken = token || localStorage.getItem('tax-auth-token')
-        return authToken ? { Authorization: `Bearer ${authToken}` } : {}
+        if (useLocalStorageAuth()) {
+            const authToken = token || localStorage.getItem('tax-auth-token')
+            return authToken ? { Authorization: `Bearer ${authToken}` } : {}
+        }
+        return {} // Production uses httpOnly cookies
     }
 
     const profileForm = useForm<ProfileFormValues>({

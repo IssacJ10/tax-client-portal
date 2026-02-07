@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { useSession } from '@/context/session-provider';
 import { useToast } from '@/hooks/use-toast';
 import { ShieldCheck, Lock, Check } from 'lucide-react';
+import { useLocalStorageAuth } from '@/lib/security/environment';
 
 export const ConsentModal = () => {
     const { user, token, isAuthenticated, login } = useSession();
@@ -41,15 +42,14 @@ export const ConsentModal = () => {
         setIsSubmitting(true);
         try {
             const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-            const isProduction = process.env.NODE_ENV === 'production';
 
-            // Build headers - use localStorage token in development, cookies in production
+            // Build headers - dual-mode auth
             const headers: HeadersInit = {
                 'Content-Type': 'application/json',
             };
 
-            // Development: add Authorization header from localStorage or context
-            if (!isProduction) {
+            // Only add Authorization header in development mode
+            if (useLocalStorageAuth()) {
                 const storedToken = token || localStorage.getItem('tax-auth-token');
                 if (storedToken) {
                     headers['Authorization'] = `Bearer ${storedToken}`;
@@ -58,7 +58,7 @@ export const ConsentModal = () => {
 
             const res = await fetch(`${strapiUrl}/api/dashboard/consent`, {
                 method: 'POST',
-                credentials: 'include', // Sends httpOnly cookies (works in production)
+                credentials: 'include', // Send httpOnly cookies (production) or as backup (dev)
                 headers,
             });
 
@@ -74,9 +74,9 @@ export const ConsentModal = () => {
             }
 
             // Update user state with consent flag
-            // Use stored token for login (token from context may be null after page refresh)
-            const storedToken = token || localStorage.getItem('tax-auth-token') || '';
-            login(storedToken, { ...user, hasConsentedToTerms: true });
+            // Get token for login (in development mode, we need it for auth)
+            const loginToken = token || localStorage.getItem('tax-auth-token') || '';
+            login(loginToken, { ...user, hasConsentedToTerms: true });
 
             toast({
                 title: "Welcome to JJ Elevate",

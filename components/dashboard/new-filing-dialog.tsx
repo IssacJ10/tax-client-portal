@@ -7,6 +7,7 @@ import { useFiling } from "@/hooks/use-filing"
 import type { FilingType } from "@/lib/domain/types"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useLocalStorageAuth } from "@/lib/security/environment"
 import {
     Dialog,
     DialogContent,
@@ -45,11 +46,11 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
         const fetchYears = async () => {
             try {
                 const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
-                const isProduction = process.env.NODE_ENV === 'production'
 
-                // Build headers - use localStorage token in development only
+                // Build headers - dual-mode auth
                 const headers: HeadersInit = {}
-                if (!isProduction) {
+                // Only add Authorization header in development mode
+                if (useLocalStorageAuth()) {
                     const token = localStorage.getItem('tax-auth-token')
                     if (token) {
                         headers['Authorization'] = `Bearer ${token}`
@@ -57,7 +58,7 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
                 }
 
                 const res = await fetch(`${strapiUrl}/api/tax-years?filters[isActive][$eq]=true&sort[0]=year:desc`, {
-                    credentials: 'include', // Sends httpOnly cookies (works in production)
+                    credentials: 'include', // Send httpOnly cookies (production) or as backup (dev)
                     headers,
                 })
                 if (res.ok) {
@@ -90,11 +91,11 @@ export function NewFilingDialog({ open, onOpenChange }: NewFilingDialogProps) {
         setInfoMessage(null) // Clear previous info message
         try {
             const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
-            const isProduction = process.env.NODE_ENV === 'production'
 
-            // Build headers - use localStorage token in development only
+            // Build headers - dual-mode auth
             const headers: HeadersInit = {}
-            if (!isProduction) {
+            // Only add Authorization header in development mode
+            if (useLocalStorageAuth()) {
                 const token = localStorage.getItem('tax-auth-token')
                 if (token) {
                     headers['Authorization'] = `Bearer ${token}`

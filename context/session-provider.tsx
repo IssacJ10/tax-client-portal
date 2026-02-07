@@ -15,6 +15,7 @@ import { Button } from '@/components/ui/button';
 import { extendCsrfToken, clearCsrfToken } from '@/lib/security/csrf';
 import { tokenCache } from '@/lib/security/secure-storage';
 import { useSWRConfig } from 'swr';
+import { useLocalStorageAuth } from '@/lib/security/environment';
 
 // --- CONFIGURATION ---
 const IDLE_WARNING_MS = 13 * 60 * 1000;  // Warn after 13 minutes of inactivity
@@ -93,29 +94,29 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
     /**
      * Check session validity with server
      *
-     * Production (HTTPS): Uses httpOnly cookies (secure, no XSS risk)
-     * Development (HTTP): Falls back to localStorage + Authorization header
-     *                     (because sameSite='lax' cookies don't work cross-origin)
+     * Dual-mode authentication:
+     * - Production (jjelevateas.com): httpOnly cookies (more secure, shared parent domain)
+     * - Development (App Engine, localhost): localStorage + Bearer token
      */
     const checkSession = useCallback(async (): Promise<{ authenticated: boolean; user: User | null }> => {
         try {
-            const isProduction = process.env.NODE_ENV === 'production';
-            const storedToken = localStorage.getItem('tax-auth-token');
-
-            // Build headers - only include Authorization in development
+            // Build headers
             const headers: HeadersInit = {
                 'Content-Type': 'application/json',
             };
 
-            // In development, add Authorization header from localStorage
-            // In production, httpOnly cookies handle auth via credentials: 'include'
-            if (!isProduction && storedToken) {
-                headers['Authorization'] = `Bearer ${storedToken}`;
+            // Only add Authorization header in development mode
+            // Production uses httpOnly cookies sent automatically via credentials: 'include'
+            if (useLocalStorageAuth()) {
+                const storedToken = localStorage.getItem('tax-auth-token');
+                if (storedToken) {
+                    headers['Authorization'] = `Bearer ${storedToken}`;
+                }
             }
 
             const res = await fetch(`${STRAPI_URL}/api/users/me`, {
                 method: 'GET',
-                credentials: 'include', // Sends httpOnly cookies (works in production)
+                credentials: 'include', // Send httpOnly cookies (production) or as backup (dev)
                 headers,
             });
 
@@ -126,9 +127,8 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
                 }
             }
 
-            // Not authenticated
-            if (!isProduction) {
-                // In development, clear stale token
+            // Not authenticated - clear stale token (development mode only)
+            if (useLocalStorageAuth()) {
                 localStorage.removeItem('tax-auth-token');
             }
             return { authenticated: false, user: null };
@@ -301,14 +301,13 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
 
     /**
      * Login Handler
-     * Called after successful authentication - server has already set httpOnly cookies
+     * Called after successful authentication
      *
-     * Production: httpOnly cookies handle auth (no localStorage token storage)
-     * Development: Token stored in localStorage as fallback (sameSite='lax' issue)
+     * Dual-mode authentication:
+     * - Production: httpOnly cookies handle auth (token stored as backup only)
+     * - Development: localStorage token used for auth
      */
     const login = useCallback((newToken: string, newUser: User) => {
-        const isProduction = process.env.NODE_ENV === 'production';
-
         // Reset logout flag to allow future logouts
         isLoggingOutRef.current = false;
 
@@ -337,13 +336,11 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
         // Store user info in localStorage for display (NOT sensitive - just name/email)
         localStorage.setItem('tax-auth-user', JSON.stringify(newUser));
 
-        // SECURITY: Only store token in localStorage in development
-        // In production, httpOnly cookies handle auth securely
-        if (!isProduction && newToken) {
+        // Store token in localStorage
+        // - Development: Used for auth via Authorization header
+        // - Production: Stored as backup (primary auth is via httpOnly cookies)
+        if (newToken) {
             localStorage.setItem('tax-auth-token', newToken);
-        } else if (isProduction) {
-            // Clear any existing token from localStorage in production
-            localStorage.removeItem('tax-auth-token');
         }
 
         // Store token in state for backwards compatibility with existing components
@@ -410,22 +407,33 @@ export const SessionProvider = ({ children }: { children: React.ReactNode }) => 
 
     /**
      * Manual Session Refresh
-     * Calls the refresh endpoint which will set new httpOnly cookies
+     * Calls the refresh endpoint to get a new access token
+     *
+     * Dual-mode: Development uses Authorization header, production uses cookies
      */
     const refreshSession = useCallback(async (): Promise<boolean> => {
         try {
+            const headers: HeadersInit = {
+                'Content-Type': 'application/json',
+            };
+
+            // Only add Authorization header in development mode
+            if (useLocalStorageAuth()) {
+                const storedToken = localStorage.getItem('tax-auth-token');
+                if (storedToken) {
+                    headers['Authorization'] = `Bearer ${storedToken}`;
+                }
+            }
+
             const res = await fetch(`${STRAPI_URL}/api/token/refresh`, {
                 method: 'POST',
-                credentials: 'include', // CRITICAL: Send httpOnly refresh token cookie
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                credentials: 'include',
+                headers,
             });
 
             if (res.ok) {
                 const data = await res.json();
-                // Server has set new httpOnly cookies
-                // Also update localStorage fallback for development
+                // Update token in state and localStorage (for both modes)
                 if (data.jwt) {
                     setToken(data.jwt);
                     localStorage.setItem('tax-auth-token', data.jwt);

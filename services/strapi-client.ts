@@ -5,6 +5,7 @@ import { sanitizeInput, sanitizeFormData, containsDangerousPatterns, containsSql
 import { getCsrfHeaders } from "@/lib/security/csrf";
 import { validateFileUpload } from "@/lib/security/validation";
 import { logError } from "@/services/error-logging-service";
+import { useLocalStorageAuth } from "@/lib/security/environment";
 
 const STRAPI_URL = process.env.NEXT_PUBLIC_STRAPI_URL || "http://localhost:1337";
 
@@ -83,17 +84,16 @@ function validateRequestData(data: unknown): { safe: boolean; error?: string } {
   return checkValue(data);
 }
 
-// Security Step 1: Request interceptor - sanitization, CSRF
-// Production: Uses httpOnly cookies (withCredentials: true)
-// Development: Falls back to localStorage token (sameSite='lax' cookies don't work cross-origin)
+// Security Step 1: Request interceptor - sanitization, CSRF, auth
+// Dual-mode authentication:
+// - Production (jjelevateas.com): httpOnly cookies (more secure, shared parent domain)
+// - Development (App Engine, localhost): localStorage + Bearer token
 strapiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     if (typeof window !== "undefined") {
-      const isProduction = process.env.NODE_ENV === 'production';
-
-      // DEVELOPMENT ONLY: Add Authorization header from localStorage
-      // In production, httpOnly cookies handle auth via withCredentials: true
-      if (!isProduction) {
+      // Only add Authorization header in development mode
+      // Production uses httpOnly cookies which are sent automatically via withCredentials
+      if (useLocalStorageAuth()) {
         const token = localStorage.getItem("tax-auth-token");
         if (token) {
           config.headers.Authorization = `Bearer ${token}`;
@@ -305,11 +305,8 @@ export async function uploadFile(file: File): Promise<UploadedFile> {
   const sanitizedFile = new File([file], sanitizedName, { type: file.type });
   formData.append('files', sanitizedFile);
 
-  const isProduction = process.env.NODE_ENV === 'production';
-
-  // DEVELOPMENT ONLY: Get token from localStorage
-  // In production, httpOnly cookies handle auth via credentials: 'include'
-  const devToken = !isProduction && typeof window !== 'undefined'
+  // Get token from localStorage for auth header (development mode only)
+  const authToken = useLocalStorageAuth() && typeof window !== 'undefined'
     ? localStorage.getItem('tax-auth-token')
     : null;
 
@@ -318,8 +315,8 @@ export async function uploadFile(file: File): Promise<UploadedFile> {
       method: 'POST',
       credentials: 'include', // Sends httpOnly cookies (works in production)
       headers: {
-        // Development fallback: Authorization header
-        ...(devToken ? { Authorization: `Bearer ${devToken}` } : {}),
+        // Authorization header for development, cookies for production
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         ...getCsrfHeaders(),
       },
       body: formData,
