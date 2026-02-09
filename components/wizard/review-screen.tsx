@@ -312,7 +312,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
             </p>
             <div className="rounded-lg bg-white border border-gray-200 p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Send Interac e-Transfer to:</p>
-              <p className="font-semibold text-[#07477a]">payments@jjelevate.ca</p>
+              <p className="font-semibold text-[#07477a]">payments@jjelevateas.com</p>
             </div>
             <div className="space-y-2">
               <p className="font-medium text-gray-900">Instructions:</p>

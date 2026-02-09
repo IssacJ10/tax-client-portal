@@ -75,9 +75,9 @@ const typeConfig: Record<string, { label: string; icon: any; shortLabel: string 
 
 // Tax deadlines
 const taxDeadlines = [
-  { date: "Apr 30, 2025", label: "Personal Tax Filing Deadline", type: "urgent" },
-  { date: "Jun 15, 2025", label: "Self-Employed Filing Deadline", type: "upcoming" },
-  { date: "Mar 31, 2025", label: "RRSP Contribution Deadline", type: "upcoming" },
+  { date: "Apr 30, 2026", label: "Personal Tax Filing Deadline", type: "urgent" },
+  { date: "Jun 15, 2026", label: "Self-Employed Filing Deadline", type: "upcoming" },
+  { date: "Mar 2, 2026", label: "RRSP Contribution Deadline", type: "upcoming" },
 ]
 
 // Tax tips

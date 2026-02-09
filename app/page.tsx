@@ -196,7 +196,7 @@ export default function HomePage() {
                     <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
-                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2026</p></div>
                       </div>
                     </div>
                   </div>
@@ -205,7 +205,7 @@ export default function HomePage() {
                     <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[190px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
-                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2026</p></div>
                       </div>
                     </div>
                   </div>
@@ -214,7 +214,7 @@ export default function HomePage() {
                     <div style={{ animation: "counterSpin 30s linear infinite" }}>
                       <div className="bg-gradient-to-br from-white/90 via-[#07477a]/10 to-white/80 backdrop-blur-xl border border-[#07477a]/20 rounded-2xl px-4 py-3 shadow-2xl flex items-center gap-3 w-[200px]">
                         <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-[#07477a]/20 to-[#07477a]/5 border border-[#07477a]/20 flex items-center justify-center shrink-0"><CalendarCheck className="h-4 w-4 text-[#07477a]" /></div>
-                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2025</p></div>
+                        <div><p className="text-[10px] text-gray-500 font-medium">Next Deadline</p><p className="text-sm font-bold text-[#07477a]">Apr 30, 2026</p></div>
                       </div>
                     </div>
                   </div>
