@@ -30,6 +30,197 @@ const staggerContainerSlow = {
   visible: { transition: { staggerChildren: 0.08 } },
 }
 
+// --- JSON-LD Structured Data for SEO / Answer Engines ---
+const organizationSchema = {
+  "@context": "https://schema.org",
+  "@type": ["LocalBusiness", "AccountingService"],
+  "@id": "https://jjelevateas.com/#organization",
+  name: "JJ Elevate Accounting Solutions Inc.",
+  alternateName: "JJ Elevate",
+  description:
+    "Professional tax filing and accounting services for individuals, trusts, and businesses across Canada. Offering personal T1, corporate T2, trust T3, bookkeeping, payroll, GST/HST filing, and business registration.",
+  url: "https://jjelevateas.com",
+  logo: "https://jjelevateas.com/images/logo.png",
+  image: "https://jjelevateas.com/images/logo.png",
+  telephone: "+1-705-770-3951",
+  email: "Contact@jjelevateas.com",
+  address: {
+    "@type": "PostalAddress",
+    streetAddress: "37-64 Belvedere Avenue",
+    addressLocality: "Charlottetown",
+    addressRegion: "PE",
+    postalCode: "",
+    addressCountry: "CA",
+  },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: 46.2504142,
+    longitude: -63.1430307,
+  },
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      opens: "00:00",
+      closes: "23:59",
+      validFrom: "2026-01-01",
+      validThrough: "2026-04-30",
+      description: "Tax Season - 24/7",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
+      opens: "17:00",
+      closes: "23:00",
+      validFrom: "2026-05-01",
+      validThrough: "2026-12-31",
+      description: "Off-Season",
+    },
+  ],
+  priceRange: "$$",
+  currenciesAccepted: "CAD",
+  paymentAccepted: "Credit Card, Interac e-Transfer",
+  areaServed: { "@type": "Country", name: "Canada" },
+  sameAs: [
+    "https://www.facebook.com/profile.php?id=61573533512866",
+    "https://www.instagram.com/jj_elevate_/",
+    "https://x.com/JismaJose85083",
+    "https://www.linkedin.com/company/jj-elevate-accounting-solutions-inc/",
+    "https://www.youtube.com/@JJElevateServices",
+  ],
+  aggregateRating: {
+    "@type": "AggregateRating",
+    ratingValue: "5.0",
+    reviewCount: "500",
+    bestRating: "5",
+  },
+  hasOfferCatalog: {
+    "@type": "OfferCatalog",
+    name: "Tax & Accounting Services",
+    itemListElement: [
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Personal Tax Filing (T1)",
+          description: "T1 General Filing, RRSP & tax credit optimization for individuals and families",
+        },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Business Tax (T2)",
+          description: "Corporate tax returns and financial statement preparation",
+        },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Trust Tax Filing (T3)",
+          description: "Trust income tax returns for family trusts, estate trusts, and testamentary trusts",
+        },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Bookkeeping",
+          description: "Monthly and quarterly bookkeeping with expense tracking",
+        },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Payroll Services",
+          description: "Employee payroll deductions management and T4/T4A filing",
+        },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "GST/HST Filing",
+          description: "CRA compliance, remittance, and input tax credit optimization",
+        },
+      },
+      {
+        "@type": "Offer",
+        itemOffered: {
+          "@type": "Service",
+          name: "Business Registration",
+          description: "Incorporation services and CRA business account setup",
+        },
+      },
+    ],
+  },
+}
+
+const websiteSchema = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "JJ Elevate Accounting Solutions",
+  url: "https://jjelevateas.com",
+  publisher: { "@id": "https://jjelevateas.com/#organization" },
+}
+
+const faqSchema = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "What tax filing services does JJ Elevate offer?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "JJ Elevate offers personal T1 tax filing, corporate T2 business tax returns, trust T3 tax filing, bookkeeping, payroll services, GST/HST filing, and business registration/incorporation across Canada.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "When is the Canadian tax filing deadline for 2026?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "The Canadian tax filing deadline for the 2025 tax year is April 30, 2026. Self-employed individuals have until June 15, 2026 to file, but any balance owing is still due by April 30, 2026.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "How much does tax filing cost at JJ Elevate?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "JJ Elevate offers transparent, guaranteed pricing starting from $45 CAD for personal tax filing. Corporate T2 filing and other services are priced based on complexity. All rates are guaranteed with no hidden fees.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Is JJ Elevate's online tax filing secure?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. JJ Elevate uses a secure online platform with encrypted document uploads and data protection. All filings are CPA-certified and reviewed by professional accountants.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Does JJ Elevate handle trust tax returns (T3)?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Yes. JJ Elevate prepares T3 trust income tax returns for family trusts, estate trusts, testamentary trusts, and inter vivos trusts across Canada. Our CPA-certified team ensures compliance with CRA trust reporting requirements.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Where is JJ Elevate located?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "JJ Elevate Accounting Solutions is located at 37-64 Belvedere Avenue, Charlottetown, Prince Edward Island, Canada. We serve clients across all Canadian provinces through our secure online filing portal.",
+      },
+    },
+  ],
+}
+
 export default function HomePage() {
   const router = useRouter()
   const heroRef = useRef<HTMLDivElement>(null)
@@ -80,6 +271,19 @@ export default function HomePage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-transparent overflow-x-hidden">
+      {/* Structured Data for SEO / Answer Engines */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteSchema) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqSchema) }}
+      />
       <SiteHeader />
 
       <main className="flex-1 relative">
