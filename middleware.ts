@@ -289,6 +289,15 @@ function checkUrlSafety(url: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+  const hostname = request.headers.get('host') || ''
+
+  // Canonical domain redirect: www → non-www (301 permanent)
+  // Consolidates SEO authority and prevents duplicate content indexing
+  if (hostname.startsWith('www.')) {
+    const url = request.nextUrl.clone()
+    url.host = hostname.replace('www.', '')
+    return NextResponse.redirect(url, 301)
+  }
 
   // Skip static paths
   if (STATIC_PATHS.some((path) => pathname.startsWith(path))) {
