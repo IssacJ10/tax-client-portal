@@ -40,8 +40,9 @@ export function useHttpOnlyCookies(): boolean {
 
 /**
  * Check if we should use localStorage tokens for auth
- * Use localStorage in development (different origins, third-party cookie issues)
+ * Always use localStorage + Bearer token for auth across all environments.
+ * httpOnly cookies are unreliable behind App Engine's HTTPS-terminating load balancer.
  */
 export function useLocalStorageAuth(): boolean {
-  return !isProductionDomain();
+  return true;
 }

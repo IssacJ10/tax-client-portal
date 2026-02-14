@@ -92,7 +92,7 @@ export const SecurityConfig = {
     'style-src': ["'self'", "'unsafe-inline'"], // Needed for Tailwind
     'img-src': ["'self'", 'data:', 'blob:', 'https:'],
     'font-src': ["'self'", 'data:'],
-    'connect-src': ["'self'", 'http://localhost:1337', 'https://*.strapi.io', 'https://www.google.com', 'https://*.nn.r.appspot.com'],
+    'connect-src': ["'self'", 'https://cms.jjelevateas.com', 'https://*.strapi.io', 'https://www.google.com', 'https://*.nn.r.appspot.com'],
     'frame-src': ["'self'", 'https://www.google.com'], // For reCAPTCHA iframe
     'frame-ancestors': ["'none'"],
     'base-uri': ["'self'"],
@@ -105,8 +105,10 @@ export const SecurityConfig = {
    */
   cors: {
     allowedOrigins: [
-      'http://localhost:3000',
-      'https://yourdomain.com', // Add production domain
+      'https://jjelevateas.com',
+      'https://www.jjelevateas.com',
+      'https://cms.jjelevateas.com',
+      'https://admin.jjelevateas.com',
     ],
     allowedMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],

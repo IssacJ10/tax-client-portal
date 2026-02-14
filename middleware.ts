@@ -32,9 +32,11 @@ const PUBLIC_PATHS = ['/auth', '/connect', '/api']
 // In development, allow localhost
 const ALLOWED_ORIGINS = process.env.NODE_ENV === 'production'
   ? [
-      'https://jjelevate.com',
-      'https://www.jjelevate.com',
-      'https://tax-client-portal-dot-secret-rope-485200-h6.nn.r.appspot.com',
+      'https://jjelevateas.com',
+      'https://www.jjelevateas.com',
+      'https://cms.jjelevateas.com',
+      'https://admin.jjelevateas.com',
+      'https://portal-dot-secret-rope-485200-h6.nn.r.appspot.com',
     ]
   : [
       'http://localhost:3000',
@@ -153,7 +155,7 @@ function addSecurityHeaders(response: NextResponse): NextResponse {
 
   // Build connect-src based on environment
   const connectSrc = isProduction
-    ? "connect-src 'self' https://*.strapi.io https://www.google.com https://*.nn.r.appspot.com"
+    ? "connect-src 'self' https://cms.jjelevateas.com https://*.strapi.io https://www.google.com https://*.nn.r.appspot.com"
     : "connect-src 'self' http://localhost:1337 https://*.strapi.io https://www.google.com https://*.nn.r.appspot.com"
 
   // Content Security Policy

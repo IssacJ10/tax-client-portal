@@ -1,0 +1,10 @@
+dispatch:
+  # Client Portal
+  - url: "jjelevateas.com/*"
+    service: portal
+  # CMS Backend
+  - url: "cms.jjelevateas.com/*"
+    service: cms
+  # Admin Dashboard
+  - url: "admin.jjelevateas.com/*"
+    service: admin
