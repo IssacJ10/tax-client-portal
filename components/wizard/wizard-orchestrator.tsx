@@ -462,17 +462,31 @@ export function WizardOrchestrator({ filingId, initialPersonalFilingId }: Wizard
         }
         return updated
       })
-      // Clear error when user types
-      // We need to find the question ID that maps to this key (name), ideally we map by ID for errors
-      // specific logic might be needed if key !== question.id.
-      // For now, let's just clear specific error if we can map it back or clear all if lazy.
-      // Better: In QuestionRenderer we passed `key` as `question.key` which is `question.name`.
-      // The validator uses `question.id` for error keys.
-      // Let's assume for now we clear errors roughly or let next validate fix it.
+      // Clear errors: for the changed field itself, and for any fields
+      // whose conditionalRequired is no longer met (e.g. SIN becomes optional)
       setErrors((prev) => {
+        if (Object.keys(prev).length === 0) return prev
         const newErrors = { ...prev }
-        // Attempt to clear error for this field
-        // Since we don't have the ID here easily, maybe we just leave it until next validate or rely on re-render
+        if (activeSchema?.questions) {
+          for (const q of activeSchema.questions) {
+            if (!q.id || !newErrors[q.id]) continue
+            // Clear error for the field that was just changed
+            if (q.name === key) {
+              delete newErrors[q.id]
+              continue
+            }
+            // Clear error for fields whose conditionalRequired is no longer met
+            if (q.validation?.conditionalRequired?.when) {
+              const isStillRequired = QuestionRegistry.isQuestionVisible(
+                { conditional: q.validation.conditionalRequired.when },
+                { ...formData, [key]: value }
+              )
+              if (!isStillRequired) {
+                delete newErrors[q.id]
+              }
+            }
+          }
+        }
         return newErrors
       })
     },

@@ -797,11 +797,22 @@
         "pattern": "^\\d{3}-?\\d{3}-?\\d{3}$",
         "conditionalRequired": {
           "when": {
-            "parentQuestionId": "maritalStatus.status",
-            "operator": "in",
-            "values": [
-              "MARRIED",
-              "COMMON_LAW"
+            "and": [
+              {
+                "parentQuestionId": "maritalStatus.status",
+                "operator": "in",
+                "values": [
+                  "MARRIED",
+                  "COMMON_LAW"
+                ]
+              },
+              {
+                "parentQuestionId": "spouse.statusInCanada",
+                "operator": "notIn",
+                "values": [
+                  "NON_RESIDENT"
+                ]
+              }
             ]
           }
         }
@@ -888,7 +899,7 @@
         }
       },
       "step": "spouse_info",
-      "order": 25,
+      "order": 12,
       "conditional": {
         "parentQuestionId": "maritalStatus.status",
         "operator": "in",
