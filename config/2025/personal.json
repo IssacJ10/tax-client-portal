@@ -1413,6 +1413,10 @@
             {
               "value": "PROTECTED_PERSON",
               "label": "Protected Person"
+            },
+            {
+              "value": "NON_RESIDENT",
+              "label": "Non Resident"
             }
           ],
           "validation": {
