@@ -707,7 +707,23 @@ export class CorporateFilingService {
     // After submission, paidAmount should equal totalPrice (user has paid for this filing)
     const paidAmount = totalPrice
 
-    console.log('[submitForReview] STEP 8: totalPrice =', totalPrice, ', paidAmount =', paidAmount)
+    // Build fee snapshot for amendment tracking
+    const previouslyPaid = (filingData as any).paidAmount || 0
+    const isAmendment = !!((filingData as any).referenceNumber && previouslyPaid > 0)
+    const amountDue = isAmendment ? totalPrice - previouslyPaid : totalPrice
+    const latestFeeSnapshot = {
+      totalPrice,
+      previouslyPaid,
+      amountDue,
+      isAmendment,
+      items: [] as Array<{ label: string; amount: number }>,
+      subtotal: totalPrice,
+      tax: 0,
+      currency: 'CAD',
+      submittedAt: new Date().toISOString()
+    }
+
+    console.log('[submitForReview] STEP 8: totalPrice =', totalPrice, ', paidAmount =', paidAmount, ', isAmendment =', isAmendment)
 
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
@@ -715,6 +731,7 @@ export class CorporateFilingService {
         confirmationNumber,
         totalPrice,
         paidAmount,
+        latestFeeSnapshot,
         submittedAt: new Date().toISOString()
       }
     })

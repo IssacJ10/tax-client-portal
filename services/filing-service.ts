@@ -144,6 +144,7 @@ function transformFiling(data: any): Filing & { corporateFiling?: any; trustFili
     status: (data.status || data.filingStatus?.statusCode || data.filingStatus?.code || 'DRAFT') as FilingStatus,
     totalPrice: data.totalPrice || 0,
     paidAmount: data.paidAmount || 0,
+    latestFeeSnapshot: data.latestFeeSnapshot || undefined,
     personalFilings: personalFilingsData.map(transformPersonalFiling),
     wizardProgress: data.wizardProgress || undefined,
     corporateFiling,
@@ -1291,7 +1292,7 @@ export const FilingService = {
    * Also marks all child personal-filings as COMPLETED
    * Accepts optional recaptchaToken for bot protection (verified on backend)
    */
-  async submitForReview(filingId: string, calculatedTotalPrice?: number, recaptchaToken?: string | null): Promise<Filing> {
+  async submitForReview(filingId: string, calculatedTotalPrice?: number, recaptchaToken?: string | null, pricingDetails?: { items: Array<{ label: string; amount: number }>; subtotal: number; tax: number }): Promise<Filing> {
     console.log('[submitForReview] Submitting filing:', filingId, 'with calculatedTotalPrice:', calculatedTotalPrice)
 
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
@@ -1360,7 +1361,23 @@ export const FilingService = {
     // This way, if they amend again later, we know what they paid previously
     const paidAmount = totalPrice
 
-    console.log('[submitForReview] STEP 5: totalPrice =', totalPrice, ', paidAmount =', paidAmount)
+    // Build fee snapshot for amendment tracking
+    const previouslyPaid = filingData.paidAmount || 0
+    const isAmendment = !!(filingData.referenceNumber && previouslyPaid > 0)
+    const amountDue = isAmendment ? totalPrice - previouslyPaid : totalPrice
+    const latestFeeSnapshot = {
+      totalPrice,
+      previouslyPaid,
+      amountDue,
+      isAmendment,
+      items: pricingDetails?.items || [],
+      subtotal: pricingDetails?.subtotal ?? totalPrice,
+      tax: pricingDetails?.tax ?? 0,
+      currency: 'CAD',
+      submittedAt: new Date().toISOString()
+    }
+
+    console.log('[submitForReview] STEP 5: totalPrice =', totalPrice, ', paidAmount =', paidAmount, ', isAmendment =', isAmendment)
 
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
@@ -1368,6 +1385,7 @@ export const FilingService = {
         confirmationNumber,
         totalPrice,
         paidAmount,
+        latestFeeSnapshot,
         submittedAt: new Date().toISOString()
       }
     })

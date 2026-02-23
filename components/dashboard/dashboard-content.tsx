@@ -44,6 +44,7 @@ import {
   AlertTriangle,
   Filter,
   Hash,
+  DollarSign,
 } from "lucide-react"
 import type { Filing } from "@/lib/domain/types"
 
@@ -574,6 +575,41 @@ function FilingCard({ filing }: { filing: Filing }) {
               <p className="text-[10px] text-gray-500 uppercase tracking-wide">Reference</p>
               <p className="text-sm font-semibold text-[#07477a] truncate">{filing.referenceNumber}</p>
             </div>
+          </div>
+        )}
+
+        {/* Filing Amount */}
+        {filing.totalPrice > 0 && (
+          <div className="mb-3 p-2 rounded-lg bg-white/50 border border-white/60">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-3.5 w-3.5 text-[#07477a]" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">
+                  {filing.latestFeeSnapshot?.isAmendment ? 'Total' : 'Filing Fee'}
+                </p>
+                <p className="text-sm font-semibold text-[#07477a]">
+                  {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(filing.totalPrice)}
+                </p>
+              </div>
+            </div>
+            {filing.latestFeeSnapshot?.isAmendment && (
+              <div className="mt-1.5 pt-1.5 border-t border-white/40 space-y-0.5">
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">Previously Paid</span>
+                  <span className="text-green-600 font-medium">
+                    {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(filing.latestFeeSnapshot.previouslyPaid)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">
+                    {filing.latestFeeSnapshot.amountDue < 0 ? 'Refund Due' : 'Additional Due'}
+                  </span>
+                  <span className={`font-semibold ${filing.latestFeeSnapshot.amountDue < 0 ? 'text-green-600' : 'text-[#07477a]'}`}>
+                    {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(filing.latestFeeSnapshot.amountDue))}
+                  </span>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

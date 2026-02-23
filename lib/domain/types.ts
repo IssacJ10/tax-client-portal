@@ -13,6 +13,19 @@ export interface WizardProgress {
   lastDependentIndex?: number;
 }
 
+// --- Fee Snapshot (persisted at submission time) ---
+export interface FeeSnapshot {
+  totalPrice: number;
+  previouslyPaid: number;
+  amountDue: number;
+  isAmendment: boolean;
+  items: Array<{ label: string; amount: number }>;
+  subtotal: number;
+  tax: number;
+  currency: string;
+  submittedAt: string;
+}
+
 // --- Database Models ---
 export interface Filing {
   id: string; // Strapi documentId
@@ -23,6 +36,7 @@ export interface Filing {
   status: FilingStatus;
   totalPrice: number;
   paidAmount?: number; // Amount already paid (for tracking amendments)
+  latestFeeSnapshot?: FeeSnapshot; // Fee breakdown at time of last submission
   personalFilings: PersonalFiling[];
   wizardProgress?: WizardProgress; // Progress tracking for resume functionality
   createdAt: string;

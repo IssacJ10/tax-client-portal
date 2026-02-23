@@ -154,7 +154,11 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
     const recaptchaToken = await executeRecaptcha("filing_submit")
 
     // Pass the calculated total price and reCAPTCHA token to be stored/verified
-    const updatedFiling = await submitForReview(pricing.total, recaptchaToken)
+    const updatedFiling = await submitForReview(pricing.total, recaptchaToken, {
+      items: [{ label: 'Base Filing Fee', amount: pricing.baseFee }, ...pricing.items],
+      subtotal: pricing.subtotal,
+      tax: pricing.tax,
+    })
     if (updatedFiling) {
       // Store the reference number from the response
       setSubmittedRefNumber(updatedFiling.referenceNumber || null)
