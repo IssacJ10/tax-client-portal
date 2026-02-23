@@ -610,6 +610,11 @@ function FilingCard({ filing }: { filing: Filing }) {
                 </div>
               </div>
             )}
+            <div className="mt-1.5 pt-1.5 border-t border-white/40">
+              <p className="text-[10px] text-gray-500">
+                For payment inquiries: <a href="mailto:payments@jjelevateas.com" className="text-[#07477a] font-medium hover:underline">payments@jjelevateas.com</a>
+              </p>
+            </div>
           </div>
         )}
 
