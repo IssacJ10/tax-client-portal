@@ -42,12 +42,8 @@ declare global {
 export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps) {
   const [isLoaded, setIsLoaded] = useState(false);
 
-  const recaptchaSiteKey = siteKey || process.env.JJ_PORTAL_CAPTCHA_KEY;
-
-  // Debug: Log if key is loaded (remove in production)
-  if (typeof window !== 'undefined') {
-    console.log("[ReCaptcha] Site key loaded:", recaptchaSiteKey ? "Yes" : "No");
-  }
+  // NEXT_PUBLIC_ prefix required for client-side access in Next.js
+  const recaptchaSiteKey = siteKey || process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
   // Define callbacks BEFORE any conditional returns (React hooks rule)
   const executeRecaptcha = useCallback(
@@ -59,13 +55,11 @@ export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps)
 
       // Wait for script to load (max 5 seconds)
       if (!window.grecaptcha) {
-        console.log("[ReCaptcha] Waiting for script to load...");
         for (let i = 0; i < 50; i++) {
           await new Promise(r => setTimeout(r, 100));
           if (window.grecaptcha) break;
         }
         if (!window.grecaptcha) {
-          console.error("[ReCaptcha] Script failed to load after 5 seconds");
           return null;
         }
       }
@@ -80,8 +74,7 @@ export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps)
           });
         });
         return token;
-      } catch (error) {
-        console.error("[ReCaptcha] Error executing reCAPTCHA:", error);
+      } catch {
         return null;
       }
     },
@@ -90,13 +83,11 @@ export function ReCaptchaProvider({ children, siteKey }: ReCaptchaProviderProps)
 
   const handleScriptLoad = useCallback(() => {
     setIsLoaded(true);
-    console.log("[ReCaptcha] Script loaded successfully");
   }, []);
 
   // If no site key is configured, render children without reCAPTCHA script
   // This allows development without setting up reCAPTCHA keys
   if (!recaptchaSiteKey) {
-    console.warn("[ReCaptcha] No site key configured. reCAPTCHA is disabled.");
     return (
       <ReCaptchaContext.Provider value={{ executeRecaptcha, isLoaded: false }}>
         {children}

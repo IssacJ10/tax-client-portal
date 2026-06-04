@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /dashboard/*
+Disallow: /filing
+Disallow: /filing/*
+Disallow: /auth
+Disallow: /auth/*
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /connect
+
+Sitemap: https://jjelevateas.com/sitemap.xml

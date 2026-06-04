@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { useFilingContext } from "@/context/filing-context"
 import { useReCaptcha } from "@/components/recaptcha-provider"
 import { calculatePricingFromSchema, formatPrice, formatFilingRef } from "@/lib/domain/pricing-engine"
+import { maskSin } from "@/lib/security/sin-protection"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import {
   Check,
@@ -153,7 +154,11 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
     const recaptchaToken = await executeRecaptcha("filing_submit")
 
     // Pass the calculated total price and reCAPTCHA token to be stored/verified
-    const updatedFiling = await submitForReview(pricing.total, recaptchaToken)
+    const updatedFiling = await submitForReview(pricing.total, recaptchaToken, {
+      items: [{ label: 'Base Filing Fee', amount: pricing.baseFee }, ...pricing.items],
+      subtotal: pricing.subtotal,
+      tax: pricing.tax,
+    })
     if (updatedFiling) {
       // Store the reference number from the response
       setSubmittedRefNumber(updatedFiling.referenceNumber || null)
@@ -311,7 +316,7 @@ export function ReviewScreen({ filing, onEditPerson, onSubmitted, onAddSpouse, o
             </p>
             <div className="rounded-lg bg-white border border-gray-200 p-4">
               <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Send Interac e-Transfer to:</p>
-              <p className="font-semibold text-[#07477a]">payments@jjelevate.ca</p>
+              <p className="font-semibold text-[#07477a]">payments@jjelevateas.com</p>
             </div>
             <div className="space-y-2">
               <p className="font-medium text-gray-900">Instructions:</p>
@@ -693,6 +698,16 @@ function formatAnswerValue(value: any, question: any): string {
       return date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })
     } catch {
       return String(value)
+    }
+  }
+
+  // SECURITY: Mask SIN fields to protect sensitive PII
+  if (question.name?.toLowerCase().includes('sin') || question.label?.toLowerCase().includes('sin')) {
+    const strValue = String(value)
+    // Only mask if it looks like a SIN (9 digits with optional dashes)
+    const digitsOnly = strValue.replace(/\D/g, '')
+    if (digitsOnly.length === 9) {
+      return maskSin(digitsOnly)
     }
   }
 

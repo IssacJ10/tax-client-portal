@@ -1,6 +1,7 @@
 // tax-client-portal/lib/domain/question-registry.ts
 
 import { TaxFilingSchema, FilingType, FilingRole } from './types';
+import { isValidSin } from '@/lib/security/sin-protection';
 
 // Assuming you have moved your JSON files to these paths as discussed
 import personal2025 from '@/config/2025/personal.json'; // Or '@/config/2024/personal.json'
@@ -317,6 +318,15 @@ export class QuestionRegistry {
                 isValid = false;
               }
             }
+
+            // Special validation for SIN fields in repeaters - Luhn checksum
+            if (fieldValue && (field.name?.toLowerCase().includes('sin') || field.label?.toLowerCase().includes('sin'))) {
+              const sinValue = String(fieldValue).replace(/\D/g, '');
+              if (sinValue.length === 9 && !isValidSin(sinValue)) {
+                errors[`${question.id}_${itemIndex}_${field.name}`] = "invalid SIN number";
+                isValid = false;
+              }
+            }
           }
         }
         continue; // Skip regular validation for repeater questions (already handled above)
@@ -439,6 +449,16 @@ export class QuestionRegistry {
           const regex = new RegExp(validation.pattern);
           if (!regex.test(String(value))) {
             errors[question.id] = "invalid format";
+            isValid = false;
+          }
+        }
+
+        // 4b. Special validation for SIN fields - Luhn checksum validation
+        // This catches invalid SINs that pass the format check but fail checksum
+        if (question.name?.toLowerCase().includes('sin') || question.label?.toLowerCase().includes('sin')) {
+          const sinValue = String(value).replace(/\D/g, ''); // Remove non-digits
+          if (sinValue.length === 9 && !isValidSin(sinValue)) {
+            errors[question.id] = "invalid SIN number";
             isValid = false;
           }
         }

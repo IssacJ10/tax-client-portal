@@ -1,11 +1,25 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { Facebook, Linkedin, Mail, Phone, MapPin, Instagram, Youtube, Calendar, MessageCircle } from "lucide-react"
 
 export function SiteFooter() {
   const pathname = usePathname()
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  useEffect(() => {
+    const token = localStorage.getItem("tax-auth-token")
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setIsLoggedIn(Date.now() < payload.exp * 1000)
+      } catch {
+        setIsLoggedIn(false)
+      }
+    }
+  }, [pathname])
 
   // Hide footer on filing wizard pages (full-screen experience)
   if (pathname?.startsWith("/filing/")) {
@@ -62,24 +76,32 @@ export function SiteFooter() {
             <h3 className="font-semibold mb-4 text-gray-900">Services</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
-                  Personal Tax Filing
-                </Link>
+                {isLoggedIn ? (
+                  <span className="text-gray-600">Personal Tax Filing</span>
+                ) : (
+                  <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">Personal Tax Filing</Link>
+                )}
               </li>
               <li>
-                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
-                  Business Tax Returns
-                </Link>
+                {isLoggedIn ? (
+                  <span className="text-gray-600">Business Tax Returns</span>
+                ) : (
+                  <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">Business Tax Returns</Link>
+                )}
               </li>
               <li>
-                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
-                  Self-Employed Services
-                </Link>
+                {isLoggedIn ? (
+                  <span className="text-gray-600">Self-Employed Services</span>
+                ) : (
+                  <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">Self-Employed Services</Link>
+                )}
               </li>
               <li>
-                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
-                  Tax Planning
-                </Link>
+                {isLoggedIn ? (
+                  <span className="text-gray-600">Tax Planning</span>
+                ) : (
+                  <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">Tax Planning</Link>
+                )}
               </li>
             </ul>
           </div>
@@ -89,22 +111,22 @@ export function SiteFooter() {
             <h3 className="font-semibold mb-4 text-gray-900">Company</h3>
             <ul className="space-y-2 text-sm">
               <li>
-                <Link href="/#about" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href={isLoggedIn ? "/about" : "/#about"} {...(isLoggedIn ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-gray-600 hover:text-[#07477a] transition-colors">
                   About Us
                 </Link>
               </li>
               <li>
-                <Link href="/#features" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href={isLoggedIn ? "/services" : "/#features"} {...(isLoggedIn ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Our Services
                 </Link>
               </li>
               <li>
-                <Link href="/auth/login" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href={isLoggedIn ? "/dashboard" : "/auth/login"} className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Client Portal
                 </Link>
               </li>
               <li>
-                <Link href="/#contact" className="text-gray-600 hover:text-[#07477a] transition-colors">
+                <Link href={isLoggedIn ? "/contact" : "/#contact"} {...(isLoggedIn ? { target: "_blank", rel: "noopener noreferrer" } : {})} className="text-gray-600 hover:text-[#07477a] transition-colors">
                   Contact Us
                 </Link>
               </li>
@@ -131,8 +153,9 @@ export function SiteFooter() {
           </div>
         </div>
 
-        <div className="mt-8 border-t border-[#07477a]/10 pt-8 text-center text-sm text-gray-500">
+        <div className="mt-8 border-t border-[#07477a]/10 pt-8 text-center text-sm text-gray-500 space-y-2">
           <p>© JJ Elevate Accounting Solutions Inc. All rights reserved.</p>
+          <p className="text-xs text-gray-400 pt-1">Application developed by <a href="https://www.citysoftsolutions.com" target="_blank" rel="noopener noreferrer" className="text-[#07477a] hover:underline">CitySoft Solutions</a> | <a href="mailto:admin@citysoftsolutions.com" className="text-[#07477a] hover:underline">admin@citysoftsolutions.com</a></p>
         </div>
       </div>
     </footer>

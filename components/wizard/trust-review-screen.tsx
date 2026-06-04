@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { useFilingContext } from "@/context/filing-context"
 import { formatFilingRef } from "@/lib/domain/pricing-engine"
+import { maskSin } from "@/lib/security/sin-protection"
 import { QuestionRegistry } from "@/lib/domain/question-registry"
 import { TrustFilingService } from "@/services/trust-filing-service"
 import { toast } from "@/hooks/use-toast"
@@ -392,6 +393,15 @@ function formatAnswerValue(value: any, question: any): string {
     const keys = Object.keys(value).filter(k => value[k] !== null && value[k] !== undefined && value[k] !== '')
     if (keys.length === 0) return 'Not provided'
     return `${keys.length} field${keys.length > 1 ? 's' : ''} provided`
+  }
+
+  // SECURITY: Mask SIN fields to protect sensitive PII
+  if (question.name?.toLowerCase().includes('sin') || question.label?.toLowerCase().includes('sin')) {
+    const strValue = String(value)
+    const digitsOnly = strValue.replace(/\D/g, '')
+    if (digitsOnly.length === 9) {
+      return maskSin(digitsOnly)
+    }
   }
 
   return String(value)

@@ -21,7 +21,7 @@ interface FilingContextType {
     markFilingInProgress: (filingId: string) => Promise<void>;
     saveFormData: (id: string, data: any) => Promise<void>;
     flushSave: () => Promise<void>;
-    submitForReview: (calculatedTotalPrice?: number, recaptchaToken?: string | null) => Promise<Filing | null>;
+    submitForReview: (calculatedTotalPrice?: number, recaptchaToken?: string | null, pricingDetails?: { items: Array<{ label: string; amount: number }>; subtotal: number; tax: number }) => Promise<Filing | null>;
     refreshFiling: () => Promise<void>;
     saveWizardProgress: (overrides?: {
         sectionIndex?: number;

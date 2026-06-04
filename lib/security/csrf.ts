@@ -1,6 +1,25 @@
 /**
  * CSRF Protection Utilities
- * Generates and validates CSRF tokens for form submissions
+ *
+ * CSRF protection in this application uses multiple layers:
+ *
+ * 1. SameSite Cookies (Primary)
+ *    - httpOnly cookies with SameSite=Lax prevent cookies from being sent
+ *      on cross-site requests, blocking most CSRF attacks
+ *
+ * 2. Origin Header Validation (Server-side, in middleware.ts)
+ *    - State-changing requests (POST, PUT, PATCH, DELETE) validate that
+ *      the Origin header matches allowed domains
+ *    - This is the SERVER-SIDE CSRF protection
+ *
+ * 3. CSRF Tokens (This module - Defense in depth)
+ *    - Tokens are generated client-side and sent in X-CSRF-Token header
+ *    - Provides additional protection for form submissions
+ *    - Token validation should be implemented in the Strapi backend
+ *
+ * NOTE: The validateCsrfToken function in this module is CLIENT-SIDE only.
+ * For true CSRF protection, tokens must be validated SERVER-SIDE (in Strapi).
+ * The Origin header validation in middleware.ts provides server-side protection.
  */
 
 const CSRF_TOKEN_KEY = 'tax-csrf-token'
@@ -14,16 +33,26 @@ interface CsrfToken {
 
 /**
  * Generate a cryptographically secure random token
+ * SECURITY: Uses Web Crypto API only - no weak fallback
  */
 function generateRandomToken(length: number = 32): string {
-  if (typeof window !== 'undefined' && window.crypto) {
+  // Browser environment with Web Crypto API
+  if (typeof window !== 'undefined' && window.crypto?.getRandomValues) {
     const array = new Uint8Array(length)
     window.crypto.getRandomValues(array)
     return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('')
   }
 
-  // Fallback for non-browser environments
-  return Math.random().toString(36).substring(2) + Date.now().toString(36)
+  // Server-side (Node.js) environment
+  if (typeof globalThis !== 'undefined' && globalThis.crypto?.getRandomValues) {
+    const array = new Uint8Array(length)
+    globalThis.crypto.getRandomValues(array)
+    return Array.from(array, (byte) => byte.toString(16).padStart(2, '0')).join('')
+  }
+
+  // No secure random available - return empty string
+  // CSRF tokens are optional defense-in-depth; primary protection is Origin validation
+  return ''
 }
 
 /**

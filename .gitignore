@@ -25,3 +25,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# deployment configs (contain secrets/infra details)
+deploy-appengine.sh
+app.yaml
+app-production.yaml
+
+# macOS
+.DS_Store

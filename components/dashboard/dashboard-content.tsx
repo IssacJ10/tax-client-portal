@@ -44,6 +44,7 @@ import {
   AlertTriangle,
   Filter,
   Hash,
+  DollarSign,
 } from "lucide-react"
 import type { Filing } from "@/lib/domain/types"
 
@@ -75,9 +76,9 @@ const typeConfig: Record<string, { label: string; icon: any; shortLabel: string 
 
 // Tax deadlines
 const taxDeadlines = [
-  { date: "Apr 30, 2025", label: "Personal Tax Filing Deadline", type: "urgent" },
-  { date: "Jun 15, 2025", label: "Self-Employed Filing Deadline", type: "upcoming" },
-  { date: "Mar 31, 2025", label: "RRSP Contribution Deadline", type: "upcoming" },
+  { date: "Apr 30, 2026", label: "Personal Tax Filing Deadline", type: "urgent" },
+  { date: "Jun 15, 2026", label: "Self-Employed Filing Deadline", type: "upcoming" },
+  { date: "Mar 2, 2026", label: "RRSP Contribution Deadline", type: "upcoming" },
 ]
 
 // Tax tips
@@ -573,6 +574,46 @@ function FilingCard({ filing }: { filing: Filing }) {
             <div className="min-w-0 flex-1">
               <p className="text-[10px] text-gray-500 uppercase tracking-wide">Reference</p>
               <p className="text-sm font-semibold text-[#07477a] truncate">{filing.referenceNumber}</p>
+            </div>
+          </div>
+        )}
+
+        {/* Filing Amount */}
+        {filing.totalPrice > 0 && (
+          <div className="mb-3 p-2 rounded-lg bg-white/50 border border-white/60">
+            <div className="flex items-center gap-2">
+              <DollarSign className="h-3.5 w-3.5 text-[#07477a]" />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] text-gray-500 uppercase tracking-wide">
+                  {filing.latestFeeSnapshot?.isAmendment ? 'Total' : 'Filing Fee'}
+                </p>
+                <p className="text-sm font-semibold text-[#07477a]">
+                  {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(filing.totalPrice)}
+                </p>
+              </div>
+            </div>
+            {filing.latestFeeSnapshot?.isAmendment && (
+              <div className="mt-1.5 pt-1.5 border-t border-white/40 space-y-0.5">
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">Previously Paid</span>
+                  <span className="text-green-600 font-medium">
+                    {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(filing.latestFeeSnapshot.previouslyPaid)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span className="text-gray-500">
+                    {filing.latestFeeSnapshot.amountDue < 0 ? 'Refund Due' : 'Additional Due'}
+                  </span>
+                  <span className={`font-semibold ${filing.latestFeeSnapshot.amountDue < 0 ? 'text-green-600' : 'text-[#07477a]'}`}>
+                    {new Intl.NumberFormat('en-CA', { style: 'currency', currency: 'CAD' }).format(Math.abs(filing.latestFeeSnapshot.amountDue))}
+                  </span>
+                </div>
+              </div>
+            )}
+            <div className="mt-1.5 pt-1.5 border-t border-white/40">
+              <p className="text-[10px] text-gray-500">
+                For payment inquiries: <a href="mailto:payments@jjelevateas.com" className="text-[#07477a] font-medium hover:underline">payments@jjelevateas.com</a>
+              </p>
             </div>
           </div>
         )}

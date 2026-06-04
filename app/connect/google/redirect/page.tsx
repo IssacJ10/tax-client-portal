@@ -17,50 +17,64 @@ function GoogleRedirectContent() {
             if (processedRef.current) return;
             processedRef.current = true;
 
-            const jwt = searchParams.get("jwt")
-            const refresh = searchParams.get("refresh")
             const errorParam = searchParams.get("error")
 
             if (errorParam) {
+                // SECURITY: Clear error from URL to prevent exposure in browser history
+                window.history.replaceState({}, '', '/connect/google/redirect');
                 setError(errorParam)
                 return
             }
 
-            if (!jwt) {
-                setError("No authentication token found")
-                return
-            }
-
             try {
-                // Fetch user data using the JWT token
                 const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
+                const jwt = searchParams.get("jwt");
+
+                // SECURITY: Immediately clear JWT from URL after extraction
+                // This prevents the token from being:
+                // - Logged in browser history
+                // - Visible in server logs via Referer header
+                // - Captured by browser extensions
+                // - Exposed if user shares/bookmarks the URL
+                if (typeof window !== 'undefined') {
+                    window.history.replaceState({}, '', '/connect/google/redirect');
+                }
+
+                // JWT from URL is required (sent by Strapi OAuth callback)
+                if (!jwt) {
+                    throw new Error('No authentication token received');
+                }
+
+                // Fetch user data using the JWT from URL params
                 const userRes = await fetch(`${strapiUrl}/api/users/me`, {
+                    method: 'GET',
+                    credentials: 'include',
                     headers: {
-                        Authorization: `Bearer ${jwt}`
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${jwt}`,
                     }
                 });
 
                 if (!userRes.ok) {
-                    throw new Error('Failed to fetch user data');
+                    throw new Error('Failed to verify authentication');
                 }
 
                 const userData = await userRes.json();
 
-                // Use login to update session state and localStorage
-                login(jwt, userData);
-
-                if (refresh) {
-                    localStorage.setItem("tax-refresh-token", refresh)
+                if (!userData || !userData.id) {
+                    throw new Error('Invalid user data received');
                 }
 
-                // Redirect to dashboard
+                // Store token and user in session
+                login(jwt, userData);
+
+                // Small delay to ensure state is updated before redirect
                 setTimeout(() => {
                     window.location.href = "/dashboard";
                 }, 100);
 
             } catch (err) {
-                setError("An error occurred during authentication processing")
-                console.error(err)
+                setError(err instanceof Error ? err.message : "An error occurred during authentication")
             }
         }
 

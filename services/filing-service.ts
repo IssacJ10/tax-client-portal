@@ -2,6 +2,7 @@
 
 import { strapiClient, type StrapiResponse } from "./strapi-client"
 import type { Filing, PersonalFiling, FilingRole, FilingType, FilingStatus } from "@/lib/domain/types"
+import { authFetch } from "@/lib/security/auth-fetch"
 
 /**
  * Mutex implementation preserved from original project
@@ -143,6 +144,7 @@ function transformFiling(data: any): Filing & { corporateFiling?: any; trustFili
     status: (data.status || data.filingStatus?.statusCode || data.filingStatus?.code || 'DRAFT') as FilingStatus,
     totalPrice: data.totalPrice || 0,
     paidAmount: data.paidAmount || 0,
+    latestFeeSnapshot: data.latestFeeSnapshot || undefined,
     personalFilings: personalFilingsData.map(transformPersonalFiling),
     wizardProgress: data.wizardProgress || undefined,
     corporateFiling,
@@ -419,22 +421,16 @@ export const FilingService = {
     const response = await strapiClient.get<StrapiResponse<any>>(
       `/filings/${documentId}?${populateQuery}`
     )
-    // Debug: Log the full raw response from Strapi
-    console.log('[getFiling] Full Strapi response:', JSON.stringify(response.data.data, null, 2))
+    // SECURITY: Not logging response - may contain SIN and PII
     return transformFiling(response.data.data)
   },
 
   async initFiling(year: number, type: FilingType = "INDIVIDUAL"): Promise<{ filing: Filing; primaryFiling: PersonalFiling }> {
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-    const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null;
-
-    if (!token) throw new Error('No authentication token');
 
     try {
       // Step 1: Get tax year ID
-      const yearRes = await fetch(`${strapiUrl}/api/tax-years?filters[year][$eq]=${year}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const yearRes = await authFetch(`${strapiUrl}/api/tax-years?filters[year][$eq]=${year}`);
       if (!yearRes.ok) throw new Error('Failed to fetch tax year configuration');
       const yearJson = await yearRes.json();
       if (!yearJson.data || yearJson.data.length === 0) throw new Error(`Tax Year ${year} not configured.`);
@@ -442,18 +438,14 @@ export const FilingService = {
 
       // Step 2: Get filing type ID (using 'primary' for INDIVIDUAL filings)
       const typeCode = type === "INDIVIDUAL" ? "PERSONAL" : type;
-      const typeRes = await fetch(`${strapiUrl}/api/filing-types?filters[type][$eq]=${typeCode}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const typeRes = await authFetch(`${strapiUrl}/api/filing-types?filters[type][$eq]=${typeCode}`);
       if (!typeRes.ok) throw new Error('Failed to fetch filing type');
       const typeJson = await typeRes.json();
       if (!typeJson.data || typeJson.data.length === 0) throw new Error(`Filing type ${typeCode} not found`);
       const filingTypeId = typeJson.data[0].id;
 
       // Step 3: Get default status ID (NOT_STARTED or IN_PROGRESS)
-      const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=NOT_STARTED`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const statusRes = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=NOT_STARTED`);
       let statusId;
       if (statusRes.ok) {
         const statusJson = await statusRes.json();
@@ -461,9 +453,7 @@ export const FilingService = {
       }
       // Fallback to IN_PROGRESS if NOT_STARTED not found
       if (!statusId) {
-        const statusRes2 = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=IN_PROGRESS`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        const statusRes2 = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=IN_PROGRESS`);
         if (statusRes2.ok) {
           const statusJson2 = await statusRes2.json();
           statusId = statusJson2.data?.[0]?.id;
@@ -603,16 +593,14 @@ export const FilingService = {
         console.log('[addFamilyMember] DEBUG - spouse.sameAddress:', primaryFormData['spouse.sameAddress'])
 
         if (hasSpouseFullName || hasSpouseFirstName) {
-          console.log('[addFamilyMember] Auto-copying spouse data from primary')
+          // SECURITY: Not logging PII - spouse data copy operation
 
           let firstName, middleName, lastName
 
           if (hasSpouseFullName) {
             // Parse fullName into firstName/middleName/lastName
             const fullName = primaryFormData['spouse.fullName'] as string
-            console.log('[addFamilyMember] DEBUG - Parsing fullName:', JSON.stringify(fullName))
             const parts = fullName.trim().split(/\s+/)
-            console.log('[addFamilyMember] DEBUG - Name parts:', parts)
             if (parts.length === 1) {
               firstName = parts[0]
             } else if (parts.length === 2) {
@@ -623,21 +611,17 @@ export const FilingService = {
               middleName = parts.slice(1, -1).join(' ')
               lastName = parts[parts.length - 1]
             }
-            console.log('[addFamilyMember] DEBUG - Parsed name:', { firstName, middleName, lastName })
           } else {
             // Use separate fields directly
             firstName = primaryFormData['spouse.firstName']
             lastName = primaryFormData['spouse.lastName']
             middleName = primaryFormData['spouse.middleName']
-            console.log('[addFamilyMember] DEBUG - Using separate fields:', { firstName, lastName, middleName })
           }
 
           // Try both possible date field names
           const spouseDOB = primaryFormData['spouse.birthDate'] || primaryFormData['spouse.dateOfBirth']
-          console.log('[addFamilyMember] DEBUG - spouse DOB:', spouseDOB)
-          console.log('[addFamilyMember] DEBUG - spouse SIN:', primaryFormData['spouse.sin'])
-          console.log('[addFamilyMember] DEBUG - spouse email:', primaryFormData['spouse.email'])
-          console.log('[addFamilyMember] DEBUG - spouse phone:', primaryFormData['spouse.phoneNumber'])
+          // SECURITY: Never log SIN or other sensitive PII
+          // Debug info available: DOB exists, SIN exists, email exists, phone exists
 
           formData = {
             'personalInfo.firstName': firstName,
@@ -652,7 +636,7 @@ export const FilingService = {
             'residency.dateBecameResident': primaryFormData['spouse.dateBecameResident'],
           }
 
-          console.log('[addFamilyMember] DEBUG - formData BEFORE address:', JSON.stringify(formData, null, 2))
+          // SECURITY: Not logging formData - may contain SIN and PII
 
           // Handle address: if sameAddress is YES, copy PRIMARY's address; otherwise copy spouse's address
           if (primaryFormData['spouse.sameAddress'] === 'YES') {
@@ -673,14 +657,11 @@ export const FilingService = {
             formData['personalInfo.postalCode'] = primaryFormData['spouse.postalCode']
           }
 
-          console.log('[addFamilyMember] DEBUG - formData AFTER address:', JSON.stringify(formData, null, 2))
-
           // Remove undefined values
           formData = Object.fromEntries(
             Object.entries(formData).filter(([_, v]) => v !== undefined && v !== null)
           )
-
-          console.log('[addFamilyMember] DEBUG - FINAL formData to send:', JSON.stringify(formData, null, 2))
+          // SECURITY: Not logging formData - may contain SIN and PII
         }
       }
 
@@ -729,7 +710,7 @@ export const FilingService = {
         }
       }
 
-      console.log(`[addFamilyMember] Creating ${role} with formData:`, Object.keys(formData).length > 0 ? JSON.stringify(formData, null, 2) : '(empty)')
+      // SECURITY: Not logging formData - may contain SIN and PII
 
       const response = await strapiClient.post<StrapiResponse<any>>("/personal-filings", {
         data: {
@@ -740,10 +721,8 @@ export const FilingService = {
         }
       })
 
-      console.log(`[addFamilyMember] API Response for ${role}:`, JSON.stringify(response.data.data, null, 2))
-
+      // SECURITY: Not logging response data - may contain SIN and PII
       const transformedFiling = transformPersonalFiling(response.data.data)
-      console.log(`[addFamilyMember] Transformed ${role} filing formData:`, JSON.stringify(transformedFiling.formData, null, 2))
 
       return transformedFiling
     } finally {
@@ -807,33 +786,33 @@ export const FilingService = {
       // Copy personal info ONLY if missing from spouse
       if (!spouseFormData['personalInfo.firstName'] && firstName) {
         updates['personalInfo.firstName'] = firstName
-        console.log('[syncSpouseFromPrimary] Copying missing firstName:', firstName)
+        // SECURITY: Not logging PII values
       }
       if (!spouseFormData['personalInfo.lastName'] && lastName) {
         updates['personalInfo.lastName'] = lastName
-        console.log('[syncSpouseFromPrimary] Copying missing lastName:', lastName)
+        // SECURITY: Not logging PII values
       }
       if (!spouseFormData['personalInfo.middleName'] && middleName) {
         updates['personalInfo.middleName'] = middleName
       }
       if (!spouseFormData['personalInfo.sin'] && primaryFormData['spouse.sin']) {
         updates['personalInfo.sin'] = primaryFormData['spouse.sin']
-        console.log('[syncSpouseFromPrimary] Copying missing SIN')
+        // SECURITY: Never log SIN values
       }
       if (!spouseFormData['personalInfo.dateOfBirth']) {
         const spouseDOB = primaryFormData['spouse.birthDate'] || primaryFormData['spouse.dateOfBirth']
         if (spouseDOB) {
           updates['personalInfo.dateOfBirth'] = spouseDOB
-          console.log('[syncSpouseFromPrimary] Copying missing DOB:', spouseDOB)
+          // SECURITY: Not logging DOB values
         }
       }
       if (!spouseFormData['personalInfo.email'] && primaryFormData['spouse.email']) {
         updates['personalInfo.email'] = primaryFormData['spouse.email']
-        console.log('[syncSpouseFromPrimary] Copying missing email')
+        // SECURITY: Not logging email values
       }
       if (!spouseFormData['personalInfo.phoneNumber'] && primaryFormData['spouse.phoneNumber']) {
         updates['personalInfo.phoneNumber'] = primaryFormData['spouse.phoneNumber']
-        console.log('[syncSpouseFromPrimary] Copying missing phone')
+        // SECURITY: Not logging phone values
       }
       if (!spouseFormData['personalInfo.statusInCanada'] && primaryFormData['spouse.statusInCanada']) {
         updates['personalInfo.statusInCanada'] = primaryFormData['spouse.statusInCanada']
@@ -1057,7 +1036,13 @@ export const FilingService = {
     }
 
     // Extract maritalStatus - handle both object format { status: "MARRIED" } and direct string
-    const maritalStatusValue = pi.maritalStatus?.status || pi.maritalStatus || nestedData.maritalStatus?.status || nestedData.maritalStatus
+    // Avoid falling through to the raw object (e.g. { changed: "No" }) when status is absent
+    // Use undefined (not null) when status is missing so the field is omitted from the payload
+    // and doesn't overwrite a previously saved value in Strapi
+    const rawMaritalStatus = pi.maritalStatus ?? nestedData.maritalStatus
+    const maritalStatusValue = typeof rawMaritalStatus === 'string'
+      ? rawMaritalStatus
+      : rawMaritalStatus?.status || undefined
 
     const mappedPayload = {
       // Personal Info (Flattened)
@@ -1199,14 +1184,9 @@ export const FilingService = {
    */
   async updateFilingStatus(filingId: string, statusCode: string): Promise<Filing> {
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337';
-    const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null;
-
-    if (!token) throw new Error('No authentication token');
 
     // Get the status documentId for the given status code (Strapi v5 uses documentId for relations)
-    const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=${statusCode}`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const statusRes = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=${statusCode}`);
 
     if (!statusRes.ok) throw new Error(`Failed to fetch status: ${statusCode}`);
     const statusJson = await statusRes.json();
@@ -1312,13 +1292,10 @@ export const FilingService = {
    * Also marks all child personal-filings as COMPLETED
    * Accepts optional recaptchaToken for bot protection (verified on backend)
    */
-  async submitForReview(filingId: string, calculatedTotalPrice?: number, recaptchaToken?: string | null): Promise<Filing> {
+  async submitForReview(filingId: string, calculatedTotalPrice?: number, recaptchaToken?: string | null, pricingDetails?: { items: Array<{ label: string; amount: number }>; subtotal: number; tax: number }): Promise<Filing> {
     console.log('[submitForReview] Submitting filing:', filingId, 'with calculatedTotalPrice:', calculatedTotalPrice)
 
     const strapiUrl = process.env.NEXT_PUBLIC_STRAPI_URL || 'http://localhost:1337'
-    const token = typeof window !== 'undefined' ? localStorage.getItem('tax-auth-token') : null
-
-    if (!token) throw new Error('No authentication token')
 
     // Note: recaptchaToken is available for future backend verification
     // Currently, the middleware handles verification for auth endpoints
@@ -1338,9 +1315,7 @@ export const FilingService = {
     // STEP 2: Get the UNDER_REVIEW status ID
     // ============================================================
     console.log('[submitForReview] STEP 2: Getting UNDER_REVIEW status ID...')
-    const statusRes = await fetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=UNDER_REVIEW`, {
-      headers: { Authorization: `Bearer ${token}` }
-    })
+    const statusRes = await authFetch(`${strapiUrl}/api/filing-statuses?filters[statusCode][$eq]=UNDER_REVIEW`)
 
     if (!statusRes.ok) throw new Error('Failed to fetch status')
     const statusJson = await statusRes.json()
@@ -1386,7 +1361,23 @@ export const FilingService = {
     // This way, if they amend again later, we know what they paid previously
     const paidAmount = totalPrice
 
-    console.log('[submitForReview] STEP 5: totalPrice =', totalPrice, ', paidAmount =', paidAmount)
+    // Build fee snapshot for amendment tracking
+    const previouslyPaid = filingData.paidAmount || 0
+    const isAmendment = !!(filingData.referenceNumber && previouslyPaid > 0)
+    const amountDue = isAmendment ? totalPrice - previouslyPaid : totalPrice
+    const latestFeeSnapshot = {
+      totalPrice,
+      previouslyPaid,
+      amountDue,
+      isAmendment,
+      items: pricingDetails?.items || [],
+      subtotal: pricingDetails?.subtotal ?? totalPrice,
+      tax: pricingDetails?.tax ?? 0,
+      currency: 'CAD',
+      submittedAt: new Date().toISOString()
+    }
+
+    console.log('[submitForReview] STEP 5: totalPrice =', totalPrice, ', paidAmount =', paidAmount, ', isAmendment =', isAmendment)
 
     const response = await strapiClient.put<StrapiResponse<any>>(`/filings/${filingId}`, {
       data: {
@@ -1394,6 +1385,7 @@ export const FilingService = {
         confirmationNumber,
         totalPrice,
         paidAmount,
+        latestFeeSnapshot,
         submittedAt: new Date().toISOString()
       }
     })

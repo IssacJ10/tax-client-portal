@@ -575,16 +575,8 @@ function QuestionField({ question, value, error, onChange, filingId, personalFil
   const evaluateConditionalRequired = () => {
     const condReq = question.validation?.conditionalRequired
     if (!condReq?.when || !formData) return false
-
-    const { parentQuestionId, operator, value, values } = condReq.when
-    const parentValue = formData[parentQuestionId]
-
-    switch (operator) {
-      case "equals": return parentValue === value
-      case "in": return Array.isArray(values) && values.includes(parentValue)
-      case "contains": return Array.isArray(parentValue) && parentValue.includes(value)
-      default: return false
-    }
+    // Delegate to QuestionRegistry which supports compound and/or conditionals
+    return QuestionRegistry.isQuestionVisible({ conditional: condReq.when }, formData)
   }
   const isRequired = question.validation?.required || evaluateConditionalRequired()
 
