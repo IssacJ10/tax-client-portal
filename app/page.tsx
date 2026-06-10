@@ -199,7 +199,7 @@ const faqSchema = {
       name: "Is JJ Elevate's online tax filing secure?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. JJ Elevate uses a secure online platform with encrypted document uploads and data protection. All filings are CPA-certified and reviewed by professional accountants.",
+        text: "Yes. JJ Elevate uses a secure online platform with encrypted document uploads and data protection. All filings are reviewed by professional accountants.",
       },
     },
     {
@@ -207,7 +207,7 @@ const faqSchema = {
       name: "Does JJ Elevate handle trust tax returns (T3)?",
       acceptedAnswer: {
         "@type": "Answer",
-        text: "Yes. JJ Elevate prepares T3 trust income tax returns for family trusts, estate trusts, testamentary trusts, and inter vivos trusts across Canada. Our CPA-certified team ensures compliance with CRA trust reporting requirements.",
+        text: "Yes. JJ Elevate prepares T3 trust income tax returns for family trusts, estate trusts, testamentary trusts, and inter vivos trusts across Canada. Our professional team ensures compliance with CRA trust reporting requirements.",
       },
     },
     {
@@ -343,7 +343,7 @@ export default function HomePage() {
                 <motion.div variants={fadeUp} className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500 font-medium">
                   <span className="flex items-center gap-1.5"><Users className="h-4 w-4 text-[#07477a]/50" /> 500+ Clients</span>
                   <span className="text-gray-300">|</span>
-                  <span className="flex items-center gap-1.5"><Shield className="h-4 w-4 text-[#07477a]/50" /> CPA Certified</span>
+                  <span className="flex items-center gap-1.5"><Shield className="h-4 w-4 text-[#07477a]/50" /> Professional Accountants</span>
                   <span className="text-gray-300">|</span>
                   <span className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-[#07477a]/50" /> AES-256 Encrypted</span>
                 </motion.div>
@@ -849,7 +849,7 @@ export default function HomePage() {
                 <motion.ul variants={staggerContainer} className="space-y-4 pt-4 mb-8">
                   {[
                     "Guaranteed Rates & Transparent Pricing",
-                    "CPA-Certified Review",
+                    "Professional Accountant Review",
                     "Year-Round Support (We don't disappear after April!)"
                   ].map((item, i) => (
                     <motion.li key={i} variants={fadeUp} className="flex items-center gap-3">

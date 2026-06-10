@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     template: "%s | JJ Elevate Accounting Solutions",
   },
   description:
-    "Professional tax filing and accounting services for individuals, trusts, and businesses across Canada. Personal T1, corporate T2, trust T3, bookkeeping, payroll, GST/HST filing and business registration. CPA-certified with 24-hour turnaround. Serving Charlottetown PE and all Canadian provinces online.",
+    "Professional tax filing and accounting services for individuals, trusts, and businesses across Canada. Personal T1, corporate T2, trust T3, bookkeeping, payroll, GST/HST filing and business registration. Professional service with 24-hour turnaround. Serving Charlottetown PE and all Canadian provinces online.",
   keywords: [
     "tax filing Canada",
     "Canadian tax services",
@@ -63,7 +63,7 @@ export const metadata: Metadata = {
     "self-employed tax filing",
     "tax preparation services",
     "affordable tax filing",
-    "CPA certified accountant",
+    "professional tax accountant",
     "tax planning compliance",
     "RRSP tax credits",
     "tax deductions Canada",
@@ -91,7 +91,7 @@ export const metadata: Metadata = {
     siteName: "JJ Elevate Accounting Solutions",
     title: "JJ Elevate | Professional Tax Filing & Accounting Services in Canada",
     description:
-      "Reliable, affordable, and expert tax services for individuals, trusts, and businesses across Canada. Personal T1, corporate T2, trust T3, bookkeeping, payroll, GST/HST. CPA-certified with 24h turnaround.",
+      "Reliable, affordable, and expert tax services for individuals, trusts, and businesses across Canada. Personal T1, corporate T2, trust T3, bookkeeping, payroll, GST/HST. Professional service with 24h turnaround.",
     images: [
       {
         url: "/images/logo.png",
@@ -105,7 +105,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "JJ Elevate | Tax Filing & Accounting Services Canada",
     description:
-      "Professional tax filing for individuals & businesses. CPA-certified, secure platform, 24h turnaround.",
+      "Professional tax filing for individuals & businesses. Secure platform, 24h turnaround.",
     images: ["/images/logo.png"],
     creator: "@JismaJose85083",
   },

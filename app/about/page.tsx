@@ -161,7 +161,7 @@ export default function AboutPage() {
                 <motion.ul variants={staggerContainer} className="space-y-4 pt-4 mb-8">
                   {[
                     "Guaranteed Rates & Transparent Pricing",
-                    "CPA-Certified Review",
+                    "Professional Accountant Review",
                     "Year-Round Support (We don't disappear after April!)"
                   ].map((item, i) => (
                     <motion.li key={i} variants={fadeUp} className="flex items-center gap-3">
